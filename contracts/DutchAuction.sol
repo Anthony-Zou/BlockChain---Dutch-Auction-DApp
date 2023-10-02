@@ -8,7 +8,7 @@ contract DuctchAuction {
     uint256 price;
     address owner;
 
-    constructor(IERC20 _token, uint _price) {
+    constructor(IERC20 _token, uint256 _price) {
         associatedToken = _token;
         owner = msg.sender;
         price = _price;
