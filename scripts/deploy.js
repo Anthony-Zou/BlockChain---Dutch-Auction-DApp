@@ -9,15 +9,25 @@ const fs = require("fs/promises");
 
 async function main() {
   const Token = await hre.ethers.getContractFactory("Token");
-  const token = await Token.deploy("100");
+  const token = await Token.deploy("1000");
 
-  const DEX = await hre.ethers.getContractFactory("DuctchAuction");
-  const dex = await DEX.deploy(token.address, 100);
+  const DutchAuction = await hre.ethers.getContractFactory("DutchAuction");
+  const startingPrice = ethers.utils.parseEther("1"); // Example starting price in wei
+  const discountRate = ethers.utils.parseEther("0.05"); // Example discount rate in wei
+  const startTime = (await ethers.provider.getBlock("latest")).timestamp + 1; // Start time is 60 seconds from now
+  const da = await DutchAuction.deploy(
+    token.address,
+    startingPrice,
+    discountRate,
+    startTime
+  );
 
   await token.deployed();
-  await dex.deployed();
+  await da.deployed();
   await writeDeploymentInfo(token, "token.json");
-  await writeDeploymentInfo(dex, "dex.json");
+  await writeDeploymentInfo(da, "da.json");
+  console.log(await da.startingPrice());
+  console.log(await da.discountRate());
 }
 
 async function writeDeploymentInfo(contract, filename = "") {

@@ -152,10 +152,10 @@ describe("DutchAuction", function () {
       );
 
       // Log the balance for debugging
-      console.log(
-        "Contract balance:",
-        ethers.utils.formatEther(contractBalance)
-      );
+      //   console.log(
+      //     "Contract balance:",
+      //     ethers.utils.formatEther(contractBalance)
+      //   );
 
       // Ensure the contract has some funds
       expect(contractBalance).to.be.gt(0);
