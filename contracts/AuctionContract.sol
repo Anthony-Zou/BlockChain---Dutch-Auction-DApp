@@ -11,7 +11,7 @@ contract DutchAuction {
     using SafeERC20 for IERC20Burnable;
 
     uint256 price;
-    address payable public seller;
+    address payable public owner;
     IERC20Burnable public vGodToken;
     uint256 private constant DURATION = 20 minutes;
     uint256 public immutable startingPrice;
@@ -31,7 +31,7 @@ contract DutchAuction {
     event Refund(address indexed buyer, uint256 amount);
 
     modifier onlyOwner() {
-        require(msg.sender == seller, "you are not the owner");
+        require(msg.sender == owner, "you are not the owner");
         _;
     }
 
@@ -62,8 +62,9 @@ contract DutchAuction {
             "Start time must be in the future"
         );
 
-        seller = payable(msg.sender);
+        owner = payable(msg.sender);
         startingPrice = _startingPrice;
+        price = startingPrice;
         discountRate = _discountRate;
         startAt = _startAt;
         expiresAt = _startAt + DURATION;
@@ -101,14 +102,16 @@ contract DutchAuction {
         require(block.timestamp >= startAt, "Auction hasn't started yet");
 
         uint256 timeElapsed = block.timestamp - startAt;
-        uint256 discount = discountRate * timeElapsed;
+        uint256 discount = 0;
+        // if (timeElapsed > 10 seconds) {
+        //     discount = (discountRate / 100) * price;
+        // }
+        //Handling the scenario where the discount might exceed the starting price.
+        // if (startingPrice <= discount) {
+        //     return 0; // Or any minimum token price if you want to impose.
+        // }
 
-        // Handling the scenario where the discount might exceed the starting price.
-        if (startingPrice <= discount) {
-            return 0; // Or any minimum token price if you want to impose.
-        }
-
-        return startingPrice - discount;
+        return startingPrice;
     }
 
     function buyToken() external payable isAuctionActive {

@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "contract": {
-    "address": "0x59b670e9fA9D0A427751Af201D676719a970857b",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     "signerAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "abi": [
       "constructor(address _token, uint256 _startingPrice, uint256 _discountRate, uint256 _startAt)",
@@ -15,8 +15,8 @@
       "function expiresAt() view returns (uint256)",
       "function getTokenBalance() view returns (uint256)",
       "function getTokenPrice() view returns (uint256)",
+      "function owner() view returns (address)",
       "function sell()",
-      "function seller() view returns (address)",
       "function startAt() view returns (uint256)",
       "function startingPrice() view returns (uint256)",
       "function vGodToken() view returns (address)",

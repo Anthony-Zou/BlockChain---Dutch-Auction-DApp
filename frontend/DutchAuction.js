@@ -1,4 +1,3 @@
-// Assumes ethers is already imported
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer;
 
@@ -15,8 +14,8 @@ const dutchAuctionAbi = [
   "function expiresAt() view returns (uint256)",
   "function getTokenBalance() view returns (uint256)",
   "function getTokenPrice() view returns (uint256)",
+  "function owner() view returns (address)",
   "function sell()",
-  "function seller() view returns (address)",
   "function startAt() view returns (uint256)",
   "function startingPrice() view returns (uint256)",
   "function vGodToken() view returns (address)",
@@ -52,30 +51,25 @@ const tokenAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 let tokenContract = null;
 
 async function getAccess() {
-  await window.ethereum.request({ method: "eth_requestAccounts" });
+  if (tokenContract) return;
+  await provider.send("eth_requestAccounts", []);
   signer = provider.getSigner();
   dutchAuctionContract = new ethers.Contract(
     dutchAuctionAddress,
     dutchAuctionAbi,
     signer
   );
+  tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
+  console.log(tokenContract);
+  console.log(dutchAuctionContract);
 }
 
 async function getTokenPrice() {
   await getAccess();
   const price = await dutchAuctionContract.getTokenPrice();
-  document.getElementById("tokenPrice").innerHTML =
-    ethers.utils.formatEther(price);
+  document.getElementById("tokenPrice").innerHTML = price;
   console.log(price);
   return price;
-}
-
-async function getTokenBalance() {
-  await getAccess();
-  const balance = await dutchAuctionContract.balanceOf(
-    await signer.getAddress()
-  );
-  document.getElementById("tokensBalance").innerHTML = balance;
 }
 
 async function getAvailableTokens() {
@@ -84,12 +78,33 @@ async function getAvailableTokens() {
   document.getElementById("tokensAvailable").innerHTML = tokens;
 }
 
+async function getDiscountedPrice() {
+  await getAccess();
+  const DiscountedPrice = await dutchAuctionContract.getDiscountedPrice();
+  document.getElementById("DiscountedPrice").innerHTML = DiscountedPrice;
+}
+
+async function getTokenBalance() {
+  await getAccess();
+  const balance = await tokenContract.balanceOf(await signer.getAddress());
+  document.getElementById("tokensBalance").innerHTML = balance;
+}
+
+async function grantAccess() {
+  await getAccess();
+  const value = document.getElementById("tokenGrant").value;
+  await tokenContract
+    .approve(dutchAuctionContract.address, value)
+    .then(() => alert("success"))
+    .catch((error) => console.log(error));
+}
+
 async function buyToken() {
   await getAccess();
   const numEthToSpend = document.getElementById("tokensToBuy").value;
   await dutchAuctionContract
     .buyToken({
-      value: ethers.utils.parseEther(numEthToSpend),
+      value: numEthToSpend,
     })
     .then(() => alert("Tokens Purchased"))
     .catch((error) => alert(`Failed to purchase tokens: ${error}`));

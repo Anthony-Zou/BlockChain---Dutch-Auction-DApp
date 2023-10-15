@@ -9,11 +9,11 @@ const fs = require("fs/promises");
 
 async function main() {
   const Token = await hre.ethers.getContractFactory("Token");
-  const token = await Token.deploy("1000");
-
+  const token = await Token.deploy("1000000");
+  await token.deployed();
   const DutchAuction = await hre.ethers.getContractFactory("DutchAuction");
-  const startingPrice = ethers.utils.parseEther("1"); // Example starting price in wei
-  const discountRate = ethers.utils.parseEther("0.05"); // Example discount rate in wei
+  const startingPrice = 8000; //  starting price in wei
+  const discountRate = 5; //  discount rate in percent
   const startTime = (await ethers.provider.getBlock("latest")).timestamp + 1; // Start time is 60 seconds from now
   const da = await DutchAuction.deploy(
     token.address,
@@ -22,7 +22,6 @@ async function main() {
     startTime
   );
 
-  await token.deployed();
   await da.deployed();
   await writeDeploymentInfo(token, "token.json");
   await writeDeploymentInfo(da, "da.json");
