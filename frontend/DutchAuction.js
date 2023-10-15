@@ -8,10 +8,13 @@ const dutchAuctionAbi = [
   "event Refund(address indexed buyer, uint256 amount)",
   "event TokenPurchased(address indexed buyer, uint256 amount, uint256 price)",
   "event TokensBurned(uint256 amount)",
+  "function BASE() view returns (uint256)",
+  "function DURATION() view returns (uint256)",
   "function burnRemainingTokens()",
   "function buyToken() payable",
   "function discountRate() view returns (uint256)",
   "function expiresAt() view returns (uint256)",
+  "function getDiscount() view returns (uint256)",
   "function getTokenBalance() view returns (uint256)",
   "function getTokenPrice() view returns (uint256)",
   "function owner() view returns (address)",
@@ -67,9 +70,11 @@ async function getAccess() {
 async function getTokenPrice() {
   await getAccess();
   const price = await dutchAuctionContract.getTokenPrice();
-  document.getElementById("tokenPrice").innerHTML = price;
-  console.log(price);
-  return price;
+  console.log("Fetched Price:", price.toString());
+  document.getElementById("tokenPrice").innerHTML = price.toString();
+  const DiscountedPrice = await dutchAuctionContract.getDiscount();
+  console.log("Discount Price:", DiscountedPrice.toString());
+  document.getElementById("DiscountedPrice").innerHTML = DiscountedPrice;
 }
 
 async function getAvailableTokens() {
@@ -80,7 +85,7 @@ async function getAvailableTokens() {
 
 async function getDiscountedPrice() {
   await getAccess();
-  const DiscountedPrice = await dutchAuctionContract.getDiscountedPrice();
+  const DiscountedPrice = await dutchAuctionContract.getDiscount()();
   document.getElementById("DiscountedPrice").innerHTML = DiscountedPrice;
 }
 
