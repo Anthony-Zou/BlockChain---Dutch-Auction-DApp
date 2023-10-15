@@ -18,7 +18,7 @@ describe("DutchAuction", function () {
     DutchAuction = await ethers.getContractFactory("DutchAuction");
 
     const startingPrice = ethers.utils.parseEther("1"); // Example starting price in wei
-    const discountRate = ethers.utils.parseEther("0.05"); // Example discount rate in wei
+    const discountRate = ethers.utils.parseEther("0.001"); // Example discount rate in wei
     const duration = 20 * 60; // 20 minutes in seconds
     const startAt = (await ethers.provider.getBlock("latest")).timestamp + 60; // Start 60 seconds into the future
 
@@ -229,6 +229,52 @@ describe("DutchAuction", function () {
         0,
         "Contract balance should be 0 after withdrawal"
       );
+    });
+  });
+
+  describe("Dutch Auction Price Reduction", function () {
+    it("Price should reduce over time", async function () {
+      // Move forward in time to start the auction
+      await ethers.provider.send("evm_increaseTime", [60]);
+      await ethers.provider.send("evm_mine");
+
+      const initialPrice = await dutchAuction.getTokenPrice();
+      console.log("Initial Price (WEI):", initialPrice.toString());
+      const initialDiscount = await dutchAuction.getDiscount();
+      console.log("Initial Discount (WEI):", initialDiscount.toString());
+
+      // Move forward in time to observe price reduction
+      await ethers.provider.send("evm_increaseTime", [60]); // e.g., 10 minutes
+      await ethers.provider.send("evm_mine");
+
+      const priceAfterTime = await dutchAuction.getTokenPrice();
+      console.log(
+        "Price After Time Elapsed 60s (WEI):",
+        priceAfterTime.toString()
+      );
+      const DiscountAfterTime = await dutchAuction.getDiscount();
+      console.log(
+        "Discount After Time Elapsed 60s (WEI):",
+        DiscountAfterTime.toString()
+      );
+
+      // Move forward in time to observe price reduction
+      await ethers.provider.send("evm_increaseTime", [60]); // e.g., 10 minutes
+      await ethers.provider.send("evm_mine");
+
+      const priceAfterTime2 = await dutchAuction.getTokenPrice();
+      console.log(
+        "Price After Time Elapsed2 60s (WEI):",
+        priceAfterTime2.toString()
+      );
+      const DiscountAfterTime2 = await dutchAuction.getDiscount();
+      console.log(
+        "Discount After Time Elapsed2 60s (WEI):",
+        DiscountAfterTime2.toString()
+      );
+
+      // Ensure the price has reduced
+      expect(priceAfterTime).to.be.lt(initialPrice);
     });
   });
 });

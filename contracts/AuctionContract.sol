@@ -2,6 +2,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol"; // Import SafeERC20
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 interface IERC20Burnable is IERC20 {
     function burn(uint256 amount) external;
@@ -9,11 +10,14 @@ interface IERC20Burnable is IERC20 {
 
 contract DutchAuction {
     using SafeERC20 for IERC20Burnable;
-
+    using SafeMath for uint256;
     uint256 price;
+
     address payable public owner;
     IERC20Burnable public vGodToken;
-    uint256 private constant DURATION = 20 minutes;
+    uint256 public constant DURATION = 1200; // 20 minutes
+    uint256 public constant BASE = 1e18; // 18 decimal places, same as Ether
+
     uint256 public immutable startingPrice;
     uint256 public immutable discountRate;
     uint256 public immutable startAt;
@@ -98,20 +102,27 @@ contract DutchAuction {
     }
 
     function getTokenPrice() public view returns (uint256) {
-        require(startAt != 0, "Auction has not started yet");
-        require(block.timestamp >= startAt, "Auction hasn't started yet");
+        //require(startAt != 0, "Auction has not started yet");
+        //require(block.timestamp >= startAt, "Auction hasn't started yet");
 
-        uint256 timeElapsed = block.timestamp - startAt;
-        uint256 discount = 0;
-        // if (timeElapsed > 10 seconds) {
-        //     discount = (discountRate / 100) * price;
-        // }
-        //Handling the scenario where the discount might exceed the starting price.
-        // if (startingPrice <= discount) {
-        //     return 0; // Or any minimum token price if you want to impose.
-        // }
+        return startingPrice - getDiscount();
+    }
 
-        return startingPrice;
+    function getDiscount() public view returns (uint256) {
+        uint256 elapsedTime = block.timestamp - startAt;
+
+        if (elapsedTime >= DURATION) {
+            return startingPrice; // If the auction duration has passed, the discount should be equal to startingPrice
+        }
+
+        uint256 discount = discountRate * elapsedTime;
+
+        // Ensure that discount does not exceed startingPrice to prevent underflow in getTokenPrice
+        if (discount >= startingPrice) {
+            return startingPrice;
+        }
+
+        return discount;
     }
 
     function buyToken() external payable isAuctionActive {
