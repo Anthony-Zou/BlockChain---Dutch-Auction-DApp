@@ -1,0 +1,29 @@
+{
+  "network": "localhost",
+  "contract": {
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
+    "signerAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "abi": [
+      "constructor(address _token, uint256 _startingPrice, uint256 _discountRate, uint256 _startAt)",
+      "event AuctionStarted(uint256 startAt, uint256 expiresAt)",
+      "event Refund(address indexed buyer, uint256 amount)",
+      "event TokenPurchased(address indexed buyer, uint256 amount, uint256 price)",
+      "event TokensBurned(uint256 amount)",
+      "function BASE() view returns (uint256)",
+      "function DURATION() view returns (uint256)",
+      "function burnRemainingTokens()",
+      "function buyToken() payable",
+      "function discountRate() view returns (uint256)",
+      "function expiresAt() view returns (uint256)",
+      "function getDiscount() view returns (uint256)",
+      "function getTokenBalance() view returns (uint256)",
+      "function getTokenPrice() view returns (uint256)",
+      "function owner() view returns (address)",
+      "function sell()",
+      "function startAt() view returns (uint256)",
+      "function startingPrice() view returns (uint256)",
+      "function vGodToken() view returns (address)",
+      "function withdrawFunds()"
+    ]
+  }
+}

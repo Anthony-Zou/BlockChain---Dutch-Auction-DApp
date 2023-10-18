@@ -20,7 +20,7 @@ To deploy the contract to your localhost network do the following:
 
 npx hardhat node
 
-npx hardhat run --network localhost ./script/deploy.js
+npx hardhat run --network localhost ./scripts/deploy.js
 
 Using the Frontend
 
