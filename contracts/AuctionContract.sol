@@ -17,7 +17,6 @@ contract DutchAuction {
     IERC20Burnable public vGodToken;
     uint256 public constant DURATION = 1200; // 20 minutes
     uint256 public constant BASE = 1e18; // 18 decimal places, same as Ether
-
     uint256 public immutable startingPrice;
     uint256 public immutable discountRate;
     uint256 public immutable startAt;
