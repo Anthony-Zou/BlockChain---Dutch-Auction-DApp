@@ -97,20 +97,6 @@ contract('DecreasingPriceCrowdsale', function (accounts) {
         const actualRate = await this.crowdsale.getCurrentRate();
         expect(actualRate).to.be.bignumber.equal(currentRate);
       });
-
-      // it('should calculate the correct token amount for a given wei value', async function () {
-      //   const currentTime = await time.latest();
-      //   const elapsedTime = currentTime.sub(this.openingTime);
-      //   const timeRange = this.closingTime.sub(this.openingTime);
-      //   const rateRange = initialRate.sub(new BN(1)); // Adjust the final rate here
-      //   const currentRate = initialRate.sub(elapsedTime.mul(rateRange).div(timeRange));
-
-      //   // Calculate the expected token amount
-      //   const expectedTokens = currentRate.mul(value);
-
-      //   const actualTokens = await this.crowdsale._getTokenAmount(value);
-      //   expect(actualTokens).to.be.bignumber.equal(expectedTokens);
-      // });
     });
   });
 });
