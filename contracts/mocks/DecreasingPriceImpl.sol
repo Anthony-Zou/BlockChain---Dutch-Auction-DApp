@@ -2,14 +2,14 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../crowdsale/DecreasingPriceCrowdsale.sol";
+import "../auction/DecreasingPriceAuction.sol";
 
-contract DecreasingPriceCrowdsaleImpl is DecreasingPriceCrowdsale {
+contract DecreasingPriceAuctionImpl is DecreasingPriceAuction {
     constructor (uint256 openingTime, uint256 closingTime, 
     uint256 initialRate, uint256 finalRate, address payable wallet, IERC20 token)
-        Crowdsale(initialRate, wallet, token)
-        TimedCrowdsale(openingTime, closingTime)
-        DecreasingPriceCrowdsale(initialRate, finalRate)
+        Auction(initialRate, wallet, token)
+        TimedAuction(openingTime, closingTime)
+        DecreasingPriceAuction(initialRate, finalRate)
     {
         // solhint-disable-previous-line no-empty-blocks
     }

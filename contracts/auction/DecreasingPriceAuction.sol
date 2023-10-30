@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "./TimedCrowdsale.sol";
+import "./TimedAuction.sol";
 
 
 /**
- * @title DecreasingPriceCrowdsale
- * @dev Extension of Crowdsale contract that increases the price of tokens linearly in time.
+ * @title DecreasingPriceAuction
+ * @dev Extension of Auction contract that increases the price of tokens linearly in time.
  * Note that what should be provided to the constructor is the initial and final _rates_, that is,
  * the amount of tokens per wei contributed. Thus, the initial rate must be greater than the final rate.
  */
-abstract contract DecreasingPriceCrowdsale is TimedCrowdsale {
+abstract contract DecreasingPriceAuction is TimedAuction {
     using SafeMath for uint256;
 
     uint256 private _initialRate;
@@ -18,33 +18,33 @@ abstract contract DecreasingPriceCrowdsale is TimedCrowdsale {
 
     /**
      * @dev Constructor, takes initial and final rates of tokens received per wei contributed.
-     * @param initRate Number of tokens a buyer gets per wei at the start of the crowdsale
-     * @param finRate Number of tokens a buyer gets per wei at the end of the crowdsale
+     * @param initRate Number of tokens a buyer gets per wei at the start of the Auction
+     * @param finRate Number of tokens a buyer gets per wei at the end of the Auction
      */
     constructor (uint256 initRate, uint256 finRate) {
-        require(initRate > 0, "DecreasingPriceCrowdsale: initial rate is 0");
-        require(initRate < finRate, "DecreasingPriceCrowdsale: initial rate is not greater than final rate");
+        require(initRate > 0, "DecreasingPriceAuction: initial rate is 0");
+        require(initRate < finRate, "DecreasingPriceAuction: initial rate is not greater than final rate");
         _initialRate = initRate;
         _finalRate = finRate;
     }
 
     /**
-     * The base rate function is overridden to revert, since this crowdsale doesn't use it, and
+     * The base rate function is overridden to revert, since this Auction doesn't use it, and
      * all calls to it are a mistake.
      */
     function rate() public pure override returns (uint256) {
-        revert("DecreasingPriceCrowdsale: rate() called, call getCurrentRate() function instead.");
+        revert("DecreasingPriceAuction: rate() called, call getCurrentRate() function instead.");
     }
 
     /**
-     * @return the initial rate of the crowdsale.
+     * @return the initial rate of the Auction.
      */
     function initialRate() public view returns (uint256) {
         return _initialRate;
     }
 
     /**
-     * @return the final rate of the crowdsale.
+     * @return the final rate of the Auction.
      */
     function finalRate() public view returns (uint256) {
         return _finalRate;

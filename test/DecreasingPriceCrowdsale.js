@@ -1,10 +1,10 @@
 const { BN, ether, expectEvent, expectRevert, time } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
 
-const DecreasingPriceCrowdsaleImpl = artifacts.require('DecreasingPriceCrowdsaleImpl'); // Replace with your contract
+const DecreasingPriceAuctionImpl = artifacts.require('DecreasingPriceAuctionImpl'); // Replace with your contract
 const SimpleToken = artifacts.require('Token');
 
-contract('DecreasingPriceCrowdsale', function (accounts) {
+contract('DecreasingPriceAuction', function (accounts) {
 
   const [ investor, wallet, purchaser ] = accounts;
 
@@ -21,25 +21,25 @@ contract('DecreasingPriceCrowdsale', function (accounts) {
   it('reverts if the initial rate is 0', async function () {
     // console.log("****************************************");  
     // console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
-    await expectRevert(DecreasingPriceCrowdsaleImpl.new(
+    await expectRevert(DecreasingPriceAuctionImpl.new(
       this.openingTime, this.closingTime, 0 , finalRate, wallet, this.token.address
-    ), "Crowdsale: rate is 0");
+    ), "Auction: rate is 0");
   });
 
   it('reverts if the final rate is smaller than the initial rate', async function () {
     // console.log("****************************************");  
     // console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
-    await expectRevert(DecreasingPriceCrowdsaleImpl.new(
+    await expectRevert(DecreasingPriceAuctionImpl.new(
       this.openingTime, this.closingTime, initialRate, 0, wallet, this.token.address
-    ), "DecreasingPriceCrowdsale: initial rate is not greater than final rate");
+    ), "DecreasingPriceAuction: initial rate is not greater than final rate");
   });
 
   it('reverts if the initial rate is euqal to the final rate', async function () {
     // console.log("****************************************");  
     // console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
-    await expectRevert(DecreasingPriceCrowdsaleImpl.new(
+    await expectRevert(DecreasingPriceAuctionImpl.new(
       this.openingTime, this.closingTime, initialRate, initialRate,  wallet, this.token.address
-    ), "DecreasingPriceCrowdsale: initial rate is not greater than final rate");
+    ), "DecreasingPriceAuction: initial rate is not greater than final rate");
   });
 
   beforeEach(async function () {
@@ -49,48 +49,48 @@ contract('DecreasingPriceCrowdsale', function (accounts) {
     this.token = await SimpleToken.new(tokenSupply);
   });
 
-  context('with crowdsale', function () {
+  context('with Auction', function () {
     beforeEach(async function () {
       // Initialize the tested contract with the initialRate
-      this.crowdsale = await DecreasingPriceCrowdsaleImpl.new(
+      this.Auction = await DecreasingPriceAuctionImpl.new(
         this.openingTime, this.closingTime, initialRate, finalRate, wallet, this.token.address
       );
 
-      // Transfer tokens to the crowdsale contract
-      await this.token.transfer(this.crowdsale.address, tokenSupply);
+      // Transfer tokens to the Auction contract
+      await this.token.transfer(this.Auction.address, tokenSupply);
     });
     
     it('should be ended only after end', async function () {
-      expect(await this.crowdsale.hasClosed()).to.equal(false);
+      expect(await this.Auction.hasClosed()).to.equal(false);
       await time.increaseTo(this.afterClosingTime);
-      expect(await this.crowdsale.isOpen()).to.equal(false);
-      expect(await this.crowdsale.hasClosed()).to.equal(true);
+      expect(await this.Auction.isOpen()).to.equal(false);
+      expect(await this.Auction.hasClosed()).to.equal(true);
     });
     
     describe('getting correct rates', function () {
       it('should reject calls to the rates() function', async function () {
-        await expectRevert(this.crowdsale.rate(), 
-        "DecreasingPriceCrowdsale: rate() called, call getCurrentRate() function instead.");
+        await expectRevert(this.Auction.rate(), 
+        "DecreasingPriceAuction: rate() called, call getCurrentRate() function instead.");
       });
 
       it('should record the initial and final rate correctly', async function () {
         // Check if the initial rate is set correctly
-        const actualInitialRate = await this.crowdsale.initialRate();
+        const actualInitialRate = await this.Auction.initialRate();
         expect(actualInitialRate).to.be.bignumber.equal(initialRate);
         // Check if the final rate is set correctly
-        const actualFinalRate = await this.crowdsale.finalRate();
+        const actualFinalRate = await this.Auction.finalRate();
         expect(actualFinalRate).to.be.bignumber.equal(finalRate);
       });
 
       it('should increase rate over time', async function () {
         // current rate should be 0 before start
-        expect(await this.crowdsale.isOpen()).to.equal(false);
-        expect(await this.crowdsale.getCurrentRate()).to.be.bignumber.equal(BN(0));
+        expect(await this.Auction.isOpen()).to.equal(false);
+        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(BN(0));
 
         // rate should be initial rate at the beginning
         await time.increaseTo(this.openingTime);
-        expect(await this.crowdsale.isOpen()).to.equal(true);
-        expect(await this.crowdsale.getCurrentRate()).to.be.bignumber.equal(initialRate);
+        expect(await this.Auction.isOpen()).to.equal(true);
+        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(initialRate);
 
         // 3 days after auction start 
         await time.increaseTo(this.openingTime.add(time.duration.days(3)));
@@ -100,18 +100,18 @@ contract('DecreasingPriceCrowdsale', function (accounts) {
         const rateRange = finalRate.sub(initialRate);
         const currentRate = initialRate.add(elapsedTime.mul(rateRange).div(timeRange));
   
-        const actualRate = await this.crowdsale.getCurrentRate();
+        const actualRate = await this.Auction.getCurrentRate();
         expect(actualRate).to.be.bignumber.equal(currentRate);
         
         // At the exact moment of closing time, rate should be 0 as out of trading time
         await time.increaseTo(this.closingTime);
-        expect(await this.crowdsale.hasClosed()).to.equal(false);
-        expect(await this.crowdsale.getCurrentRate()).to.be.bignumber.equal(finalRate)
+        expect(await this.Auction.hasClosed()).to.equal(false);
+        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(finalRate)
 
         // After auction ends, rate should be 0 as out of trading time
         await time.increaseTo(this.afterClosingTime);
-        expect(await this.crowdsale.hasClosed()).to.equal(true);
-        expect(await this.crowdsale.getCurrentRate()).to.be.bignumber.equal(BN(0));
+        expect(await this.Auction.hasClosed()).to.equal(true);
+        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(BN(0));
 
       });
     });

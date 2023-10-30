@@ -10,18 +10,18 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 
 
 /**
- * @title Crowdsale
- * @dev Crowdsale is a base contract for managing a token crowdsale,
+ * @title Auction
+ * @dev Auction is a base contract for managing a token Auction,
  * allowing investors to purchase tokens with ether. This contract implements
  * such functionality in its most fundamental form and can be extended to provide additional
  * functionality and/or custom behavior.
  * The external interface represents the basic interface for purchasing tokens, and conforms
- * the base architecture for crowdsales. It is *not* intended to be modified / overridden.
- * The internal interface conforms the extensible and modifiable surface of crowdsales. Override
+ * the base architecture for Auctions. It is *not* intended to be modified / overridden.
+ * The internal interface conforms the extensible and modifiable surface of Auctions. Override
  * the methods to add functionality. Consider using 'super' where appropriate to concatenate
  * behavior.
  */
-contract Crowdsale is Context, ReentrancyGuard, AccessControl {
+contract Auction is Context, ReentrancyGuard, AccessControl {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -37,17 +37,36 @@ contract Crowdsale is Context, ReentrancyGuard, AccessControl {
     // 1 wei will give you 1 unit, or 0.001 TOK.
     uint256 private _rate;
 
+    // A map storing the address and weiAmount
+    mapping(address => uint256) private _contributions;
+    address [] private _queue;
+
     // Amount of wei raised
     uint256 private _weiRaised;
+
+    // Whether the auction is finalized or not
+    bool private _finalized;
 
     /**
      * Event for token purchase logging
      * @param purchaser who paid for the tokens
      * @param beneficiary who got the tokens
      * @param value weis paid for purchase
+     */
+    event BidsPlaced(address indexed purchaser, address indexed beneficiary, uint256 value);
+
+    /**
+     * Event for token emission logging
+     * @param beneficiary who got the tokens
+     * @param value weis paid for purchase
      * @param amount amount of tokens purchased
      */
-    event TokensPurchased(address indexed purchaser, address indexed beneficiary, uint256 value, uint256 amount);
+    event TokensEmissioned(address indexed beneficiary, uint256 value, uint256 amount);
+
+    /**
+     * Event for auction end
+     */
+    event AuctionFinalized();
 
     /**
      * @param rate_ Number of token units a buyer gets per wei
@@ -58,13 +77,15 @@ contract Crowdsale is Context, ReentrancyGuard, AccessControl {
      * @param token_ Address of the token being sold
      */
     constructor (uint256 rate_, address payable wallet_, IERC20 token_) {
-        require(rate_ > 0, "Crowdsale: rate is 0");
-        require(wallet_ != address(0), "Crowdsale: wallet is the zero address");
-        require(address(token_) != address(0), "Crowdsale: token is the zero address");
+        require(rate_ > 0, "Auction: rate is 0");
+        require(wallet_ != address(0), "Auction: wallet is the zero address");
+        require(address(token_) != address(0), "Auction: token is the zero address");
 
         _rate = rate_;
         _wallet = wallet_;
         _token = token_;
+
+        _finalized = false;
 
        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
@@ -112,6 +133,22 @@ contract Crowdsale is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
+     * @return true if the Auction is finalized, false otherwise.
+     */
+    function finalized() public view returns (bool) {
+        return _finalized;
+    }
+
+    /**
+     * @dev Returns the amount contributed so far by a specific beneficiary.
+     * @param beneficiary Address of contributor
+     * @return Beneficiary contribution so far
+     */
+    function getContribution(address beneficiary) public view returns (uint256) {
+        return _contributions[beneficiary];
+    }
+
+    /**
      * @dev low level token purchase ***DO NOT OVERRIDE***
      * This function has a non-reentrancy guard, so it shouldn't be called by
      * another `nonReentrant` function.
@@ -119,35 +156,67 @@ contract Crowdsale is Context, ReentrancyGuard, AccessControl {
      */
     function placeBids(address beneficiary) virtual public nonReentrant payable {
         uint256 weiAmount = msg.value;
-        _preValidatePurchase(beneficiary, weiAmount);
+        _preValidateBids(beneficiary, weiAmount);
 
-        // calculate token amount to be created
-        uint256 tokens = _getTokenAmount(weiAmount);
-
-        // update state
-        _weiRaised = _weiRaised.add(weiAmount);
-
-        _processPurchase(beneficiary, tokens);
-        emit TokensPurchased(_msgSender(), beneficiary, weiAmount, tokens);
+        emit BidsPlaced(_msgSender(), beneficiary, weiAmount);
 
         _updatePurchasingState(beneficiary, weiAmount);
 
         _forwardFunds();
-        _postValidatePurchase(beneficiary, weiAmount);
+        _postValidateBids(beneficiary, weiAmount);
     }
 
+
+    /**
+     * @dev Must be called after Auction ends, to do some extra finalization
+     * work. Calls the contract's finalization function.
+     */
+    function finalize() virtual public {
+        require(!_finalized, "Auction: already finalized");
+        _finalized = true;
+
+        _finalization();
+        emit AuctionFinalized();
+    }
+    
+
+    /**
+     * @dev Can be overridden to add finalization logic. The overriding function
+     * should call super._finalization() to ensure the chain of finalization is
+     * executed entirely.
+     */
+    function _finalization() virtual internal {
+        // solhint-disable-previous-line no-empty-blocks
+        // The simplest logic: 
+        for (uint i=0; i<_queue.length; i++) {
+            // get the corresponding weiAmount from the map
+            uint256 weiAmount = getContribution(_queue[i]);
+
+            // calculate token amount to be created
+            uint256 tokens = _getTokenAmount(weiAmount);
+
+            // update state
+            _weiRaised = _weiRaised.add(weiAmount);
+
+            _deliverTokens(_queue[i], tokens);
+
+            emit TokensEmissioned(_queue[i], weiAmount, tokens);
+        }
+    }
+
+        
     /**
      * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met.
-     * Use `super` in contracts that inherit from Crowdsale to extend their validations.
-     * Example from CappedCrowdsale.sol's _preValidatePurchase method:
-     *     super._preValidatePurchase(beneficiary, weiAmount);
+     * Use `super` in contracts that inherit from Auction to extend their validations.
+     * Example from CappedAuction.sol's _preValidateBids method:
+     *     super._preValidateBids(beneficiary, weiAmount);
      *     require(weiRaised().add(weiAmount) <= cap);
      * @param beneficiary Address performing the token purchase
      * @param weiAmount Value in wei involved in the purchase
      */
-    function _preValidatePurchase(address beneficiary, uint256 weiAmount) virtual internal view {
-        require(beneficiary != address(0), "Crowdsale: beneficiary is the zero address");
-        require(weiAmount != 0, "Crowdsale: weiAmount is 0");
+    function _preValidateBids(address beneficiary, uint256 weiAmount) virtual internal view {
+        require(beneficiary != address(0), "Auction: beneficiary is the zero address");
+        require(weiAmount != 0, "Auction: weiAmount is 0");
         this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
     }
 
@@ -157,12 +226,12 @@ contract Crowdsale is Context, ReentrancyGuard, AccessControl {
      * @param beneficiary Address performing the token purchase
      * @param weiAmount Value in wei involved in the purchase
      */
-    function _postValidatePurchase(address beneficiary, uint256 weiAmount) virtual internal view {
+    function _postValidateBids(address beneficiary, uint256 weiAmount) virtual internal view {
         // solhint-disable-previous-line no-empty-blocks
     }
 
     /**
-     * @dev Source of tokens. Override this method to modify the way in which the crowdsale ultimately gets and sends
+     * @dev Source of tokens. Override this method to modify the way in which the Auction ultimately gets and sends
      * its tokens.
      * @param beneficiary Address performing the token purchase
      * @param tokenAmount Number of tokens to be emitted
@@ -172,23 +241,14 @@ contract Crowdsale is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Executed when a purchase has been validated and is ready to be executed. Doesn't necessarily emit/send
-     * tokens.
-     * @param beneficiary Address receiving the tokens
-     * @param tokenAmount Number of tokens to be purchased
-     */
-    function _processPurchase(address beneficiary, uint256 tokenAmount) virtual  internal {
-        _deliverTokens(beneficiary, tokenAmount);
-    }
-
-    /**
      * @dev Override for extensions that require an internal state to check for validity (current user contributions,
      * etc.)
      * @param beneficiary Address receiving the tokens
      * @param weiAmount Value in wei involved in the purchase
      */
     function _updatePurchasingState(address beneficiary, uint256 weiAmount) virtual internal {
-        // solhint-disable-previous-line no-empty-blocks
+        _queue.push(beneficiary);
+        _contributions[beneficiary] = _contributions[beneficiary].add(weiAmount);
     }
 
     /**

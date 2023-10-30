@@ -2,13 +2,13 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "../crowdsale/TimedCrowdsale.sol";
+import "../auction/TimedAuction.sol";
 
-contract TimedCrowdsaleImpl is TimedCrowdsale {
+contract TimedAuctionImpl is TimedAuction {
     constructor (uint256 openingTime, uint256 closingTime, 
     uint256 rate, address payable wallet, IERC20 token)
-        Crowdsale(rate, wallet, token)
-        TimedCrowdsale(openingTime, closingTime)
+        Auction(rate, wallet, token)
+        TimedAuction(openingTime, closingTime)
     {
         // solhint-disable-previous-line no-empty-blocks
     }

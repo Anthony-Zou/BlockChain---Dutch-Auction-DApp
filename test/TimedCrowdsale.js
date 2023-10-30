@@ -1,10 +1,10 @@
 const { BN, ether, expectEvent, expectRevert, time } = require('@openzeppelin/test-helpers');
 const { expect } = require('chai');
 
-const TimedCrowdsaleImpl = artifacts.require('TimedCrowdsaleImpl');
+const TimedAuctionImpl = artifacts.require('TimedAuctionImpl');
 const SimpleToken = artifacts.require('Token');
 
-contract('TimedCrowdsale', function (accounts) {
+contract('TimedAuction', function (accounts) {
   const [ investor, wallet, purchaser ] = accounts;
   const rate = new BN(1);
   const value = ether('42');
@@ -25,59 +25,59 @@ contract('TimedCrowdsale', function (accounts) {
   it('reverts if the opening time is in the past', async function () {
     // console.log("****************************************");  
     // console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
-    await expectRevert(TimedCrowdsaleImpl.new(
+    await expectRevert(TimedAuctionImpl.new(
       (await time.latest()).sub(time.duration.days(1)), this.closingTime, rate, wallet, this.token.address
-    ), 'TimedCrowdsale: opening time is before current time');
+    ), 'TimedAuction: opening time is before current time');
   });
 
   it('reverts if the closing time is before the opening time', async function () {
-    await expectRevert(TimedCrowdsaleImpl.new(
+    await expectRevert(TimedAuctionImpl.new(
       this.openingTime, this.openingTime.sub(time.duration.seconds(1)), rate, wallet, this.token.address
-    ), 'TimedCrowdsale: opening time is not before closing time');
+    ), 'TimedAuction: opening time is not before closing time');
   });
 
   it('reverts if the closing time equals the opening time', async function () {
-    await expectRevert(TimedCrowdsaleImpl.new(
+    await expectRevert(TimedAuctionImpl.new(
       this.openingTime, this.openingTime, rate, wallet, this.token.address
-    ), 'TimedCrowdsale: opening time is not before closing time');
+    ), 'TimedAuction: opening time is not before closing time');
   });
 
-  context('with crowdsale', function () {
+  context('with Auction', function () {
     beforeEach(async function () {
-      this.crowdsale = await TimedCrowdsaleImpl.new(
+      this.Auction = await TimedAuctionImpl.new(
         this.openingTime, this.closingTime, rate, wallet, this.token.address
       );
-      await this.token.transfer(this.crowdsale.address, tokenSupply);
+      await this.token.transfer(this.Auction.address, tokenSupply);
     });
 
     it('should be ended only after end', async function () {
-      expect(await this.crowdsale.hasClosed()).to.equal(false);
+      expect(await this.Auction.hasClosed()).to.equal(false);
       await time.increaseTo(this.afterClosingTime);
-      expect(await this.crowdsale.isOpen()).to.equal(false);
-      expect(await this.crowdsale.hasClosed()).to.equal(true);
+      expect(await this.Auction.isOpen()).to.equal(false);
+      expect(await this.Auction.hasClosed()).to.equal(true);
     });
 
     describe('accepting payments', function () {
       it('should reject payments before start', async function () {
-        expect(await this.crowdsale.isOpen()).to.equal(false);
-        await expectRevert(this.crowdsale.send(value), 'TimedCrowdsale: not open');
-        await expectRevert(this.crowdsale.placeBids(investor, { from: purchaser, value: value }),
-          'TimedCrowdsale: not open'
+        expect(await this.Auction.isOpen()).to.equal(false);
+        await expectRevert(this.Auction.send(value), 'TimedAuction: not open');
+        await expectRevert(this.Auction.placeBids(investor, { from: purchaser, value: value }),
+          'TimedAuction: not open'
         );
       });
 
       it('should accept payments after start', async function () {
         await time.increaseTo(this.openingTime);
-        expect(await this.crowdsale.isOpen()).to.equal(true);
-        await this.crowdsale.send(value);
-        await this.crowdsale.placeBids(investor, { value: value, from: purchaser });
+        expect(await this.Auction.isOpen()).to.equal(true);
+        await this.Auction.send(value);
+        await this.Auction.placeBids(investor, { value: value, from: purchaser });
       });
 
       it('should reject payments after end', async function () {
         await time.increaseTo(this.afterClosingTime);
-        await expectRevert(this.crowdsale.send(value), 'TimedCrowdsale: not open');
-        await expectRevert(this.crowdsale.placeBids(investor, { value: value, from: purchaser }),
-          'TimedCrowdsale: not open'
+        await expectRevert(this.Auction.send(value), 'TimedAuction: not open');
+        await expectRevert(this.Auction.placeBids(investor, { value: value, from: purchaser }),
+          'TimedAuction: not open'
         );
       });
     });
@@ -85,61 +85,61 @@ contract('TimedCrowdsale', function (accounts) {
     describe('extending closing time', function () {
       it('should not reduce duration', async function () {
         // Same date
-        await expectRevert(this.crowdsale.extendTime(this.closingTime),
-          'TimedCrowdsale: new closing time is before current closing time'
+        await expectRevert(this.Auction.extendTime(this.closingTime),
+          'TimedAuction: new closing time is before current closing time'
         );
 
         // Prescending date
         const newClosingTime = this.closingTime.sub(time.duration.seconds(1));
-        await expectRevert(this.crowdsale.extendTime(newClosingTime),
-          'TimedCrowdsale: new closing time is before current closing time'
+        await expectRevert(this.Auction.extendTime(newClosingTime),
+          'TimedAuction: new closing time is before current closing time'
         );
       });
 
-      context('before crowdsale start', function () {
+      context('before Auction start', function () {
         beforeEach(async function () {
-          expect(await this.crowdsale.isOpen()).to.equal(false);
-          await expectRevert(this.crowdsale.send(value), 'TimedCrowdsale: not open');
+          expect(await this.Auction.isOpen()).to.equal(false);
+          await expectRevert(this.Auction.send(value), 'TimedAuction: not open');
         });
 
         it('it extends end time', async function () {
           const newClosingTime = this.closingTime.add(time.duration.days(1));
-          const { logs } = await this.crowdsale.extendTime(newClosingTime);
-          expectEvent.inLogs(logs, 'TimedCrowdsaleExtended', {
+          const { logs } = await this.Auction.extendTime(newClosingTime);
+          expectEvent.inLogs(logs, 'TimedAuctionExtended', {
             prevClosingTime: this.closingTime,
             newClosingTime: newClosingTime,
           });
-          expect(await this.crowdsale.closingTime()).to.be.bignumber.equal(newClosingTime);
+          expect(await this.Auction.closingTime()).to.be.bignumber.equal(newClosingTime);
         });
       });
 
-      context('after crowdsale start', function () {
+      context('after Auction start', function () {
         beforeEach(async function () {
           await time.increaseTo(this.openingTime);
-          expect(await this.crowdsale.isOpen()).to.equal(true);
-          await this.crowdsale.send(value);
+          expect(await this.Auction.isOpen()).to.equal(true);
+          await this.Auction.send(value);
         });
 
         it('it extends end time', async function () {
           const newClosingTime = this.closingTime.add(time.duration.days(1));
-          const { logs } = await this.crowdsale.extendTime(newClosingTime);
-          expectEvent.inLogs(logs, 'TimedCrowdsaleExtended', {
+          const { logs } = await this.Auction.extendTime(newClosingTime);
+          expectEvent.inLogs(logs, 'TimedAuctionExtended', {
             prevClosingTime: this.closingTime,
             newClosingTime: newClosingTime,
           });
-          expect(await this.crowdsale.closingTime()).to.be.bignumber.equal(newClosingTime);
+          expect(await this.Auction.closingTime()).to.be.bignumber.equal(newClosingTime);
         });
       });
 
-      context('after crowdsale end', function () {
+      context('after Auction end', function () {
         beforeEach(async function () {
           await time.increaseTo(this.afterClosingTime);
         });
 
         it('it reverts', async function () {
           const newClosingTime = await time.latest();
-          await expectRevert(this.crowdsale.extendTime(newClosingTime),
-            'TimedCrowdsale: already closed'
+          await expectRevert(this.Auction.extendTime(newClosingTime),
+            'TimedAuction: already closed'
           );
         });
       });
