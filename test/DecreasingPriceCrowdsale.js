@@ -23,7 +23,7 @@ contract('DecreasingPriceCrowdsale', function (accounts) {
     // console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
     await expectRevert(DecreasingPriceCrowdsaleImpl.new(
       this.openingTime, this.closingTime, 0 , finalRate, wallet, this.token.address
-    ), "DecreasingPriceCrowdsale: initial rate is 0");
+    ), "Crowdsale: rate is 0");
   });
 
   it('reverts if the final rate is smaller than the initial rate', async function () {
@@ -82,12 +82,18 @@ contract('DecreasingPriceCrowdsale', function (accounts) {
         expect(actualFinalRate).to.be.bignumber.equal(finalRate);
       });
 
-      it('should decrease rate over time', async function () {
+      it('should increase rate over time', async function () {
         // current rate should be 0 before start
+        expect(await this.crowdsale.isOpen()).to.equal(false);
         expect(await this.crowdsale.getCurrentRate()).to.be.bignumber.equal(BN(0));
 
-        //
+        // rate should be initial rate at the beginning
         await time.increaseTo(this.openingTime);
+        expect(await this.crowdsale.isOpen()).to.equal(true);
+        expect(await this.crowdsale.getCurrentRate()).to.be.bignumber.equal(initialRate);
+
+        // 3 days after auction start 
+        await time.increaseTo(this.openingTime.add(time.duration.days(3)));
         const currentTime = await time.latest();
         const elapsedTime = currentTime.sub(this.openingTime);
         const timeRange = this.closingTime.sub(this.openingTime);
@@ -96,6 +102,17 @@ contract('DecreasingPriceCrowdsale', function (accounts) {
   
         const actualRate = await this.crowdsale.getCurrentRate();
         expect(actualRate).to.be.bignumber.equal(currentRate);
+        
+        // At the exact moment of closing time, rate should be 0 as out of trading time
+        await time.increaseTo(this.closingTime);
+        expect(await this.crowdsale.hasClosed()).to.equal(false);
+        expect(await this.crowdsale.getCurrentRate()).to.be.bignumber.equal(finalRate)
+
+        // After auction ends, rate should be 0 as out of trading time
+        await time.increaseTo(this.afterClosingTime);
+        expect(await this.crowdsale.hasClosed()).to.equal(true);
+        expect(await this.crowdsale.getCurrentRate()).to.be.bignumber.equal(BN(0));
+
       });
     });
   });

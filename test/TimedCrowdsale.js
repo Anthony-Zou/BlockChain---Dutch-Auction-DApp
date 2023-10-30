@@ -61,7 +61,7 @@ contract('TimedCrowdsale', function (accounts) {
       it('should reject payments before start', async function () {
         expect(await this.crowdsale.isOpen()).to.equal(false);
         await expectRevert(this.crowdsale.send(value), 'TimedCrowdsale: not open');
-        await expectRevert(this.crowdsale.buyTokens(investor, { from: purchaser, value: value }),
+        await expectRevert(this.crowdsale.placeBids(investor, { from: purchaser, value: value }),
           'TimedCrowdsale: not open'
         );
       });
@@ -70,13 +70,13 @@ contract('TimedCrowdsale', function (accounts) {
         await time.increaseTo(this.openingTime);
         expect(await this.crowdsale.isOpen()).to.equal(true);
         await this.crowdsale.send(value);
-        await this.crowdsale.buyTokens(investor, { value: value, from: purchaser });
+        await this.crowdsale.placeBids(investor, { value: value, from: purchaser });
       });
 
       it('should reject payments after end', async function () {
         await time.increaseTo(this.afterClosingTime);
         await expectRevert(this.crowdsale.send(value), 'TimedCrowdsale: not open');
-        await expectRevert(this.crowdsale.buyTokens(investor, { value: value, from: purchaser }),
+        await expectRevert(this.crowdsale.placeBids(investor, { value: value, from: purchaser }),
           'TimedCrowdsale: not open'
         );
       });

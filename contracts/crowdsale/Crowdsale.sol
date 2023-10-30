@@ -72,15 +72,15 @@ contract Crowdsale is Context, ReentrancyGuard, AccessControl {
     /**
      * @dev fallback function ***DO NOT OVERRIDE***
      * Note that other contracts will transfer funds with a base gas stipend
-     * of 2300, which is not enough to call buyTokens. Consider calling
-     * buyTokens directly when purchasing tokens from a contract.
+     * of 2300, which is not enough to call placeBids. Consider calling
+     * placeBids directly when purchasing tokens from a contract.
      */
     fallback () external payable {
-        buyTokens(_msgSender());
+        placeBids(_msgSender());
     }
 
     receive () external payable {
-        buyTokens(_msgSender());
+        placeBids(_msgSender());
     }
 
     /**
@@ -117,7 +117,7 @@ contract Crowdsale is Context, ReentrancyGuard, AccessControl {
      * another `nonReentrant` function.
      * @param beneficiary Recipient of the token purchase
      */
-    function buyTokens(address beneficiary) virtual public nonReentrant payable {
+    function placeBids(address beneficiary) virtual public nonReentrant payable {
         uint256 weiAmount = msg.value;
         _preValidatePurchase(beneficiary, weiAmount);
 

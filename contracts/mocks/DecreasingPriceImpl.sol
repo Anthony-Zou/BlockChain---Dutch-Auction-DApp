@@ -7,7 +7,7 @@ import "../crowdsale/DecreasingPriceCrowdsale.sol";
 contract DecreasingPriceCrowdsaleImpl is DecreasingPriceCrowdsale {
     constructor (uint256 openingTime, uint256 closingTime, 
     uint256 initialRate, uint256 finalRate, address payable wallet, IERC20 token)
-        Crowdsale(1, wallet, token)
+        Crowdsale(initialRate, wallet, token)
         TimedCrowdsale(openingTime, closingTime)
         DecreasingPriceCrowdsale(initialRate, finalRate)
     {

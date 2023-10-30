@@ -56,20 +56,20 @@ contract('Crowdsale', function (accounts) {
           });
         });
 
-        describe('buyTokens', function () {
+        describe('placeBids', function () {
           it('should accept payments', async function () {
-            await this.crowdsale.buyTokens(investor, { value: value, from: purchaser });
+            await this.crowdsale.placeBids(investor, { value: value, from: purchaser });
           });
 
           it('reverts on zero-valued payments', async function () {
             await expectRevert(
-              this.crowdsale.buyTokens(investor, { value: 0, from: purchaser }), 'Crowdsale: weiAmount is 0'
+              this.crowdsale.placeBids(investor, { value: 0, from: purchaser }), 'Crowdsale: weiAmount is 0'
             );
           });
 
           it('requires a non-null beneficiary', async function () {
             await expectRevert(
-              this.crowdsale.buyTokens(ZERO_ADDRESS, { value: value, from: purchaser }),
+              this.crowdsale.placeBids(ZERO_ADDRESS, { value: value, from: purchaser }),
               'Crowdsale: beneficiary is the zero address'
             );
           });
@@ -101,7 +101,7 @@ contract('Crowdsale', function (accounts) {
 
       describe('low-level purchase', function () {
         it('should log purchase', async function () {
-          const { logs } = await this.crowdsale.buyTokens(investor, { value: value, from: purchaser });
+          const { logs } = await this.crowdsale.placeBids(investor, { value: value, from: purchaser });
           expectEvent.inLogs(logs, 'TokensPurchased', {
             purchaser: purchaser,
             beneficiary: investor,
@@ -111,13 +111,13 @@ contract('Crowdsale', function (accounts) {
         });
 
         it('should assign tokens to beneficiary', async function () {
-          await this.crowdsale.buyTokens(investor, { value, from: purchaser });
+          await this.crowdsale.placeBids(investor, { value, from: purchaser });
           expect(await this.token.balanceOf(investor)).to.be.bignumber.equal(expectedTokenAmount);
         });
 
         it('should forward funds to wallet', async function () {
           const balanceTracker = await balance.tracker(wallet);
-          await this.crowdsale.buyTokens(investor, { value, from: purchaser });
+          await this.crowdsale.placeBids(investor, { value, from: purchaser });
           expect(await balanceTracker.delta()).to.be.bignumber.equal(value);
         });
       });
