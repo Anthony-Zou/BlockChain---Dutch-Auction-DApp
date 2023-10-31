@@ -38,7 +38,7 @@ abstract contract RefundableAuction is Auction {
 
     /**
      * @dev Constructor, creates RefundEscrow and token wallet address.
-     * @param tokenMaxAmount_ Approved allowance to the crowdsale.
+     * @param tokenMaxAmount_ Approved allowance to the auction.
      */
     constructor(uint256 tokenMaxAmount_) {
         _tokenMaxAmount = tokenMaxAmount_;
@@ -58,7 +58,7 @@ abstract contract RefundableAuction is Auction {
     }
 
     /**
-     * @dev Investors can claim refunds here if the crowdsale is unsuccessful.
+     * @dev Investors can claim refunds here if the token is soldout.
      */
     function claimRefund() public onlyWhileRefundable{
         require(finalized(), "RefundableAuction: not finalized");

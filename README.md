@@ -37,3 +37,8 @@ Interact with the contract!
 
 # Timed, refundable, and postDelivery crowdsale using openzeppelin
 https://docs.openzeppelin.com/contracts/2.x/crowdsales#refundablecrowdsale
+
+
+# Test with hardhar
+npx hardhat test
+npx hardhat test --grep "finalization"

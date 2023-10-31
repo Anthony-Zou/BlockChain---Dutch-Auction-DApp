@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "hardhat/console.sol";
 
 
 /**
@@ -184,7 +185,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      */
     function finalize() virtual public onlyWhileNotFinalized {
         _finalized = true;
-
+        
         _finalization();
         emit AuctionFinalized();
     }
@@ -228,7 +229,11 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         // calculate token amount to be created
         uint256 tokenAmount = _getTokenAmount(weiAmount);
 
+        //console.log("Received weiAmount", weiAmount);
+
         _deliverTokens(beneficiary, tokenAmount);
+
+        //console.log("Token delivered", tokenAmount);
 
         emit TokensEmissioned(beneficiary, weiAmount, tokenAmount);
     }
@@ -257,8 +262,10 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         if(_contributions[beneficiary] == 0){
             // Push only if the beneficiary only placed bid once
             _queue.push(beneficiary);
+            //console.log("Added beneficiary to queue", beneficiary);
         }
         _contributions[beneficiary] = _contributions[beneficiary].add(weiAmount);
+        //console.log("Added funds to beneficiary, after add:", _contributions[beneficiary].add(weiAmount));
     }
 
     /**
@@ -286,10 +293,13 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _finalization() virtual internal {
         // solhint-disable-previous-line no-empty-blocks
         // The simplest logic: 
+        //console.log("In _finalization, length of queue: ", _queue.length);
         for (uint i=0; i<_queue.length; i++) {
             // get the corresponding weiAmount from the map
             uint256 weiAmount = contribution(_queue[i]);
+            //console.log("In _finalization loop, weiAmount: ", weiAmount);
             _processPurchase(_queue[i], weiAmount);
         }
+        //console.log("Out of loop, before return");
     }
 }
