@@ -25,6 +25,14 @@ abstract contract TimedAuction is Auction {
     }
 
     /**
+     * @dev Reverts if not in Auction time range.
+     */
+    modifier onlyAfterOpen {
+        require(isOpen(), "TimedAuction: hasn't open");
+        _;
+    }
+
+    /**
      * @dev Constructor, takes Auction opening and closing times.
      * @param openingTime_ Auction opening time
      * @param closingTime_ Auction closing time
@@ -56,10 +64,19 @@ abstract contract TimedAuction is Auction {
     /**
      * @return true if the Auction is open, false otherwise.
      */
+    function afterOpen() public view returns (bool) {
+        // solhint-disable-next-line not-rely-on-time
+        return block.timestamp >= _openingTime;
+    }
+
+    /**
+     * @return true if the Auction is open, false otherwise.
+     */
     function isOpen() public view returns (bool) {
         // solhint-disable-next-line not-rely-on-time
-        return block.timestamp >= _openingTime && block.timestamp <= _closingTime;
+        return afterOpen() && block.timestamp <= _closingTime;
     }
+
 
     /**
      * @dev Checks whether the period in which the Auction is open has already elapsed.
@@ -82,6 +99,18 @@ abstract contract TimedAuction is Auction {
      view {
         super._preValidateBids(beneficiary, weiAmount);
     }
+
+    /**
+     * @dev Extend parent behavior requiring finalization to be after auction starts.
+     */
+    function _finalization() 
+    internal 
+    virtual 
+    override
+    onlyAfterOpen {
+        super._finalization();
+    }
+
 
     /**
      * @dev Extend Auction.

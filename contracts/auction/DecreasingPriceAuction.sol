@@ -2,6 +2,8 @@
 pragma solidity ^0.8.9;
 
 import "./TimedAuction.sol";
+import "@openzeppelin/contracts/utils/math/Math.sol";
+
 
 
 /**
@@ -34,11 +36,12 @@ abstract contract DecreasingPriceAuction is TimedAuction {
      */
     function _finalization() 
     internal 
-    override {
+    override 
+    onlyAfterOpen {
         // _finalized = True before calling this function, so cannot use the public function
         uint256 currentTimeRate = _getCurrentRate();
         // If the currentTimeRate is smaller than the finalRate, use finalRate
-        _finalizedRate = currentTimeRate > _finalRate ? _finalRate : currentTimeRate;
+        _finalizedRate = Math.min(currentTimeRate, _finalRate);
         super._finalization();
     }
 

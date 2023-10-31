@@ -221,10 +221,16 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @dev Source of tokens. Override this method to modify the way in which the Auction ultimately gets and sends
      * its tokens.
      * @param beneficiary Address performing the token purchase
-     * @param tokenAmount Number of tokens to be emitted
+     * @param weiAmount Number of weiAmount contributed to this beneficiary
      */
-    function _processPurchase(address beneficiary, uint256 tokenAmount) virtual internal {
+    function _processPurchase(address beneficiary, uint256 weiAmount) virtual internal {
+        
+        // calculate token amount to be created
+        uint256 tokenAmount = _getTokenAmount(weiAmount);
+
         _deliverTokens(beneficiary, tokenAmount);
+
+        emit TokensEmissioned(beneficiary, weiAmount, tokenAmount);
     }
 
 
@@ -245,7 +251,13 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @param weiAmount Value in wei involved in the purchase
      */
     function _updatePurchasingState(address beneficiary, uint256 weiAmount) virtual internal {
-        _queue.push(beneficiary);
+        
+        // update state
+        _weiRaised = _weiRaised.add(weiAmount);
+        if(_contributions[beneficiary] == 0){
+            // Push only if the beneficiary only placed bid once
+            _queue.push(beneficiary);
+        }
         _contributions[beneficiary] = _contributions[beneficiary].add(weiAmount);
     }
 
@@ -277,16 +289,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         for (uint i=0; i<_queue.length; i++) {
             // get the corresponding weiAmount from the map
             uint256 weiAmount = contribution(_queue[i]);
-
-            // calculate token amount to be created
-            uint256 tokens = _getTokenAmount(weiAmount);
-
-            // update state
-            _weiRaised = _weiRaised.add(weiAmount);
-
-            _processPurchase(_queue[i], tokens);
-
-            emit TokensEmissioned(_queue[i], weiAmount, tokens);
+            _processPurchase(_queue[i], weiAmount);
         }
     }
 }

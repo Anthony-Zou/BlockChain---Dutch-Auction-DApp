@@ -50,6 +50,12 @@ contract('TimedAuction', function (accounts) {
       await this.token.transfer(this.Auction.address, tokenSupply);
     });
 
+    it('reverts if the finalize() function is called before opening time', async function () {
+      expect(await this.Auction.isOpen()).to.equal(false);
+      expect(await this.Auction.afterOpen()).to.equal(false);
+      await expectRevert(this.Auction.finalize(), "TimedAuction: hasn't open");
+    });
+
     it('should be ended only after end', async function () {
       expect(await this.Auction.hasClosed()).to.equal(false);
       await time.increaseTo(this.afterClosingTime);

@@ -60,7 +60,7 @@ contract('DecreasingPriceAuction', function (accounts) {
       await this.token.transfer(this.Auction.address, tokenSupply);
     });
     
-    it('should be ended only after end', async function () {
+    it('should be closed after time passed', async function () {
       expect(await this.Auction.hasClosed()).to.equal(false);
       await time.increaseTo(this.afterClosingTime);
       expect(await this.Auction.isOpen()).to.equal(false);
