@@ -26,7 +26,9 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    // The token being sold
+    // The token being sold, if the token has a up limit, the contract will crash with
+    // 'ERC20: transfer amount exceeds balance' if the limit is exceeded. 
+    // To avoid that, use RefundableAuction instead.
     IERC20 private _token;
 
     // Address where funds are collected
@@ -133,6 +135,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @return the number of token units a buyer gets per wei.
      */
     function rate() virtual public view returns (uint256) {
+        //console.log("rate called", _rate);
         return _rate;
     }
 
