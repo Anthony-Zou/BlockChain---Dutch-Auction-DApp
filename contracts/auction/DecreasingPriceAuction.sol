@@ -15,6 +15,7 @@ abstract contract DecreasingPriceAuction is TimedAuction {
 
     uint256 private _initialRate;
     uint256 private _finalRate;
+    uint256 private _finalizedRate;
 
     /**
      * @dev Constructor, takes initial and final rates of tokens received per wei contributed.
@@ -26,6 +27,19 @@ abstract contract DecreasingPriceAuction is TimedAuction {
         require(initRate < finRate, "DecreasingPriceAuction: initial rate is not greater than final rate");
         _initialRate = initRate;
         _finalRate = finRate;
+    }
+
+    /**
+     * @dev Extend parent behavior requiring to set finalizedRate when auction is finalized.
+     */
+    function _finalization() 
+    internal 
+    override {
+        // _finalized = True before calling this function, so cannot use the public function
+        uint256 currentTimeRate = _getCurrentRate();
+        // If the currentTimeRate is smaller than the finalRate, use finalRate
+        _finalizedRate = currentTimeRate > _finalRate ? _finalRate : currentTimeRate;
+        super._finalization();
     }
 
     /**
@@ -56,14 +70,27 @@ abstract contract DecreasingPriceAuction is TimedAuction {
      * @return The number of tokens a buyer gets per wei at a given time
      */
     function getCurrentRate() public view returns (uint256) {
-        if (!isOpen()) {
-            return 0;
+        if(finalized()){
+            return _finalizedRate;
         }
+
+        if (hasClosed()){
+            return _finalRate;
+        }
+        
+        if (!isOpen()) {
+            return _initialRate;
+        }
+        return _getCurrentRate();
+    }
+
+    function _getCurrentRate() internal view returns (uint256) {
 
         uint256 elapsedTime = block.timestamp.sub(openingTime());
         uint256 timeRange = closingTime().sub(openingTime());
         uint256 rateRange = _finalRate.sub(_initialRate);
         return _initialRate.add(elapsedTime.div(timeRange).mul(rateRange));
+
     }
 
     /**

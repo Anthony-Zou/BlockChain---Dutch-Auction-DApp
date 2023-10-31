@@ -69,6 +69,14 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     event AuctionFinalized();
 
     /**
+     * @dev Reverts if not in Auction time range.
+     */
+    modifier onlyWhileNotFinalized {
+        require(!finalized(), "Auction: already finalized");
+        _;
+    }
+
+    /**
      * @param rate_ Number of token units a buyer gets per wei
      * @dev The rate is the conversion between wei and the smallest and indivisible
      * token unit. So, if you are using a rate of 1 with a ERC20Detailed token
@@ -103,6 +111,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     receive () external payable {
         placeBids(_msgSender());
     }
+
+    // Get functions
 
     /**
      * @return the token being sold.
@@ -144,9 +154,11 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @param beneficiary Address of contributor
      * @return Beneficiary contribution so far
      */
-    function getContribution(address beneficiary) public view returns (uint256) {
+    function contribution(address beneficiary) public view returns (uint256) {
         return _contributions[beneficiary];
     }
+
+    // low_level functions (drivers)
 
     /**
      * @dev low level token purchase ***DO NOT OVERRIDE***
@@ -166,44 +178,18 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         _postValidateBids(beneficiary, weiAmount);
     }
 
-
     /**
      * @dev Must be called after Auction ends, to do some extra finalization
      * work. Calls the contract's finalization function.
      */
-    function finalize() virtual public {
-        require(!_finalized, "Auction: already finalized");
+    function finalize() virtual public onlyWhileNotFinalized {
         _finalized = true;
 
         _finalization();
         emit AuctionFinalized();
     }
     
-
-    /**
-     * @dev Can be overridden to add finalization logic. The overriding function
-     * should call super._finalization() to ensure the chain of finalization is
-     * executed entirely.
-     */
-    function _finalization() virtual internal {
-        // solhint-disable-previous-line no-empty-blocks
-        // The simplest logic: 
-        for (uint i=0; i<_queue.length; i++) {
-            // get the corresponding weiAmount from the map
-            uint256 weiAmount = getContribution(_queue[i]);
-
-            // calculate token amount to be created
-            uint256 tokens = _getTokenAmount(weiAmount);
-
-            // update state
-            _weiRaised = _weiRaised.add(weiAmount);
-
-            _deliverTokens(_queue[i], tokens);
-
-            emit TokensEmissioned(_queue[i], weiAmount, tokens);
-        }
-    }
-
+    // customizeable funtions (overrides)
         
     /**
      * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met.
@@ -229,6 +215,18 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _postValidateBids(address beneficiary, uint256 weiAmount) virtual internal view {
         // solhint-disable-previous-line no-empty-blocks
     }
+
+    
+    /**
+     * @dev Source of tokens. Override this method to modify the way in which the Auction ultimately gets and sends
+     * its tokens.
+     * @param beneficiary Address performing the token purchase
+     * @param tokenAmount Number of tokens to be emitted
+     */
+    function _processPurchase(address beneficiary, uint256 tokenAmount) virtual internal {
+        _deliverTokens(beneficiary, tokenAmount);
+    }
+
 
     /**
      * @dev Source of tokens. Override this method to modify the way in which the Auction ultimately gets and sends
@@ -265,5 +263,30 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      */
     function _forwardFunds() internal {
         _wallet.transfer(msg.value);
+    }
+
+    
+    /**
+     * @dev Can be overridden to add finalization logic. The overriding function
+     * should call super._finalization() to ensure the chain of finalization is
+     * executed entirely.
+     */
+    function _finalization() virtual internal {
+        // solhint-disable-previous-line no-empty-blocks
+        // The simplest logic: 
+        for (uint i=0; i<_queue.length; i++) {
+            // get the corresponding weiAmount from the map
+            uint256 weiAmount = contribution(_queue[i]);
+
+            // calculate token amount to be created
+            uint256 tokens = _getTokenAmount(weiAmount);
+
+            // update state
+            _weiRaised = _weiRaised.add(weiAmount);
+
+            _processPurchase(_queue[i], tokens);
+
+            emit TokensEmissioned(_queue[i], weiAmount, tokens);
+        }
     }
 }

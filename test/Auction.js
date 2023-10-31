@@ -88,7 +88,7 @@ contract('Auction', function (accounts) {
 
         it('should show the contribution of the bid', async function () {
           await this.Auction.sendTransaction({ value, from: investor });
-          expect(await this.Auction.getContribution(investor)).to.be.bignumber.equal(value);
+          expect(await this.Auction.contribution(investor)).to.be.bignumber.equal(value);
         });
 
         it('should forward funds to wallet', async function () {
