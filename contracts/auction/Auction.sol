@@ -200,7 +200,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @param beneficiary Address performing the token purchase
      * @param weiAmount Value in wei involved in the purchase
      */
-    function _preValidateBids(address beneficiary, uint256 weiAmount) virtual internal view {
+    function _preValidateBids(address beneficiary, uint256 weiAmount) virtual internal view onlyWhileNotFinalized{
         require(beneficiary != address(0), "Auction: beneficiary is the zero address");
         require(weiAmount != 0, "Auction: weiAmount is 0");
         this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
