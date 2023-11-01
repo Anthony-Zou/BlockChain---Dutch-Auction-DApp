@@ -58,7 +58,15 @@ contract("Auction", function (accounts) {
         });
 
         it("should return the finalized state of the auction", async function () {
-          expect(await this.auction.finalize()).equal(false); // Change this to the expected rate
+          expect(await this.auction.finalized()).to.equal(false); // Change this to the expected rate
+        });
+
+        it("should return the correct wallet address", async function () {
+          expect(await this.auction.wallet()).to.equal(wallet); // Change this to the expected rate
+        });
+
+        it("should return the correct token address", async function () {
+          expect(await this.auction.token()).equal(this.token.address); // Change this to the expected rate
         });
       });
 
@@ -129,13 +137,11 @@ contract("Auction", function (accounts) {
 
         it("should show the right weiAmountRaise of the bid", async function () {
           await this.auction.sendTransaction({ value, from: investor });
-          expect(
-            await this.auction.weiRaised()
-          ).to.be.bignumber.equal(value);
-          await this.auction.placeBids(beneficiary, { value, from: investor });
-          expect(
-            await this.auction.weiRaised()
-          ).to.be.bignumber.equal(value.mul(new BN(2)));
+          expect(await this.auction.weiRaised()).to.be.bignumber.equal(value);
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          expect(await this.auction.weiRaised()).to.be.bignumber.equal(
+            value.mul(new BN(2))
+          );
         });
 
         it("should forward funds to wallet", async function () {
@@ -146,8 +152,13 @@ contract("Auction", function (accounts) {
       });
 
       describe("low-level finalization", function () {
+        it("should return finalized() = true", async function () {
+          await this.auction.finalize();
+          expect(await this.auction.finalized()).to.equal(true);
+        });
+
         it("should not accept re-finalization", async function () {
-          this.auction.finalize();
+          await this.auction.finalize();
           await expectRevert(
             this.auction.finalize(),
             "Auction: already finalized"
@@ -161,14 +172,14 @@ contract("Auction", function (accounts) {
             value: value,
             from: purchaser,
           });
-          const { logs } = this.auction.finalize();
-          console.log(logs);
-          expectEvent.inLogs(logs, "TokensEmissioned", {
+          const receipt = await this.auction.finalize();
+          //console.log(receipt);
+          await expectEvent.inLogs(receipt.logs, "AuctionFinalized", {});
+          await expectEvent.inLogs(receipt.logs, "TokensEmissioned", {
             beneficiary: investor,
             value: value,
             amount: expectedTokenAmount,
           });
-          expectEvent.inLogs(logs, "AuctionFinalized", {});
         });
 
         it("should assign tokens to beneficiary after finalization", async function () {

@@ -41,11 +41,16 @@ abstract contract RefundableAuction is Auction {
      * @param tokenMaxAmount_ Approved allowance to the auction.
      */
     constructor(uint256 tokenMaxAmount_) {
+        require(tokenMaxAmount_>0, "RefundableAuction: tokenMaxAmount is 0");
         _tokenMaxAmount = tokenMaxAmount_;
     }
 
     function tokenMaxAmount() public view returns (uint256){
         return _tokenMaxAmount;
+    }
+
+    function allowRefund() public view returns (bool){
+        return _allowRefund;
     }
 
     /**
@@ -61,8 +66,7 @@ abstract contract RefundableAuction is Auction {
      * @dev Investors can claim refunds here if the token is soldout.
      */
     function claimRefund() public onlyWhileRefundable{
-        require(finalized(), "RefundableAuction: not finalized");
-        require(_refunds[_msgSender()] > 0, "No refunds available");
+        require(_refunds[_msgSender()] > 0, "RefundableAuction: no refunds available");
         uint256 refundAmount = _refunds[_msgSender()];
         _refunds[_msgSender()] = 0; // Reset the refund balance to prevent double withdrawal
         payable(_msgSender()).transfer(refundAmount);
