@@ -20,13 +20,6 @@ abstract contract RefundableAuction is Auction {
 
     event ClaimableRefund(address indexed beneficiary, uint256 value);
 
-    /**
-     * @dev Reverts if no remaining tokens to be sold.
-     */
-    modifier onlyWhileTokenRemaining {
-        require(remainingTokens() > 0, "RefundableAuction: all tokens sold out");
-        _;
-    }
 
     /**
      * @dev Reverts if not in Auction time range.
@@ -57,9 +50,9 @@ abstract contract RefundableAuction is Auction {
      * @dev Checks the amount of tokens left in the allowance.
      * @return Amount of tokens left in the allowance
      */
-    function remainingTokens() public view returns (uint256) {
-        uint256 demandAmount = _getTokenAmount(weiRaised());
-        return demandAmount > _tokenMaxAmount? 0: _tokenMaxAmount.sub(demandAmount);
+    function remainingSupply() public view returns (uint256) {
+        uint256 currentDemand = _getTokenAmount(weiRaised());
+        return currentDemand > _tokenMaxAmount? 0: _tokenMaxAmount.sub(currentDemand);
     }
 
     /**
@@ -80,8 +73,13 @@ abstract contract RefundableAuction is Auction {
     function _preValidateBids(address beneficiary, uint256 weiAmount) 
     internal 
     override
-    onlyWhileTokenRemaining
      view {
+        //console.log("in RefundableAuction _preValidateBids weiAmount", weiAmount);
+        uint256 newDemand = _getTokenAmount((weiAmount));
+        //console.log("in RefundableAuction _preValidateBids newDemand", newDemand);
+        //console.log("in RefundableAuction _preValidateBids remainingSupply()", remainingSupply());
+        require(remainingSupply() >= newDemand, "RefundableAuction: demand exceeded supply");
+
         super._preValidateBids(beneficiary, weiAmount);
     }
 
@@ -92,7 +90,7 @@ abstract contract RefundableAuction is Auction {
      */
     function _processPurchase(address beneficiary, uint256 weiAmount) internal override {
         uint256 demand = _getTokenAmount(weiAmount);
-        uint256 supply = remainingTokens();
+        uint256 supply = remainingSupply();
 
         if (demand > supply){
             uint256 supplyWeiAmount = supply.mul(rate());

@@ -206,7 +206,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      */
     function _preValidateBids(address beneficiary, uint256 weiAmount) virtual internal view onlyWhileNotFinalized{
         require(beneficiary != address(0), "Auction: beneficiary is the zero address");
-        require(weiAmount != 0, "Auction: weiAmount is 0");
+        //console.log("in Auction _preValidateBids weiAmount", weiAmount);
+        require(weiAmount > 0, "Auction: weiAmount is 0");
         this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
     }
 
@@ -285,6 +286,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      */
     function _forwardFunds() internal {
         _wallet.transfer(msg.value);
+        //console.log("Auction: Funds forwarded", msg.value);
     }
 
     
