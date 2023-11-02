@@ -117,10 +117,15 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @param token_ Address of the token being sold
      * @param tokenMaxAmount_ Approved allowance to the auction.
      */
-    constructor(uint256 rate_, address payable owner_, IERC20 token_, uint256 tokenMaxAmount_) {
+    constructor(
+        uint256 rate_,
+        address payable owner_,
+        IERC20 token_,
+        uint256 tokenMaxAmount_
+    ) {
         require(rate_ > 0, "Auction: rate is 0");
         require(owner_ != address(0), "Auction: owner is the zero address");
-        require(tokenMaxAmount_>0, "Auction: tokenMaxAmount is 0");
+        require(tokenMaxAmount_ > 0, "Auction: tokenMaxAmount is 0");
         require(
             address(token_) != address(0),
             "Auction: token is the zero address"
@@ -192,7 +197,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     /**
      * @return the maximum amount of token to be sold within the auction.
      */
-    function tokenMaxAmount() public view returns (uint256){
+    function tokenMaxAmount() public view returns (uint256) {
         return _tokenMaxAmount;
     }
 
@@ -202,7 +207,10 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      */
     function remainingSupply() public view returns (uint256) {
         uint256 currentDemand = _getTokenAmount(weiRaised());
-        return currentDemand > _tokenMaxAmount? 0: _tokenMaxAmount.sub(currentDemand);
+        return
+            currentDemand > _tokenMaxAmount
+                ? 0
+                : _tokenMaxAmount.sub(currentDemand);
     }
 
     /**
@@ -249,7 +257,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
 
     function burnToken() public virtual onlyWhileFinalized onlyOwner {
         // Burn the remaining tokens only allowed after finalization
-        uint256 remainingTokens = tokenMaxAmount() - _getTokenAmount(weiRaised());
+        uint256 remainingTokens = tokenMaxAmount() -
+            _getTokenAmount(weiRaised());
 
         if (remainingTokens > 0) {
             _token.burn(remainingTokens); // Burn tokens directly
@@ -259,7 +268,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
 
     function withdrawToken() public virtual onlyWhileFinalized onlyOwner {
         // Burn the remaining tokens only allowed after finalization
-        uint256 remainingTokens = tokenMaxAmount() - _getTokenAmount(weiRaised());
+        uint256 remainingTokens = tokenMaxAmount() -
+            _getTokenAmount(weiRaised());
 
         if (remainingTokens > 0) {
             _deliverTokens(_owner, remainingTokens);
@@ -269,6 +279,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
 
     function withdrawFunds() external onlyWhileFinalized onlyOwner {
         require(!_fundsWithdrawn, "Auction: Funds already withdrawn");
+        //console.log("In withdrawFunds(), passed all validation");
         _fundsWithdrawn = true;
         _owner.transfer(weiRaised());
         /**
@@ -298,15 +309,17 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             beneficiary != address(0),
             "Auction: beneficiary is the zero address"
         );
-        
+        require(weiAmount > 0, "Auction: weiAmount is 0");
+
         //console.log("in Auction _preValidateBids weiAmount", weiAmount);
         uint256 newDemand = _getTokenAmount((weiAmount));
         //console.log("in Auction _preValidateBids newDemand", newDemand);
         //console.log("in Auction _preValidateBids remainingSupply()", remainingSupply());
-        require(remainingSupply() >= newDemand, "Auction: demand exceeded supply");
-
-        //console.log("in Auction _preValidateBids weiAmount", weiAmount);
-        require(weiAmount > 0, "Auction: weiAmount is 0");
+        require(
+            remainingSupply() >= newDemand,
+            "Auction: demand exceeded supply"
+        );
+        //console.log("_preValidateBids check passed");
         this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
     }
 
@@ -408,13 +421,13 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _finalization() internal virtual {
         // solhint-disable-previous-line no-empty-blocks
         // The simplest logic:
-        console.log("In _finalization, length of queue: ", _queue.length);
+        //console.log("In _finalization, length of queue: ", _queue.length);
         for (uint i = 0; i < _queue.length; i++) {
             // get the corresponding weiAmount from the map
             uint256 weiAmount = contribution(_queue[i]);
-            console.log("In _finalization loop, weiAmount: ", weiAmount);
+            //console.log("In _finalization loop, weiAmount: ", weiAmount);
             _processPurchase(_queue[i], weiAmount);
         }
-        console.log("Out of loop, before return");
+        //console.log("Out of loop, before return");
     }
 }

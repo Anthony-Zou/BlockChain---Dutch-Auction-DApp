@@ -9,15 +9,18 @@ const {
 const { ZERO_ADDRESS } = constants;
 const { expect } = require("chai");
 
-const Auction = artifacts.require("AuctionImpl");
+const Auction = artifacts.require("Auction");
 const SimpleToken = artifacts.require("Token");
 
 contract("Auction", function (accounts) {
   const [investor, owner, purchaser] = accounts;
 
-  const rate = new BN(1);
+  const rate = new BN(10);
   const value = ether("1");
+  const exceedingValue = ether("10");
   const tokenSupply = new BN("10").pow(new BN("35"));
+  const insufficientTokenSupply = new BN("10").pow(new BN("19")); // 1 ether = 10^18 wei, multiply by rate = 10^19
+
   const expectedTokenAmount = rate.mul(value);
 
   it("requires a non-null token", async function () {
@@ -190,11 +193,19 @@ contract("Auction", function (accounts) {
         it("shouldn't allow funds withdrawl before finalization", async function () {
           const balanceTracker = await balance.tracker(owner);
           await this.auction.placeBids(investor, { value, from: purchaser });
+          expect(await balanceTracker.delta()).to.be.bignumber.equal(new BN(0));
+          console.log(
+            "before withdrawl, balance",
+            await balance.current(owner)
+          );
+
           await expectRevert(
             this.auction.withdrawFunds({ from: owner }),
             "Auction: not finalized"
           );
-          expect(await balanceTracker.delta()).to.be.equal(0);
+          console.log("after withdrawl, balance", await balance.current(owner));
+          console.log("reverted", await balanceTracker.delta());
+          expect(await balanceTracker.delta()).to.be.bignumber.equal(new BN(0));
         });
       });
 
@@ -280,6 +291,107 @@ contract("Auction", function (accounts) {
             "Auction: not owner"
           );
           expect(await balanceTracker.delta()).to.be.equal(0);
+        });
+      });
+    });
+
+    context("Auction with insufficient token balance", function () {
+      beforeEach(async function () {
+        // Initialize the tested contract with the initialRate
+        this.auction = await Auction.new(
+          rate,
+          owner,
+          this.token.address,
+          insufficientTokenSupply
+        );
+
+        // Transfer tokens to the Auction contract
+        await this.token.transfer(
+          this.auction.address,
+          insufficientTokenSupply
+        );
+      });
+
+      describe("accepting payments", function () {
+        describe("bare payments and record the right contribution", function () {
+          it("should accept payments when the request is within balance", async function () {
+            const balanceTracker = await balance.tracker(owner);
+            await this.auction.send(value, { from: investor });
+            expect(
+              await this.auction.contribution(investor)
+            ).to.be.bignumber.equal(value);
+
+            // Check contribution
+            expect(
+              await this.auction.contribution(investor)
+            ).to.be.bignumber.equal(value);
+
+            // Check weiRaised
+            expect(await this.auction.weiRaised()).to.be.bignumber.equal(value);
+
+            // Check fund forwarding (shouldn't forward fund yet)
+            expect(await balanceTracker.delta()).to.equal(0);
+
+            // Check remaining supply
+            expect(await this.auction.remainingSupply()).to.equal(0);
+          });
+        });
+
+        describe("placeBids", function () {
+          it("should reject bids over tokenMaxAllowed", async function () {
+            const balanceTracker = await balance.tracker(owner);
+            await expectRevert(
+              this.auction.placeBids(investor, {
+                value: exceedingValue,
+                from: purchaser,
+              }),
+              "Auction: demand exceeded supply"
+            );
+            // Check contribution
+            expect(await this.auction.contribution(investor)).to.equal(0);
+
+            // Check weiRaised
+            expect(await this.auction.weiRaised()).to.equal(0);
+
+            // Check remaining supply
+            expect(await this.auction.remainingSupply()).to.be.bignumber.equal(
+              insufficientTokenSupply
+            );
+
+            // Check fund forwarding
+            expect(await balanceTracker.delta()).to.equal(0);
+          });
+
+          it("should allow bids under tokenMaxAllowed", async function () {
+            const balanceTracker = await balance.tracker(owner);
+            await expectRevert(
+              this.auction.placeBids(investor, {
+                value: exceedingValue,
+                from: purchaser,
+              }),
+              "Auction: demand exceeded supply"
+            );
+
+            // Shouldn't reject this next bid with smaller demand
+            await this.auction.placeBids(purchaser, {
+              value: value,
+              from: purchaser,
+            });
+
+            // Check contribution
+            expect(
+              await this.auction.contribution(purchaser)
+            ).to.be.bignumber.equal(value);
+
+            // Check weiRaised
+            expect(await this.auction.weiRaised()).to.equal(value);
+
+            // Check remaining supply
+            expect(await this.auction.remainingSupply()).to.equal(0);
+
+            // Check fund forwarding (shouldn't forward any yet)
+            expect(await balanceTracker.delta()).to.equal(0);
+          });
         });
       });
     });

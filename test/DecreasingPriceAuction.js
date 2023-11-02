@@ -168,6 +168,7 @@ contract("DecreasingPriceAuction", function (accounts) {
 
       it("should record finalized rate", async function () {
         // current rate should be initial rate before start
+        //console.log("await this.Auction.isOpen()", await this.Auction.isOpen());
         expect(await this.Auction.isOpen()).to.equal(false);
         expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
           initialRate
