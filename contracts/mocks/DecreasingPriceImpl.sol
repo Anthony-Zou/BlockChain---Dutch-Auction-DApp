@@ -6,8 +6,9 @@ import "../auction/DecreasingPriceAuction.sol";
 
 contract DecreasingPriceAuctionImpl is DecreasingPriceAuction {
     constructor (uint256 openingTime, uint256 closingTime, 
-    uint256 initialRate, uint256 finalRate, address payable wallet, IERC20 token)
-        Auction(initialRate, wallet, token)
+    uint256 initialRate, uint256 finalRate, 
+    address payable wallet, IERC20 token, uint256 tokenMaxAmount)
+        Auction(initialRate, wallet, token, tokenMaxAmount)
         TimedAuction(openingTime, closingTime)
         DecreasingPriceAuction(initialRate, finalRate)
     {

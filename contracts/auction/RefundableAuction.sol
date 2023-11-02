@@ -14,7 +14,6 @@ abstract contract RefundableAuction is Auction {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 private _tokenMaxAmount;
     mapping(address => uint256) private _refunds;
     bool _allowRefund = false;
 
@@ -29,32 +28,9 @@ abstract contract RefundableAuction is Auction {
         _;
     }
 
-    /**
-     * @dev Constructor, creates RefundEscrow and token wallet address.
-     * @param tokenMaxAmount_ Approved allowance to the auction.
-     */
-    constructor(uint256 tokenMaxAmount_) {
-        require(tokenMaxAmount_>0, "RefundableAuction: tokenMaxAmount is 0");
-        _tokenMaxAmount = tokenMaxAmount_;
-    }
-
-    function tokenMaxAmount() public view returns (uint256){
-        return _tokenMaxAmount;
-    }
-
     function allowRefund() public view returns (bool){
         return _allowRefund;
     }
-
-    /**
-     * @dev Checks the amount of tokens left in the allowance.
-     * @return Amount of tokens left in the allowance
-     */
-    function remainingSupply() public view returns (uint256) {
-        uint256 currentDemand = _getTokenAmount(weiRaised());
-        return currentDemand > _tokenMaxAmount? 0: _tokenMaxAmount.sub(currentDemand);
-    }
-
     /**
      * @dev Investors can claim refunds here if the token is soldout.
      */
@@ -63,24 +39,6 @@ abstract contract RefundableAuction is Auction {
         uint256 refundAmount = _refunds[_msgSender()];
         _refunds[_msgSender()] = 0; // Reset the refund balance to prevent double withdrawal
         payable(_msgSender()).transfer(refundAmount);
-    }
-
-    /**
-     * @dev Extend parent behavior requiring to be within contributing period.
-     * @param beneficiary Token purchaser
-     * @param weiAmount Amount of wei contributed
-     */
-    function _preValidateBids(address beneficiary, uint256 weiAmount) 
-    internal 
-    override
-     view {
-        //console.log("in RefundableAuction _preValidateBids weiAmount", weiAmount);
-        uint256 newDemand = _getTokenAmount((weiAmount));
-        //console.log("in RefundableAuction _preValidateBids newDemand", newDemand);
-        //console.log("in RefundableAuction _preValidateBids remainingSupply()", remainingSupply());
-        require(remainingSupply() >= newDemand, "RefundableAuction: demand exceeded supply");
-
-        super._preValidateBids(beneficiary, weiAmount);
     }
 
     /**

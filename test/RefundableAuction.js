@@ -9,7 +9,7 @@ const {
 const { ZERO_ADDRESS } = constants;
 const { expect } = require("chai");
 
-const DecreasingPriceAuctionImpl = artifacts.require("RefundableAuctionImpl"); // Replace with your contract
+const RefundableAuctionImpl = artifacts.require("RefundableAuctionImpl"); // Replace with your contract
 const SimpleToken = artifacts.require("Token");
 
 contract("RefundableAuction", function (accounts) {
@@ -25,17 +25,10 @@ contract("RefundableAuction", function (accounts) {
     this.token = await SimpleToken.new(tokenSupply);
   });
 
-  it("requires a non-zero tokenMaxAmount", async function () {
-    await expectRevert(
-      DecreasingPriceAuctionImpl.new(0, rate, wallet, this.token.address),
-      "RefundableAuction: tokenMaxAmount is 0"
-    );
-  });
-
-  context("RefundableAuction with sufficient token balance", function () {
+  context("Auction with sufficient token balance", function () {
     beforeEach(async function () {
       // Initialize the tested contract with the initialRate
-      this.auction = await DecreasingPriceAuctionImpl.new(
+      this.auction = await RefundableAuctionImpl.new(
         tokenSupply,
         rate,
         wallet,
@@ -47,19 +40,11 @@ contract("RefundableAuction", function (accounts) {
     });
 
     describe("basic getter functions", function () {
-      it("should return the tokenMaxAmount of the auction", async function () {
-        expect(await this.auction.tokenMaxAmount()).to.be.bignumber.equal(
-          tokenSupply
-        ); // Change this to the expected rate
-      });
 
       it("should return the allowRefund state of the auction", async function () {
         expect(await this.auction.allowRefund()).to.equal(false); // Change this to the expected rate
       });
 
-      it("should return the correct remainingSupply", async function () {
-        expect(await this.auction.remainingSupply()).to.equal(tokenSupply); // Change this to the expected rate
-      });
     });
 
     describe("accepting payments", function () {
@@ -136,10 +121,10 @@ contract("RefundableAuction", function (accounts) {
     });
   });
 
-  context("RefundableAuction with insufficient token balance", function () {
+  context("Auction with insufficient token balance", function () {
     beforeEach(async function () {
       // Initialize the tested contract with the initialRate
-      this.auction = await DecreasingPriceAuctionImpl.new(
+      this.auction = await RefundableAuctionImpl.new(
         insufficientTokenSupply,
         rate,
         wallet,
@@ -190,7 +175,7 @@ contract("RefundableAuction", function (accounts) {
               value: exceedingValue,
               from: purchaser,
             }),
-            "RefundableAuction: demand exceeded supply"
+            "Auction: demand exceeded supply"
           );
           // Check contribution
           expect(await this.auction.contribution(investor)).to.equal(0);
@@ -214,7 +199,7 @@ contract("RefundableAuction", function (accounts) {
               value: exceedingValue,
               from: purchaser,
             }),
-            "RefundableAuction: demand exceeded supply"
+            "Auction: demand exceeded supply"
           );
 
           // Shouldn't reject this next bid with smaller demand
@@ -244,7 +229,7 @@ contract("RefundableAuction", function (accounts) {
   context("before finalization", function () {
     beforeEach(async function () {
       // Initialize the tested contract with the initialRate
-      this.auction = await DecreasingPriceAuctionImpl.new(
+      this.auction = await RefundableAuctionImpl.new(
         tokenSupply,
         rate,
         wallet,
@@ -267,7 +252,7 @@ contract("RefundableAuction", function (accounts) {
   context("after finalization", function () {
     beforeEach(async function () {
       // Initialize the tested contract with the initialRate
-      this.auction = await DecreasingPriceAuctionImpl.new(
+      this.auction = await RefundableAuctionImpl.new(
         tokenSupply,
         rate,
         wallet,

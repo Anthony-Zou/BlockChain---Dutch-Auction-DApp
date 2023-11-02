@@ -13,7 +13,7 @@ const Auction = artifacts.require("AuctionImpl");
 const SimpleToken = artifacts.require("Token");
 
 contract("Auction", function (accounts) {
-  const [investor, wallet, purchaser] = accounts;
+  const [investor, owner, purchaser] = accounts;
 
   const rate = new BN(1);
   const value = ether("1");
@@ -22,7 +22,7 @@ contract("Auction", function (accounts) {
 
   it("requires a non-null token", async function () {
     await expectRevert(
-      Auction.new(rate, wallet, ZERO_ADDRESS),
+      Auction.new(rate, owner, ZERO_ADDRESS, tokenSupply),
       "Auction: token is the zero address"
     );
   });
@@ -34,21 +34,33 @@ contract("Auction", function (accounts) {
 
     it("requires a non-zero rate", async function () {
       await expectRevert(
-        Auction.new(0, wallet, this.token.address),
+        Auction.new(0, owner, this.token.address, tokenSupply),
         "Auction: rate is 0"
       );
     });
 
-    it("requires a non-null wallet", async function () {
+    it("requires a non-null owner", async function () {
       await expectRevert(
-        Auction.new(rate, ZERO_ADDRESS, this.token.address),
-        "Auction: wallet is the zero address"
+        Auction.new(rate, ZERO_ADDRESS, this.token.address, tokenSupply),
+        "Auction: owner is the zero address"
+      );
+    });
+
+    it("requires a non-zero tokenMaxAmount", async function () {
+      await expectRevert(
+        Auction.new(rate, owner, this.token.address, 0),
+        "Auction: tokenMaxAmount is 0"
       );
     });
 
     context("once deployed", async function () {
       beforeEach(async function () {
-        this.auction = await Auction.new(rate, wallet, this.token.address);
+        this.auction = await Auction.new(
+          rate,
+          owner,
+          this.token.address,
+          tokenSupply
+        );
         await this.token.transfer(this.auction.address, tokenSupply);
       });
 
@@ -61,12 +73,22 @@ contract("Auction", function (accounts) {
           expect(await this.auction.finalized()).to.equal(false); // Change this to the expected rate
         });
 
-        it("should return the correct wallet address", async function () {
-          expect(await this.auction.wallet()).to.equal(wallet); // Change this to the expected rate
+        it("should return the correct owner address", async function () {
+          expect(await this.auction.owner()).to.equal(owner); // Change this to the expected rate
         });
 
         it("should return the correct token address", async function () {
           expect(await this.auction.token()).equal(this.token.address); // Change this to the expected rate
+        });
+
+        it("should return the tokenMaxAmount of the auction", async function () {
+          expect(await this.auction.tokenMaxAmount()).to.be.bignumber.equal(
+            tokenSupply
+          ); // Change this to the expected rate
+        });
+
+        it("should return the correct remainingSupply", async function () {
+          expect(await this.auction.remainingSupply()).to.equal(tokenSupply); // Change this to the expected rate
         });
       });
 
@@ -144,10 +166,10 @@ contract("Auction", function (accounts) {
           );
         });
 
-        it("should forward funds to wallet", async function () {
-          const balanceTracker = await balance.tracker(wallet);
+        it("should forward funds to owner only after finalization", async function () {
+          const balanceTracker = await balance.tracker(owner);
           await this.auction.sendTransaction({ value, from: investor });
-          expect(await balanceTracker.delta()).to.be.bignumber.equal(value);
+          expect(await balanceTracker.delta()).to.be.equal(0);
         });
       });
 
@@ -163,6 +185,16 @@ contract("Auction", function (accounts) {
             this.auction.finalize(),
             "Auction: already finalized"
           );
+        });
+
+        it("shouldn't allow funds withdrawl before finalization", async function () {
+          const balanceTracker = await balance.tracker(owner);
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          await expectRevert(
+            this.auction.withdrawFunds({ from: owner }),
+            "Auction: not finalized"
+          );
+          expect(await balanceTracker.delta()).to.be.equal(0);
         });
       });
 
@@ -204,6 +236,50 @@ contract("Auction", function (accounts) {
           expect(await this.token.balanceOf(investor)).to.be.bignumber.equal(
             expectedTokenAmount.mul(new BN(4))
           );
+        });
+
+        it("should allow funds withdrawl to owner after finalization", async function () {
+          const balanceTracker = await balance.tracker(owner);
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          await this.auction.sendTransaction({ value: value, from: investor });
+          await this.auction.finalize();
+          await this.auction.withdrawFunds({ from: owner });
+          expect(await balanceTracker.delta()).to.be.bignumber.equal(
+            value.mul(new BN(4))
+          );
+        });
+
+        it("shouldn't allow double withdrawl to owner after finalization", async function () {
+          const balanceTracker = await balance.tracker(owner);
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          await this.auction.sendTransaction({ value: value, from: investor });
+          await this.auction.finalize();
+          await this.auction.withdrawFunds({ from: owner });
+          expect(await balanceTracker.delta()).to.be.bignumber.equal(
+            value.mul(new BN(4))
+          );
+          await expectRevert(
+            this.auction.withdrawFunds({ from: owner }),
+            "Auction: Funds already withdrawn"
+          );
+        });
+
+        it("should only allow funds to be withdrawn by owner after finalization", async function () {
+          const balanceTracker = await balance.tracker(owner);
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          await this.auction.placeBids(investor, { value, from: purchaser });
+          await this.auction.sendTransaction({ value: value, from: investor });
+          await this.auction.finalize();
+          await expectRevert(
+            this.auction.withdrawFunds({ from: investor }),
+            "Auction: not owner"
+          );
+          expect(await balanceTracker.delta()).to.be.equal(0);
         });
       });
     });
