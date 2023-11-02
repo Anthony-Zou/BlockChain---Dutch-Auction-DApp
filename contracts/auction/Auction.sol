@@ -37,11 +37,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     // Address of the owner
     address payable private _owner;
 
-    // How many token units a buyer gets per wei.
-    // The rate is the conversion between wei and the smallest and indivisible token unit.
-    // So, if you are using a rate of 1 with a ERC20Detailed token with 3 decimals called TOK
-    // 1 wei will give you 1 unit, or 0.001 TOK.
-    uint256 private _rate;
+    // Price per token in wei.
+    uint256 private _price;
 
     // A map storing the address and weiAmount
     mapping(address => uint256) private _contributions;
@@ -109,21 +106,18 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @param rate_ Number of token units a buyer gets per wei
-     * @dev The rate is the conversion between wei and the smallest and indivisible
-     * token unit. So, if you are using a rate of 1 with a ERC20Detailed token
-     * with 3 decimals called TOK, 1 wei will give you 1 unit, or 0.001 TOK.
-     * @param owner_ Address where collected funds will be forwarded to
+     * @param price_ Price of the token in wei
+     * @param owner_ Address of the owner of the contract (seller of the auction)
      * @param token_ Address of the token being sold
      * @param tokenMaxAmount_ Approved allowance to the auction.
      */
     constructor(
-        uint256 rate_,
+        uint256 price_,
         address payable owner_,
         IERC20 token_,
         uint256 tokenMaxAmount_
     ) {
-        require(rate_ > 0, "Auction: rate is 0");
+        require(price_ > 0, "Auction: price is 0");
         require(owner_ != address(0), "Auction: owner is the zero address");
         require(tokenMaxAmount_ > 0, "Auction: tokenMaxAmount is 0");
         require(
@@ -131,7 +125,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             "Auction: token is the zero address"
         );
 
-        _rate = rate_;
+        _price = price_;
         _owner = owner_;
         _token = IERC20Burnable(address(token_));
         _tokenMaxAmount = tokenMaxAmount_;
@@ -175,9 +169,9 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     /**
      * @return the number of token units a buyer gets per wei.
      */
-    function rate() public view virtual returns (uint256) {
-        //console.log("rate called", _rate);
-        return _rate;
+    function price() public view virtual returns (uint256) {
+        //console.log("price called", _price);
+        return _price;
     }
 
     /**
@@ -235,20 +229,18 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     ) public payable virtual nonReentrant {
         uint256 weiAmount = msg.value;
         _preValidateBids(beneficiary, weiAmount);
-
-        emit BidsPlaced(_msgSender(), beneficiary, weiAmount);
-
         _updatePurchasingState(beneficiary, weiAmount);
 
         _forwardFunds();
         _postValidateBids(beneficiary, weiAmount);
+        emit BidsPlaced(_msgSender(), beneficiary, weiAmount);
     }
 
     /**
      * @dev Must be called after Auction ends, to do some extra finalization
      * work. Calls the contract's finalization function.
      */
-    function finalize() public virtual onlyWhileNotFinalized {
+    function finalize() public virtual onlyWhileNotFinalized nonReentrant {
         _finalized = true;
 
         _finalization();
@@ -402,7 +394,10 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _getTokenAmount(
         uint256 weiAmount
     ) internal view virtual returns (uint256) {
-        return weiAmount.mul(_rate);
+        //console.log("weiAmount", weiAmount);
+        //console.log("_price", _price);
+        //console.log("weiAmount.div(_price)", weiAmount.div(_price));
+        return weiAmount.div(_price);
     }
 
     /**

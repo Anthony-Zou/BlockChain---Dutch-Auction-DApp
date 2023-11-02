@@ -51,7 +51,7 @@ abstract contract RefundableAuction is Auction {
         uint256 supply = remainingSupply();
 
         if (demand > supply){
-            uint256 supplyWeiAmount = supply.mul(rate());
+            uint256 supplyWeiAmount = supply.mul(price());
             uint256 change = weiAmount.sub(supplyWeiAmount);
 
             _deliverTokens(beneficiary, supply);

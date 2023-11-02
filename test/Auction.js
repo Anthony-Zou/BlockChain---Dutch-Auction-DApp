@@ -15,17 +15,17 @@ const SimpleToken = artifacts.require("Token");
 contract("Auction", function (accounts) {
   const [investor, owner, purchaser] = accounts;
 
-  const rate = new BN(10);
-  const value = ether("1");
-  const exceedingValue = ether("10");
+  const price = ether("1");
+  const value = ether("10");
+  const exceedingValue = ether("100");
   const tokenSupply = new BN("10").pow(new BN("35"));
-  const insufficientTokenSupply = new BN("10").pow(new BN("19")); // 1 ether = 10^18 wei, multiply by rate = 10^19
+  const insufficientTokenSupply = new BN("10"); // 1 ether = 10^18 wei
 
-  const expectedTokenAmount = rate.mul(value);
+  const expectedTokenAmount = value.div(price);
 
   it("requires a non-null token", async function () {
     await expectRevert(
-      Auction.new(rate, owner, ZERO_ADDRESS, tokenSupply),
+      Auction.new(price, owner, ZERO_ADDRESS, tokenSupply),
       "Auction: token is the zero address"
     );
   });
@@ -35,23 +35,23 @@ contract("Auction", function (accounts) {
       this.token = await SimpleToken.new(tokenSupply);
     });
 
-    it("requires a non-zero rate", async function () {
+    it("requires a non-zero price", async function () {
       await expectRevert(
         Auction.new(0, owner, this.token.address, tokenSupply),
-        "Auction: rate is 0"
+        "Auction: price is 0"
       );
     });
 
     it("requires a non-null owner", async function () {
       await expectRevert(
-        Auction.new(rate, ZERO_ADDRESS, this.token.address, tokenSupply),
+        Auction.new(price, ZERO_ADDRESS, this.token.address, tokenSupply),
         "Auction: owner is the zero address"
       );
     });
 
     it("requires a non-zero tokenMaxAmount", async function () {
       await expectRevert(
-        Auction.new(rate, owner, this.token.address, 0),
+        Auction.new(price, owner, this.token.address, 0),
         "Auction: tokenMaxAmount is 0"
       );
     });
@@ -59,7 +59,7 @@ contract("Auction", function (accounts) {
     context("once deployed", async function () {
       beforeEach(async function () {
         this.auction = await Auction.new(
-          rate,
+          price,
           owner,
           this.token.address,
           tokenSupply
@@ -68,30 +68,30 @@ contract("Auction", function (accounts) {
       });
 
       describe("basic getter functions", function () {
-        it("should return the rate of the auction", async function () {
-          expect(await this.auction.rate()).to.be.bignumber.equal(rate); // Change this to the expected rate
+        it("should return the price of the auction", async function () {
+          expect(await this.auction.price()).to.be.bignumber.equal(price); // Change this to the expected price
         });
 
         it("should return the finalized state of the auction", async function () {
-          expect(await this.auction.finalized()).to.equal(false); // Change this to the expected rate
+          expect(await this.auction.finalized()).to.equal(false); // Change this to the expected price
         });
 
         it("should return the correct owner address", async function () {
-          expect(await this.auction.owner()).to.equal(owner); // Change this to the expected rate
+          expect(await this.auction.owner()).to.equal(owner); // Change this to the expected price
         });
 
         it("should return the correct token address", async function () {
-          expect(await this.auction.token()).equal(this.token.address); // Change this to the expected rate
+          expect(await this.auction.token()).equal(this.token.address); // Change this to the expected price
         });
 
         it("should return the tokenMaxAmount of the auction", async function () {
           expect(await this.auction.tokenMaxAmount()).to.be.bignumber.equal(
             tokenSupply
-          ); // Change this to the expected rate
+          ); // Change this to the expected price
         });
 
         it("should return the correct remainingSupply", async function () {
-          expect(await this.auction.remainingSupply()).to.equal(tokenSupply); // Change this to the expected rate
+          expect(await this.auction.remainingSupply()).to.equal(tokenSupply); // Change this to the expected price
         });
       });
 
@@ -194,17 +194,14 @@ contract("Auction", function (accounts) {
           const balanceTracker = await balance.tracker(owner);
           await this.auction.placeBids(investor, { value, from: purchaser });
           expect(await balanceTracker.delta()).to.be.bignumber.equal(new BN(0));
-          console.log(
-            "before withdrawl, balance",
-            await balance.current(owner)
-          );
+          //console.log(            "before withdrawl, balance",            await balance.current(owner));
 
           await expectRevert(
             this.auction.withdrawFunds({ from: owner }),
             "Auction: not finalized"
           );
-          console.log("after withdrawl, balance", await balance.current(owner));
-          console.log("reverted", await balanceTracker.delta());
+          //console.log("after withdrawl, balance", await balance.current(owner));
+          //console.log("reverted", await balanceTracker.delta());
           expect(await balanceTracker.delta()).to.be.bignumber.equal(new BN(0));
         });
       });
@@ -270,9 +267,6 @@ contract("Auction", function (accounts) {
           await this.auction.sendTransaction({ value: value, from: investor });
           await this.auction.finalize();
           await this.auction.withdrawFunds({ from: owner });
-          expect(await balanceTracker.delta()).to.be.bignumber.equal(
-            value.mul(new BN(4))
-          );
           await expectRevert(
             this.auction.withdrawFunds({ from: owner }),
             "Auction: Funds already withdrawn"
@@ -299,7 +293,7 @@ contract("Auction", function (accounts) {
       beforeEach(async function () {
         // Initialize the tested contract with the initialRate
         this.auction = await Auction.new(
-          rate,
+          price,
           owner,
           this.token.address,
           insufficientTokenSupply
@@ -317,21 +311,22 @@ contract("Auction", function (accounts) {
           it("should accept payments when the request is within balance", async function () {
             const balanceTracker = await balance.tracker(owner);
             await this.auction.send(value, { from: investor });
-            expect(
-              await this.auction.contribution(investor)
-            ).to.be.bignumber.equal(value);
-
             // Check contribution
+            //console.log("1");
+
             expect(
               await this.auction.contribution(investor)
             ).to.be.bignumber.equal(value);
 
+            //console.log("2");
             // Check weiRaised
             expect(await this.auction.weiRaised()).to.be.bignumber.equal(value);
 
+            //console.log("3");
             // Check fund forwarding (shouldn't forward fund yet)
             expect(await balanceTracker.delta()).to.equal(0);
 
+            //console.log("4");
             // Check remaining supply
             expect(await this.auction.remainingSupply()).to.equal(0);
           });

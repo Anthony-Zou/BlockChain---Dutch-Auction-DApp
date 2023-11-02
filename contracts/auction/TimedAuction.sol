@@ -28,7 +28,7 @@ abstract contract TimedAuction is Auction {
      * @dev Reverts if not in Auction time range.
      */
     modifier onlyAfterOpen {
-        require(isOpen(), "TimedAuction: hasn't open");
+        require(afterOpen(), "TimedAuction: hasn't open");
         _;
     }
 

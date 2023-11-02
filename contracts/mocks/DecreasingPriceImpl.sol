@@ -6,11 +6,11 @@ import "../auction/DecreasingPriceAuction.sol";
 
 contract DecreasingPriceAuctionImpl is DecreasingPriceAuction {
     constructor (uint256 openingTime, uint256 closingTime, 
-    uint256 initialRate, uint256 finalRate, 
+    uint256 initialPrice, uint256 finalPrice, 
     address payable wallet, IERC20 token, uint256 tokenMaxAmount)
-        Auction(initialRate, wallet, token, tokenMaxAmount)
+        Auction(initialPrice, wallet, token, tokenMaxAmount)
         TimedAuction(openingTime, closingTime)
-        DecreasingPriceAuction(initialRate, finalRate)
+        DecreasingPriceAuction(initialPrice, finalPrice)
     {
         // solhint-disable-previous-line no-empty-blocks
     }

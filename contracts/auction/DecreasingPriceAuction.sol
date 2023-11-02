@@ -4,105 +4,113 @@ pragma solidity ^0.8.9;
 import "./TimedAuction.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 
-
-
 /**
  * @title DecreasingPriceAuction
  * @dev Extension of Auction contract that increases the price of tokens linearly in time.
- * Note that what should be provided to the constructor is the initial and final _rates_, that is,
- * the amount of tokens per wei contributed. Thus, the initial rate must be greater than the final rate.
+ * Note that what should be provided to the constructor is the initial and final _prices_.
+ * Thus, the initial price must be smaller than the final price.
  */
 abstract contract DecreasingPriceAuction is TimedAuction {
     using SafeMath for uint256;
 
-    uint256 private _initialRate;
-    uint256 private _finalRate;
-    uint256 private _finalizedRate;
+    uint256 private _initialPrice;
+    uint256 private _finalPrice;
+    // Make into contract attribute so no need to calculate everytime
+    uint256 private _discountRate;
 
     /**
-     * @dev Constructor, takes initial and final rates of tokens received per wei contributed.
-     * @param initRate Number of tokens a buyer gets per wei at the start of the Auction
-     * @param finRate Number of tokens a buyer gets per wei at the end of the Auction
+     * @dev Constructor, takes initial and final prices of tokens received per wei contributed.
+     * @param initPrice Number of tokens a buyer gets per wei at the start of the Auction
+     * @param finPrice Number of tokens a buyer gets per wei at the end of the Auction
      */
-    constructor (uint256 initRate, uint256 finRate) {
-        require(initRate > 0, "DecreasingPriceAuction: initial rate is 0");
-        require(initRate < finRate, "DecreasingPriceAuction: initial rate is not greater than final rate");
-        _initialRate = initRate;
-        _finalRate = finRate;
+    constructor(uint256 initPrice, uint256 finPrice) {
+        require(finPrice > 0, "DecreasingPriceAuction: final price is 0");
+        require(
+            initPrice > finPrice,
+            "DecreasingPriceAuction: initial price is not greater than final price"
+        );
+        _discountRate = (initPrice.sub(finPrice)).div(
+            closingTime().sub(openingTime())
+        );
+        require(
+            _discountRate > 0,
+            "DecreasingPriceAuction: price discount rate is 0"
+        );
+        _initialPrice = initPrice;
+        _finalPrice = finPrice;
     }
 
     /**
-     * @dev Extend parent behavior requiring to set finalizedRate when auction is finalized.
-     */
-    function _finalization() 
-    internal 
-    override 
-    onlyAfterOpen {
-        // _finalized = True before calling this function, so cannot use the public function
-        uint256 currentTimeRate = _getCurrentRate();
-        // If the currentTimeRate is smaller than the finalRate, use finalRate
-        _finalizedRate = Math.min(currentTimeRate, _finalRate);
-        super._finalization();
-    }
-
-    /**
-     * The base rate function is overridden to revert, since this Auction doesn't use it, and
+     * The base price function is overridden to revert, since this Auction doesn't use it, and
      * all calls to it are a mistake.
      */
-    function rate() public pure override returns (uint256) {
-        revert("DecreasingPriceAuction: rate() called, call getCurrentRate() function instead.");
+    function price() public view override returns (uint256) {
+        return getCurrentPrice();
     }
 
     /**
-     * @return the initial rate of the Auction.
+     * @return the initial price of the Auction.
      */
-    function initialRate() public view returns (uint256) {
-        return _initialRate;
+    function initialPrice() public view returns (uint256) {
+        return _initialPrice;
     }
 
     /**
-     * @return the final rate of the Auction.
+     * @return the final price of the Auction.
      */
-    function finalRate() public view returns (uint256) {
-        return _finalRate;
+    function finalPrice() public view returns (uint256) {
+        return _finalPrice;
     }
 
     /**
-     * @dev Returns the rate of tokens per wei at the present time.
-     * Note that, as price _increases_ with time, the rate _decreases_.
+     * @dev Returns the price of tokens per wei at the present time.
+     * Note that, as price _increases_ with time, the price _decreases_.
      * @return The number of tokens a buyer gets per wei at a given time
      */
-    function getCurrentRate() public view returns (uint256) {
-        if(finalized()){
-            return _finalizedRate;
-        }
-
-        if (hasClosed()){
-            return _finalRate;
-        }
-        
-        if (!isOpen()) {
-            return _initialRate;
-        }
-        return _getCurrentRate();
+    function getCurrentPrice() public view returns (uint256) {
+        return Math.max(_getTimedPrice(), _getDemandPrice());
     }
 
-    function _getCurrentRate() internal view returns (uint256) {
+    function _getTimedPrice() internal view returns (uint256) {
+        if (!afterOpen()) {
+            return _initialPrice;
+        }
+        if (hasClosed()) {
+            return _finalPrice;
+        }
+        console.log(
+            "within auction time, block.timestamp.sub(openingTime()",
+            block.timestamp.sub(openingTime())
+        );
+        console.log(
+            "_discountRate",
+            _discountRate
+        );
+        console.log(
+            "before return, the return expression",
+            _initialPrice.sub(
+                (block.timestamp.sub(openingTime())).mul(_discountRate)
+            )
+        );
 
-        uint256 elapsedTime = block.timestamp.sub(openingTime());
-        uint256 timeRange = closingTime().sub(openingTime());
-        uint256 rateRange = _finalRate.sub(_initialRate);
-        return _initialRate.add(elapsedTime.div(timeRange).mul(rateRange));
+        return
+            _initialPrice.sub(
+                (block.timestamp.sub(openingTime())).mul(_discountRate)
+            );
+    }
 
+    function _getDemandPrice() internal view returns (uint256) {
+        return weiRaised().div(tokenMaxAmount());
     }
 
     /**
-     * @dev Overrides parent method taking into account variable rate.
+     * @dev Overrides parent method taking into account variable price.
      * @param weiAmount The value in wei to be converted into tokens
      * @return The number of tokens _weiAmount wei will buy at present time
      */
-    function _getTokenAmount(uint256 weiAmount) internal view override returns (uint256) {
-        uint256 currentRate = getCurrentRate();
-        return currentRate.mul(weiAmount);
+    function _getTokenAmount(
+        uint256 weiAmount
+    ) internal view override returns (uint256) {
+        return weiAmount.div(getCurrentPrice());
     }
 }

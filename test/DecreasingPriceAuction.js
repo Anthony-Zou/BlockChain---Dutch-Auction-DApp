@@ -15,82 +15,97 @@ const SimpleToken = artifacts.require("Token");
 contract("DecreasingPriceAuction", function (accounts) {
   const [investor, wallet, purchaser] = accounts;
 
-  const value = ether("42");
+  const value = ether("1");
   const tokenSupply = new BN("10").pow(new BN("22"));
-  const initialRate = new BN(1); // Set your initial rate here
-  const finalRate = new BN(2); // Set your initial rate here
+  const initialPrice = ether("2"); // Set your initial price here
+  const finalPrice = ether("1"); // Set your initial price here
 
   before(async function () {
     // Advance to the next block to correctly read time in the solidity "now" function interpreted by ganache
     await time.advanceBlock();
   });
 
-  it("reverts if the initial rate is 0", async function () {
-    // console.log("****************************************");
-    // console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
-    await expectRevert(
-      DecreasingPriceAuctionImpl.new(
-        this.openingTime,
-        this.closingTime,
-        0,
-        finalRate,
-        wallet,
-        this.token.address,
-        tokenSupply
-      ),
-      "Auction: rate is 0"
-    );
-  });
-
-  it("reverts if the final rate is smaller than the initial rate", async function () {
-    // console.log("****************************************");
-    // console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
-    await expectRevert(
-      DecreasingPriceAuctionImpl.new(
-        this.openingTime,
-        this.closingTime,
-        initialRate,
-        0,
-        wallet,
-        this.token.address,
-        tokenSupply
-      ),
-      "DecreasingPriceAuction: initial rate is not greater than final rate"
-    );
-  });
-
-  it("reverts if the initial rate is euqal to the final rate", async function () {
-    // console.log("****************************************");
-    // console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
-    await expectRevert(
-      DecreasingPriceAuctionImpl.new(
-        this.openingTime,
-        this.closingTime,
-        initialRate,
-        initialRate,
-        wallet,
-        this.token.address,
-        tokenSupply
-      ),
-      "DecreasingPriceAuction: initial rate is not greater than final rate"
-    );
-  });
-
   beforeEach(async function () {
-    this.openingTime = (await time.latest()).add(time.duration.weeks(1));
-    this.closingTime = this.openingTime.add(time.duration.weeks(1));
+    this.openingTime = (await time.latest()).add(time.duration.minutes(20));
+    this.closingTime = this.openingTime.add(time.duration.minutes(20));
     this.afterClosingTime = this.closingTime.add(time.duration.seconds(1));
     this.token = await SimpleToken.new(tokenSupply);
   });
 
-  context("with Auction", function () {
+  it("reverts if the initial price is 0", async function () {
+    await expectRevert(
+      DecreasingPriceAuctionImpl.new(
+        this.openingTime,
+        this.closingTime,
+        0,
+        finalPrice,
+        wallet,
+        this.token.address,
+        tokenSupply
+      ),
+      "Auction: price is 0"
+    );
+  });
+
+  it("reverts if the final price is smaller than the initial price", async function () {
+    //console.log("****************************************");
+    //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+    await expectRevert(
+      DecreasingPriceAuctionImpl.new(
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        0,
+        wallet,
+        this.token.address,
+        tokenSupply
+      ),
+      "DecreasingPriceAuction: final price is 0"
+    );
+  });
+
+  it("reverts if the initial price is euqal to the final price", async function () {
+    //console.log("****************************************");
+    //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+    await expectRevert(
+      DecreasingPriceAuctionImpl.new(
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        initialPrice,
+        wallet,
+        this.token.address,
+        tokenSupply
+      ),
+      "DecreasingPriceAuction: initial price is not greater than final price"
+    );
+  });
+
+  it("reverts if the price difference is smaller than the time range", async function () {
+    //console.log("****************************************");
+    //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+    await expectRevert(
+      DecreasingPriceAuctionImpl.new(
+        this.openingTime,
+        this.closingTime,
+        new BN(2),
+        new BN(1),
+        wallet,
+        this.token.address,
+        tokenSupply
+      ),
+      "DecreasingPriceAuction: price discount rate is 0"
+    );
+  });
+
+  context("with No Demand(Only time decreasing)", function () {
     beforeEach(async function () {
-      // Initialize the tested contract with the initialRate
+      // Initialize the tested contract with the initialPrice
       this.Auction = await DecreasingPriceAuctionImpl.new(
         this.openingTime,
         this.closingTime,
-        initialRate,
-        finalRate,
+        initialPrice,
+        finalPrice,
         wallet,
         this.token.address,
         tokenSupply
@@ -107,165 +122,72 @@ contract("DecreasingPriceAuction", function (accounts) {
       expect(await this.Auction.hasClosed()).to.equal(true);
     });
 
-    describe("getting correct rates", function () {
-      it("should reject calls to the rates() function", async function () {
-        await expectRevert(
-          this.Auction.rate(),
-          "DecreasingPriceAuction: rate() called, call getCurrentRate() function instead."
-        );
+    describe("getting correct prices", function () {
+      it("should redirect calls to the prices() function", async function () {
+        expect(await this.Auction.price()).to.be.bignumber.equal(initialPrice);
       });
 
-      it("should record the initial and final rate correctly", async function () {
-        // Check if the initial rate is set correctly
-        const actualInitialRate = await this.Auction.initialRate();
-        expect(actualInitialRate).to.be.bignumber.equal(initialRate);
-        // Check if the final rate is set correctly
-        const actualFinalRate = await this.Auction.finalRate();
-        expect(actualFinalRate).to.be.bignumber.equal(finalRate);
+      it("should record the initial and final price correctly", async function () {
+        // Check if the initial price is set correctly
+        const actualInitialPrice = await this.Auction.initialPrice();
+        expect(actualInitialPrice).to.be.bignumber.equal(initialPrice);
+        // Check if the final price is set correctly
+        const actualFinalPrice = await this.Auction.finalPrice();
+        expect(actualFinalPrice).to.be.bignumber.equal(finalPrice);
       });
 
-      it("should increase rate over time", async function () {
-        // current rate should be initial rate before start
+      it("should return initial price before start", async function () {
+        // current price should be initial price before start
         expect(await this.Auction.isOpen()).to.equal(false);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          initialRate
+        expect(await this.Auction.getCurrentPrice()).to.be.bignumber.equal(
+          initialPrice
         );
+      });
 
-        // rate should be initial rate at the beginning
+      it("should return initial at the start", async function () {
+        // price should be initial price at the beginning
         await time.increaseTo(this.openingTime);
         expect(await this.Auction.isOpen()).to.equal(true);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          initialRate
-        );
-
-        // 3 days after auction start
-        await time.increaseTo(this.openingTime.add(time.duration.days(3)));
-        const currentTime = await time.latest();
-        const elapsedTime = currentTime.sub(this.openingTime);
-        const timeRange = this.closingTime.sub(this.openingTime);
-        const rateRange = finalRate.sub(initialRate);
-        const currentRate = initialRate.add(
-          elapsedTime.mul(rateRange).div(timeRange)
-        );
-
-        const actualRate = await this.Auction.getCurrentRate();
-        expect(actualRate).to.be.bignumber.equal(currentRate);
-
-        // At the exact moment of closing time, rate should be final rate
-        await time.increaseTo(this.closingTime);
-        expect(await this.Auction.hasClosed()).to.equal(false);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          finalRate
-        );
-
-        // After auction ends, rate should be final rate
-        await time.increaseTo(this.afterClosingTime);
-        expect(await this.Auction.hasClosed()).to.equal(true);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          finalRate
+        expect(await this.Auction.getCurrentPrice()).to.be.bignumber.equal(
+          initialPrice
         );
       });
 
-      it("should record finalized rate", async function () {
-        // current rate should be initial rate before start
-        //console.log("await this.Auction.isOpen()", await this.Auction.isOpen());
-        expect(await this.Auction.isOpen()).to.equal(false);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          initialRate
-        );
-
-        // rate should be initial rate at the beginning
-        await time.increaseTo(this.openingTime);
-        expect(await this.Auction.isOpen()).to.equal(true);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          initialRate
-        );
-
-        // 3 days after auction start
-        await time.increaseTo(this.openingTime.add(time.duration.days(3)));
+      it("should return correct time-decreased price", async function () {
+        // 10 minutes after auction start
+        await time.increaseTo(this.openingTime.add(time.duration.minutes(10)));
         const currentTime = await time.latest();
         const elapsedTime = currentTime.sub(this.openingTime);
-        const timeRange = this.closingTime.sub(this.openingTime);
-        const rateRange = finalRate.sub(initialRate);
-        const currentRate = initialRate.add(
-          elapsedTime.mul(rateRange).div(timeRange)
-        );
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          currentRate
-        );
+        // Use math.floor because this is the expected code logic
+        const rate = (finalPrice.sub(initialPrice)).div(this.closingTime.sub(this.openingTime));
+        const currentPrice = initialPrice.add(elapsedTime.mul(rate));
 
-        // If finaliza() is called in middle of a auction, the finalizedRate should be recorded
-        this.Auction.finalize();
-        //let tmpRate=;
-        //console.log(tmpRate);
-        //expect(tmpRate).to.be.bignumber.equal(currentRate);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          currentRate
-        );
-        await time.increaseTo(this.openingTime.add(time.duration.days(4)));
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          currentRate
-        );
+        const actualPrice = await this.Auction.getCurrentPrice();
+        expect(actualPrice).to.be.bignumber.equal(currentPrice);
+      });
 
-        // At the exact moment of closing time, rate should be final rate
+      it("should return the latest price at the time of close", async function () {
+        // At the exact moment of closing time, price should be final price
         await time.increaseTo(this.closingTime);
         expect(await this.Auction.hasClosed()).to.equal(false);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          currentRate
-        );
 
-        // After auction ends, rate should be final rate
-        await time.increaseTo(this.afterClosingTime);
-        expect(await this.Auction.hasClosed()).to.equal(true);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          currentRate
+        const currentTime = await time.latest();
+        const elapsedTime = currentTime.sub(this.openingTime);
+        // Use math.floor because this is the expected code logic
+        const rate = (finalPrice.sub(initialPrice)).div(this.closingTime.sub(this.openingTime));
+        const currentPrice = initialPrice.add(elapsedTime.mul(rate));
+
+        expect(await this.Auction.getCurrentPrice()).to.be.bignumber.equal(
+          currentPrice
         );
       });
 
-      it("should record finalized rate", async function () {
-        // current rate should be initial rate before start
-        expect(await this.Auction.isOpen()).to.equal(false);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          initialRate
-        );
-
-        // rate should be initial rate at the beginning
-        await time.increaseTo(this.openingTime);
-        expect(await this.Auction.isOpen()).to.equal(true);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          initialRate
-        );
-
-        // 3 days after auction start
-        await time.increaseTo(this.openingTime.add(time.duration.days(3)));
-        const currentTime = await time.latest();
-        const elapsedTime = currentTime.sub(this.openingTime);
-        const timeRange = this.closingTime.sub(this.openingTime);
-        const rateRange = finalRate.sub(initialRate);
-        const currentRate = initialRate.add(
-          elapsedTime.mul(rateRange).div(timeRange)
-        );
-        const actualRate = await this.Auction.getCurrentRate();
-        expect(actualRate).to.be.bignumber.equal(currentRate);
-
-        // At the exact moment of closing time, rate should be final rate
-        await time.increaseTo(this.closingTime);
-        expect(await this.Auction.hasClosed()).to.equal(false);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          finalRate
-        );
-
-        // After auction ends, rate should be final rate
+      it("should return final price after closed", async function () {
+        // After auction ends, price should be final price
         await time.increaseTo(this.afterClosingTime);
         expect(await this.Auction.hasClosed()).to.equal(true);
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          finalRate
-        );
-
-        // If finaliza() is called after a auction closed, the finalizedRate should be recorded
-        this.Auction.finalize();
-        expect(await this.Auction.getCurrentRate()).to.be.bignumber.equal(
-          finalRate
+        expect(await this.Auction.getCurrentPrice()).to.be.bignumber.equal(
+          finalPrice
         );
       });
     });

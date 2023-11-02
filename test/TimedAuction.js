@@ -22,15 +22,15 @@ contract("TimedAuction", function (accounts) {
   });
 
   beforeEach(async function () {
-    this.openingTime = (await time.latest()).add(time.duration.weeks(1));
-    this.closingTime = this.openingTime.add(time.duration.weeks(1));
+    this.openingTime = (await time.latest()).add(time.duration.minutes(20));
+    this.closingTime = this.openingTime.add(time.duration.minutes(20));
     this.afterClosingTime = this.closingTime.add(time.duration.seconds(1));
     this.token = await SimpleToken.new(tokenSupply);
   });
 
   it("reverts if the opening time is in the past", async function () {
-    // console.log("****************************************");
-    // console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+    //console.log("****************************************");
+    //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
     await expectRevert(
       TimedAuctionImpl.new(
         (await time.latest()).sub(time.duration.days(1)),
