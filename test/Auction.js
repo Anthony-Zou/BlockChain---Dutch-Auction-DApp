@@ -22,6 +22,7 @@ contract("Auction", function (accounts) {
   const insufficientTokenSupply = new BN("10"); // 1 ether = 10^18 wei
 
   const expectedTokenAmount = value.div(price);
+  const expectedGasFee = new BN("10").pow(new BN("15")); // 0.001 wei
 
   it("requires a non-null token", async function () {
     await expectRevert(
@@ -202,7 +203,7 @@ contract("Auction", function (accounts) {
           );
           //console.log("after withdrawl, balance", await balance.current(owner));
           //console.log("reverted", await balanceTracker.delta());
-          expect(await balanceTracker.delta()).to.be.bignumber.equal(new BN(0));
+          expect(await balanceTracker.delta()).to.closeTo(new BN(0), expectedGasFee);
         });
       });
 
@@ -254,23 +255,22 @@ contract("Auction", function (accounts) {
           await this.auction.sendTransaction({ value: value, from: investor });
           await this.auction.finalize();
           await this.auction.withdrawFunds({ from: owner });
-          expect(await balanceTracker.delta()).to.be.bignumber.equal(
-            value.mul(new BN(4))
-          );
+          expect(await balanceTracker.delta()).to.closeTo(value.mul(new BN(4)), expectedGasFee);
         });
 
         it("shouldn't allow double withdrawl to owner after finalization", async function () {
-          const balanceTracker = await balance.tracker(owner);
           await this.auction.placeBids(investor, { value, from: purchaser });
           await this.auction.placeBids(investor, { value, from: purchaser });
           await this.auction.placeBids(investor, { value, from: purchaser });
           await this.auction.sendTransaction({ value: value, from: investor });
           await this.auction.finalize();
           await this.auction.withdrawFunds({ from: owner });
+          const balanceTracker = await balance.tracker(owner);
           await expectRevert(
             this.auction.withdrawFunds({ from: owner }),
             "Auction: Funds already withdrawn"
           );
+          expect(await balanceTracker.delta()).to.closeTo(new BN(0), expectedGasFee);
         });
 
         it("should only allow funds to be withdrawn by owner after finalization", async function () {

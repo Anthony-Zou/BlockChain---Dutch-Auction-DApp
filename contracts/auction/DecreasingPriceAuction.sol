@@ -78,20 +78,19 @@ abstract contract DecreasingPriceAuction is TimedAuction {
         if (hasClosed()) {
             return _finalPrice;
         }
+        /**
         console.log(
-            "within auction time, block.timestamp.sub(openingTime()",
+            "block.timestamp.sub(openingTime()",
             block.timestamp.sub(openingTime())
         );
-        console.log(
-            "_discountRate",
-            _discountRate
-        );
+        console.log("_discountRate", _discountRate);
         console.log(
             "before return, the return expression",
             _initialPrice.sub(
                 (block.timestamp.sub(openingTime())).mul(_discountRate)
             )
         );
+         */
 
         return
             _initialPrice.sub(
