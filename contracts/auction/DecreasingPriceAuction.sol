@@ -66,6 +66,20 @@ abstract contract DecreasingPriceAuction is TimedAuction {
      * @dev Returns the price of tokens per wei at the present time.
      * Note that, as price _increases_ with time, the price _decreases_.
      * @return The number of tokens a buyer gets per wei at a given time
+     * @dev     // Dutch Auction Price Function
+    // ============================
+    //  
+    // Start Price ----- 
+    //                   \ 
+    //                    \
+    //                     \
+    //                      \ ------------ Clearing Price
+    //                     / \            = AmountRaised/TokenSupply
+    //      Token Price  --   \
+    //                  /      \ 
+    //                --        ----------- Minimum Price
+    // Amount raised /          End Time
+    //
      */
     function getCurrentPrice() public view returns (uint256) {
         return Math.max(_getTimedPrice(), _getDemandPrice());

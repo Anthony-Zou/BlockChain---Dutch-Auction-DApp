@@ -103,7 +103,7 @@ contract("TimedAuction", function (accounts) {
         expect(await this.Auction.isOpen()).to.equal(false);
         await expectRevert(this.Auction.send(value), "TimedAuction: not open");
         await expectRevert(
-          this.Auction.placeBids(investor, { from: purchaser, value: value }),
+          this.Auction.placeBids({ from: purchaser, value: value }),
           "TimedAuction: not open"
         );
       });
@@ -112,17 +112,14 @@ contract("TimedAuction", function (accounts) {
         await time.increaseTo(this.openingTime);
         expect(await this.Auction.isOpen()).to.equal(true);
         await this.Auction.send(value);
-        await this.Auction.placeBids(investor, {
-          value: value,
-          from: purchaser,
-        });
+        await this.Auction.placeBids({ value: value, from: purchaser });
       });
 
       it("should reject payments after end", async function () {
         await time.increaseTo(this.afterClosingTime);
         await expectRevert(this.Auction.send(value), "TimedAuction: not open");
         await expectRevert(
-          this.Auction.placeBids(investor, { value: value, from: purchaser }),
+          this.Auction.placeBids({ value: value, from: purchaser }),
           "TimedAuction: not open"
         );
       });

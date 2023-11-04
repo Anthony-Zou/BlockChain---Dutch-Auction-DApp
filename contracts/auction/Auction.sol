@@ -59,12 +59,10 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     /**
      * Event for token purchase logging
      * @param purchaser who paid for the tokens
-     * @param beneficiary who got the tokens
      * @param value weis paid for purchase
      */
     event BidsPlaced(
         address indexed purchaser,
-        address indexed beneficiary,
         uint256 value
     );
 
@@ -143,11 +141,11 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * placeBids directly when purchasing tokens from a contract.
      */
     fallback() external payable {
-        placeBids(_msgSender());
+        placeBids();
     }
 
     receive() external payable {
-        placeBids(_msgSender());
+        placeBids();
     }
 
     // Get functions
@@ -222,18 +220,29 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @dev low level token purchase ***DO NOT OVERRIDE***
      * This function has a non-reentrancy guard, so it shouldn't be called by
      * another `nonReentrant` function.
-     * @param beneficiary Recipient of the token purchase
      */
-    function placeBids(
-        address beneficiary
-    ) public payable virtual nonReentrant {
+    function placeBids() public payable virtual nonReentrant {
+        // By right, there will never be msg from ZERO_ADDRESS 
+        // console.log("_msgSender() != address(0)", _msgSender() != address(0));
+        // require(
+        //     _msgSender() != address(0),
+        //     "Auction: beneficiary is the zero address"
+        // );
+        
+
         uint256 weiAmount = msg.value;
-        _preValidateBids(beneficiary, weiAmount);
-        _updatePurchasingState(beneficiary, weiAmount);
+        _preValidateBids(_msgSender(), weiAmount);
+    
+        uint256 contributionRecorded = _updatePurchasingState(_msgSender(), weiAmount);
+        
+        // Return any ETH to be refunded
+        if (weiAmount > contributionRecorded) {
+            payable(_msgSender()).transfer(weiAmount.sub(contributionRecorded));
+        }
 
         _forwardFunds();
-        _postValidateBids(beneficiary, weiAmount);
-        emit BidsPlaced(_msgSender(), beneficiary, weiAmount);
+        _postValidateBids(_msgSender(), weiAmount);
+        emit BidsPlaced(_msgSender(), weiAmount);
     }
 
     /**
@@ -297,20 +306,9 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         address beneficiary,
         uint256 weiAmount
     ) internal view virtual onlyWhileNotFinalized {
-        require(
-            beneficiary != address(0),
-            "Auction: beneficiary is the zero address"
-        );
+        //console.log("in _preValidateBids, beneficiary: ",beneficiary);
         require(weiAmount > 0, "Auction: weiAmount is 0");
 
-        //console.log("in Auction _preValidateBids weiAmount", weiAmount);
-        uint256 newDemand = _getTokenAmount((weiAmount));
-        //console.log("in Auction _preValidateBids newDemand", newDemand);
-        //console.log("in Auction _preValidateBids remainingSupply()", remainingSupply());
-        require(
-            remainingSupply() >= newDemand,
-            "Auction: demand exceeded supply"
-        );
         //console.log("_preValidateBids check passed");
         this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
     }
@@ -372,18 +370,22 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _updatePurchasingState(
         address beneficiary,
         uint256 weiAmount
-    ) internal virtual {
+    ) internal virtual returns(uint256){
+        
+        uint256 maxAllowed = remainingSupply() * price();
+        // console.log("in Auction _updatePurchasingState maxAllowed", maxAllowed);
+        uint256 recordedAmount = Math.min(maxAllowed, weiAmount);
         // update state
-        _weiRaised = _weiRaised.add(weiAmount);
+        _weiRaised = _weiRaised.add(recordedAmount);
         if (_contributions[beneficiary] == 0) {
             // Push only if the beneficiary only placed bid once
             _queue.push(beneficiary);
             //console.log("Added beneficiary to queue", beneficiary);
         }
         _contributions[beneficiary] = _contributions[beneficiary].add(
-            weiAmount
+            recordedAmount
         );
-        //console.log("Added funds to beneficiary, after add:", _contributions[beneficiary].add(weiAmount));
+        return recordedAmount;
     }
 
     /**
