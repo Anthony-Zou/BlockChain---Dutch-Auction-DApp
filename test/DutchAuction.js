@@ -199,20 +199,22 @@ contract("DutchAuction", function (accounts) {
     });
   });
 
-  /**
   context("2. Deployment and Getter Functions Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
       this.auction = await DutchAuction.new(
-        price,
-        owner,
-        this.token.address,
-        tokenSupply
+          this.openingTime,
+          this.closingTime,
+          initialPrice,
+          finalPrice,
+          owner,
+          this.token.address,
+          tokenSupply
       );
       await this.token.transfer(this.auction.address, tokenSupply);
     });
     it("PriceGetter - Should return the price of the auction.", async function () {
-      expect(await this.auction.price()).to.be.bignumber.equal(price); // Change this to the expected price
+      expect(await this.auction.price()).to.be.bignumber.equal(initialPrice); // Change this to the expected price
     });
 
     it("FinalizedStateGetter - Should return the finalized state of the auction.", async function () {
@@ -237,14 +239,19 @@ contract("DutchAuction", function (accounts) {
       expect(await this.auction.remainingSupply()).to.equal(tokenSupply); // Change this to the expected price
     });
   });
+  
+  /**
   context("3. Accepting Payments and Bids Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
       this.auction = await DutchAuction.new(
-        price,
-        owner,
-        this.token.address,
-        tokenSupply
+          this.openingTime,
+          this.closingTime,
+          initialPrice,
+          finalPrice,
+          owner,
+          this.token.address,
+          tokenSupply
       );
       await this.token.transfer(this.auction.address, tokenSupply);
     });
@@ -277,6 +284,7 @@ contract("DutchAuction", function (accounts) {
     //   );
     // });
   });
+  
   context("4. High-Level Bidding Functionality Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
