@@ -39,11 +39,9 @@ contract("RefundableAuction", function (accounts) {
     });
 
     describe("basic getter functions", function () {
-
       it("should return the allowRefund state of the auction", async function () {
         expect(await this.auction.allowRefund()).to.equal(false); // Change this to the expected rate
       });
-
     });
   });
 

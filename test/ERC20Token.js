@@ -1,5 +1,5 @@
 const { expect } = require("chai");
-describe("Token", () => {
+describe("ERC20Token", () => {
   let tokenSupply = "100";
   let token;
   let owner;
@@ -12,21 +12,21 @@ describe("Token", () => {
     token = await Token.deploy(tokenSupply);
   });
 
-  describe("Deployment", () => {
-    it("Should assign total supply of tokens to the owner/deployer", async () => {
+  context("1. Deployment", () => {
+    it("AssignTotalSupplyToOwner - Should assign total supply of tokens to the owner/deployer", async () => {
       const ownerBalance = await token.balanceOf(owner.address);
       expect(await token.totalSupply()).to.equal(ownerBalance);
     });
   });
 
-  describe("Transactions", () => {
-    it("should transfer tokens between accounts", async () => {
+  context("2. Transactions", () => {
+    it("TransferTokensBetweenAccounts - should transfer tokens between accounts", async () => {
       await token.transfer(addr1.address, 50);
       const addr1Balance = await token.balanceOf(addr1.address);
       expect(addr1Balance).to.equal(50);
     });
 
-    it("should revert transfer tokens between accounts if amount exceed balance", async () => {
+    it("RevertExcessiveTransfer - should revert transfer tokens between accounts if amount exceed balance", async () => {
       await expect(token.connect(addr1).transfer(addr2.address, 51)).to.be
         .reverted;
     });
