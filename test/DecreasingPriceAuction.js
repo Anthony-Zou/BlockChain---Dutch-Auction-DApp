@@ -32,73 +32,74 @@ contract("DecreasingPriceAuction", function (accounts) {
     this.token = await SimpleToken.new(tokenSupply);
   });
 
-  it("reverts if the initial price is 0", async function () {
-    await expectRevert(
-      DecreasingPriceAuctionImpl.new(
-        this.openingTime,
-        this.closingTime,
-        0,
-        finalPrice,
-        wallet,
-        this.token.address,
-        tokenSupply
-      ),
-      "Auction: price is 0"
-    );
-  });
+  context("1. Initialization Validity Tests", function () {
+    it("RevertsIfInitialPriceIsZero - Reverts if the initial price is 0.", async function () {
+      await expectRevert(
+        DecreasingPriceAuctionImpl.new(
+          this.openingTime,
+          this.closingTime,
+          0,
+          finalPrice,
+          wallet,
+          this.token.address,
+          tokenSupply
+        ),
+        "Auction: price is 0"
+      );
+    });
 
-  it("reverts if the final price is smaller than the initial price", async function () {
-    //console.log("****************************************");
-    //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
-    await expectRevert(
-      DecreasingPriceAuctionImpl.new(
-        this.openingTime,
-        this.closingTime,
-        initialPrice,
-        0,
-        wallet,
-        this.token.address,
-        tokenSupply
-      ),
-      "DecreasingPriceAuction: final price is 0"
-    );
-  });
+    it("RevertsIfFinalPriceSmallerThanInitial - Reverts if the final price is smaller than the initial price.", async function () {
+      //console.log("****************************************");
+      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+      await expectRevert(
+        DecreasingPriceAuctionImpl.new(
+          this.openingTime,
+          this.closingTime,
+          initialPrice,
+          0,
+          wallet,
+          this.token.address,
+          tokenSupply
+        ),
+        "DecreasingPriceAuction: final price is 0"
+      );
+    });
 
-  it("reverts if the initial price is euqal to the final price", async function () {
-    //console.log("****************************************");
-    //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
-    await expectRevert(
-      DecreasingPriceAuctionImpl.new(
-        this.openingTime,
-        this.closingTime,
-        initialPrice,
-        initialPrice,
-        wallet,
-        this.token.address,
-        tokenSupply
-      ),
-      "DecreasingPriceAuction: initial price is not greater than final price"
-    );
-  });
+    it("RevertsIfInitialPriceEqualsFinalPrice - Reverts if the initial price is equal to the final price.", async function () {
+      //console.log("****************************************");
+      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+      await expectRevert(
+        DecreasingPriceAuctionImpl.new(
+          this.openingTime,
+          this.closingTime,
+          initialPrice,
+          initialPrice,
+          wallet,
+          this.token.address,
+          tokenSupply
+        ),
+        "DecreasingPriceAuction: initial price is not greater than final price"
+      );
+    });
 
-  it("reverts if the price difference is smaller than the time range", async function () {
-    //console.log("****************************************");
-    //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
-    await expectRevert(
-      DecreasingPriceAuctionImpl.new(
-        this.openingTime,
-        this.closingTime,
-        new BN(2),
-        new BN(1),
-        wallet,
-        this.token.address,
-        tokenSupply
-      ),
-      "DecreasingPriceAuction: price discount rate is 0"
-    );
+    it("RevertsIfPriceDifferenceSmallerThanTimeRange - Reverts if the price difference is smaller than the time range.", async function () {
+      //console.log("****************************************");
+      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+      await expectRevert(
+        DecreasingPriceAuctionImpl.new(
+          this.openingTime,
+          this.closingTime,
+          new BN(2),
+          new BN(1),
+          wallet,
+          this.token.address,
+          tokenSupply
+        ),
+        "DecreasingPriceAuction: price discount rate is 0"
+      );
+    });
   });
-
-  context("without bids (only time decreasing)", function () {
+  context("2. Price Retrieval Tests (Without Bids)", function () {
     beforeEach(async function () {
       // Initialize the tested contract with the initialPrice
       this.auction = await DecreasingPriceAuctionImpl.new(
@@ -115,12 +116,12 @@ contract("DecreasingPriceAuction", function (accounts) {
       await this.token.transfer(this.auction.address, tokenSupply);
     });
 
-    describe("getting correct prices", function () {
-      it("should redirect calls to the prices() function", async function () {
+    describe("Getting correct prices", function () {
+      it("RedirectCallsToPricesFunction - Should redirect calls to the prices() function.", async function () {
         expect(await this.auction.price()).to.be.bignumber.equal(initialPrice);
       });
 
-      it("should record the initial and final price correctly", async function () {
+      it("RecordInitialAndFinalPrice - Should record the initial and final price correctly.", async function () {
         // Check if the initial price is set correctly
         const actualInitialPrice = await this.auction.initialPrice();
         expect(actualInitialPrice).to.be.bignumber.equal(initialPrice);
@@ -129,7 +130,7 @@ contract("DecreasingPriceAuction", function (accounts) {
         expect(actualFinalPrice).to.be.bignumber.equal(finalPrice);
       });
 
-      it("should return initial price before start", async function () {
+      it("ReturnInitialPriceBeforeStart - Should return initial price before start.", async function () {
         // current price should be initial price before start
         expect(await this.auction.isOpen()).to.equal(false);
         expect(await this.auction.getCurrentPrice()).to.be.bignumber.equal(
@@ -137,7 +138,7 @@ contract("DecreasingPriceAuction", function (accounts) {
         );
       });
 
-      it("should return initial at the start", async function () {
+      it("ReturnInitialAtStart - Should return initial at the start.", async function () {
         // price should be initial price at the beginning
         await time.increaseTo(this.openingTime);
         expect(await this.auction.isOpen()).to.equal(true);
@@ -146,20 +147,22 @@ contract("DecreasingPriceAuction", function (accounts) {
         );
       });
 
-      it("should return correct time-decreased price", async function () {
+      it("ReturnTimeDecreasedPrice - Should return correct time-decreased price.", async function () {
         // 10 minutes after auction start
         await time.increaseTo(this.openingTime.add(time.duration.minutes(10)));
         const currentTime = await time.latest();
         const elapsedTime = currentTime.sub(this.openingTime);
         // Use math.floor because this is the expected code logic
-        const rate = (finalPrice.sub(initialPrice)).div(this.closingTime.sub(this.openingTime));
+        const rate = finalPrice
+          .sub(initialPrice)
+          .div(this.closingTime.sub(this.openingTime));
         const currentPrice = initialPrice.add(elapsedTime.mul(rate));
 
         const actualPrice = await this.auction.getCurrentPrice();
         expect(actualPrice).to.be.bignumber.equal(currentPrice);
       });
 
-      it("should return the latest price at the time of close", async function () {
+      it("ReturnLatestPriceAtTimeOfClose - Should return the latest price at the time of close.", async function () {
         // At the exact moment of closing time, price should be final price
         await time.increaseTo(this.closingTime);
         expect(await this.auction.hasClosed()).to.equal(false);
@@ -167,7 +170,9 @@ contract("DecreasingPriceAuction", function (accounts) {
         const currentTime = await time.latest();
         const elapsedTime = currentTime.sub(this.openingTime);
         // Use math.floor because this is the expected code logic
-        const rate = (finalPrice.sub(initialPrice)).div(this.closingTime.sub(this.openingTime));
+        const rate = finalPrice
+          .sub(initialPrice)
+          .div(this.closingTime.sub(this.openingTime));
         const currentPrice = initialPrice.add(elapsedTime.mul(rate));
 
         expect(await this.auction.getCurrentPrice()).to.be.bignumber.equal(
@@ -175,7 +180,7 @@ contract("DecreasingPriceAuction", function (accounts) {
         );
       });
 
-      it("should return final price after closed", async function () {
+      it("ReturnFinalPriceAfterClosed	- Should return final price after closed.", async function () {
         // After auction ends, price should be final price
         await time.increaseTo(this.afterClosingTime);
         expect(await this.auction.hasClosed()).to.equal(true);
@@ -186,44 +191,47 @@ contract("DecreasingPriceAuction", function (accounts) {
     });
   });
 
-  
-  context("with bids and time decreasing", function () {
-    beforeEach(async function () {
-      // Initialize the tested contract with the initialPrice
-      this.auction = await DecreasingPriceAuctionImpl.new(
-        this.openingTime,
-        this.closingTime,
-        initialPrice,
-        finalPrice,
-        wallet,
-        this.token.address,
-        tokenSupply
-      );
+  context(
+    "3. Price Retrieval and Bid Handling Tests (With Bids and Time Decreasing)",
+    function () {
+      beforeEach(async function () {
+        // Initialize the tested contract with the initialPrice
+        this.auction = await DecreasingPriceAuctionImpl.new(
+          this.openingTime,
+          this.closingTime,
+          initialPrice,
+          finalPrice,
+          wallet,
+          this.token.address,
+          tokenSupply
+        );
 
-      // Transfer tokens to the Auction contract
-      await this.token.transfer(this.auction.address, tokenSupply);
-    });
-
-    describe("getting correct prices", function () {
-      
-      it("should return correct time-decreased price when demand expected price is lower", async function () {
-        // 10 minutes after auction start
-        // TODO: Fill the test case
-        /**
-         * 
-        await time.increaseTo(this.openingTime.add(time.duration.minutes(10)));
-        await this.auction.placeBids(investor, { value, from: purchaser });
-
-        const currentTime = await time.latest();
-        const elapsedTime = currentTime.sub(this.openingTime);
-        // Analogy math.floor because this is the expected code logic
-        const rate = (finalPrice.sub(initialPrice)).div(this.closingTime.sub(this.openingTime));
-        const currentPrice = initialPrice.add(elapsedTime.mul(rate));
-        
-        const actualPrice = await this.auction.getCurrentPrice();
-        expect(actualPrice).to.be.bignumber.equal(currentPrice);
-        */
+        // Transfer tokens to the Auction contract
+        await this.token.transfer(this.auction.address, tokenSupply);
       });
-    });
-  });
+
+      describe("Getting correct prices", function () {
+        it("ReturnPriceWithTimeAndBidAdjustment - Should return correct time-decreased price when demand expected price is lower.", async function () {
+          // 10 minutes after auction start
+          // TODO: Fill the test case
+
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(10))
+          );
+          await this.auction.placeBids(investor, { value, from: purchaser });
+
+          const currentTime = await time.latest();
+          const elapsedTime = currentTime.sub(this.openingTime);
+          // Analogy math.floor because this is the expected code logic
+          const rate = finalPrice
+            .sub(initialPrice)
+            .div(this.closingTime.sub(this.openingTime));
+          const currentPrice = initialPrice.add(elapsedTime.mul(rate));
+
+          const actualPrice = await this.auction.getCurrentPrice();
+          expect(actualPrice).to.be.bignumber.equal(currentPrice);
+        });
+      });
+    }
+  );
 });
