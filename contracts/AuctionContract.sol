@@ -8,7 +8,7 @@ interface IERC20Burnable is IERC20 {
     function burn(uint256 amount) external;
 }
 
-contract DutchAuction {
+contract DutchAuction2 {
     using SafeERC20 for IERC20Burnable;
     using SafeMath for uint256;
     uint256 price;

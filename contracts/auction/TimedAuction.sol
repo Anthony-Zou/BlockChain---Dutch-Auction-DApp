@@ -95,6 +95,7 @@ abstract contract TimedAuction is Auction {
     function _preValidateBids(address beneficiary, uint256 weiAmount) 
     internal 
     override
+    virtual
     onlyWhileOpen
      view {
         super._preValidateBids(beneficiary, weiAmount);

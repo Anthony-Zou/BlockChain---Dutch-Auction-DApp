@@ -308,9 +308,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     ) internal view virtual onlyWhileNotFinalized {
         //console.log("in _preValidateBids, beneficiary: ",beneficiary);
         require(weiAmount > 0, "Auction: weiAmount is 0");
-
         //console.log("_preValidateBids check passed");
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
     }
 
     /**
@@ -399,7 +397,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         //console.log("weiAmount", weiAmount);
         //console.log("_price", _price);
         //console.log("weiAmount.div(_price)", weiAmount.div(_price));
-        return weiAmount.div(_price);
+        return weiAmount.div(price());
     }
 
     /**
