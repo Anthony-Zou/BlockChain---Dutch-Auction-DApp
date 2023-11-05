@@ -24,7 +24,7 @@ contract("RefundableAuction", function (accounts) {
     this.token = await SimpleToken.new(tokenSupply);
   });
 
-  context("Auction with sufficient token balance", function () {
+  context("1. Auction with sufficient token balance", function () {
     beforeEach(async function () {
       // Initialize the tested contract with the initialRate
       this.auction = await RefundableAuctionImpl.new(
@@ -37,15 +37,17 @@ contract("RefundableAuction", function (accounts) {
       // Transfer tokens to the Auction contract
       await this.token.transfer(this.auction.address, tokenSupply);
     });
-
-    describe("basic getter functions", function () {
-      it("should return the allowRefund state of the auction", async function () {
-        expect(await this.auction.allowRefund()).to.equal(false); // Change this to the expected rate
-      });
+    it("ReturnAllowRefundState - Should return the allowRefund state of the auction", async function () {
+      expect(await this.auction.allowRefund()).to.equal(false); // Change this to the expected rate
     });
+    // describe("basic getter functions", function () {
+    //   it("ReturnAllowRefundState - Should return the allowRefund state of the auction", async function () {
+    //     expect(await this.auction.allowRefund()).to.equal(false); // Change this to the expected rate
+    //   });
+    // });
   });
 
-  context("Auction with insufficient token balance", function () {
+  context("2. Auction with insufficient token balance", function () {
     beforeEach(async function () {
       // Initialize the tested contract with the initialRate
       this.auction = await RefundableAuctionImpl.new(
@@ -60,7 +62,7 @@ contract("RefundableAuction", function (accounts) {
     });
   });
 
-  context("before finalization", function () {
+  context("3. Before Finalization", function () {
     beforeEach(async function () {
       // Initialize the tested contract with the initialRate
       this.auction = await RefundableAuctionImpl.new(
@@ -74,7 +76,7 @@ contract("RefundableAuction", function (accounts) {
       await this.token.transfer(this.auction.address, tokenSupply);
     });
 
-    it("denies refunds", async function () {
+    it("DeniesRefunds - Verifies that refunds are not allowed before the auction finalization.", async function () {
       expect(await this.auction.allowRefund()).to.equal(false);
       await expectRevert(
         this.auction.claimRefund(),
@@ -83,7 +85,7 @@ contract("RefundableAuction", function (accounts) {
     });
   });
 
-  context("after finalization", function () {
+  context("4. After finalization", function () {
     beforeEach(async function () {
       // Initialize the tested contract with the initialRate
       this.auction = await RefundableAuctionImpl.new(
@@ -97,7 +99,7 @@ contract("RefundableAuction", function (accounts) {
       await this.token.transfer(this.auction.address, tokenSupply);
     });
 
-    it("should revert if no refund for the beneficiary", async function () {
+    it("RevertNoRefundForBeneficiary - Ensures that the contract reverts if there's an attempt to claim a refund when none is available for the beneficiary.", async function () {
       await this.auction.finalize();
       expect(await this.auction.finalized()).to.equal(true);
       expect(await this.auction.allowRefund()).to.equal(true);
