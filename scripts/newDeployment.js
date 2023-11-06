@@ -11,7 +11,7 @@ async function main() {
   const closingTime =
     (await ethers.provider.getBlock("latest")).timestamp + 1200;
   const initialPrice = 8000;
-  const finalPrice = 1000;
+  const finalPrice = 500;
   const tokenMaxAmount = 10000;
   const [deployer] = await hre.ethers.getSigners(); // This will get the deployer's address
   const wallet = deployer.address;
@@ -22,15 +22,15 @@ async function main() {
     initialPrice,
     finalPrice,
     wallet,
-    token,
+    token.address,
     tokenMaxAmount
   );
 
   await da.deployed();
   await writeDeploymentInfo(token, "token.json");
   await writeDeploymentInfo(da, "da.json");
-  console.log(await da.startingPrice());
-  console.log(await da.discountRate());
+  console.log(await da.initialPrice());
+  console.log(await da.price());
 }
 
 async function writeDeploymentInfo(contract, filename = "") {
