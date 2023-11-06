@@ -16,9 +16,9 @@ contract("DecreasingPriceAuction", function (accounts) {
   const [investor, wallet, purchaser] = accounts;
 
   const value = ether("1");
-  const tokenSupply = new BN("10").pow(new BN("22"));
-  const initialPrice = ether("2"); // Set your initial price here
-  const finalPrice = ether("1"); // Set your initial price here
+  const tokenSupply = new BN("10");
+  const initialPrice = new BN("2400"); // Set your initial price here
+  const finalPrice = new BN("1200"); // Set your initial price here
 
   before(async function () {
     // Advance to the next block to correctly read time in the solidity "now" function interpreted by ganache
@@ -133,7 +133,7 @@ contract("DecreasingPriceAuction", function (accounts) {
       it("ReturnInitialPriceBeforeStart - Should return initial price before start.", async function () {
         // current price should be initial price before start
         expect(await this.auction.isOpen()).to.equal(false);
-        expect(await this.auction.getCurrentPrice()).to.be.bignumber.equal(
+        expect(await this.auction.price()).to.be.bignumber.equal(
           initialPrice
         );
       });
@@ -142,7 +142,7 @@ contract("DecreasingPriceAuction", function (accounts) {
         // price should be initial price at the beginning
         await time.increaseTo(this.openingTime);
         expect(await this.auction.isOpen()).to.equal(true);
-        expect(await this.auction.getCurrentPrice()).to.be.bignumber.equal(
+        expect(await this.auction.price()).to.be.bignumber.equal(
           initialPrice
         );
       });
@@ -158,7 +158,7 @@ contract("DecreasingPriceAuction", function (accounts) {
           .div(this.closingTime.sub(this.openingTime));
         const currentPrice = initialPrice.add(elapsedTime.mul(rate));
 
-        const actualPrice = await this.auction.getCurrentPrice();
+        const actualPrice = await this.auction.price();
         expect(actualPrice).to.be.bignumber.equal(currentPrice);
       });
 
@@ -175,7 +175,7 @@ contract("DecreasingPriceAuction", function (accounts) {
           .div(this.closingTime.sub(this.openingTime));
         const currentPrice = initialPrice.add(elapsedTime.mul(rate));
 
-        expect(await this.auction.getCurrentPrice()).to.be.bignumber.equal(
+        expect(await this.auction.price()).to.be.bignumber.equal(
           currentPrice
         );
       });
@@ -184,7 +184,7 @@ contract("DecreasingPriceAuction", function (accounts) {
         // After auction ends, price should be final price
         await time.increaseTo(this.afterClosingTime);
         expect(await this.auction.hasClosed()).to.equal(true);
-        expect(await this.auction.getCurrentPrice()).to.be.bignumber.equal(
+        expect(await this.auction.price()).to.be.bignumber.equal(
           finalPrice
         );
       });
@@ -218,7 +218,7 @@ contract("DecreasingPriceAuction", function (accounts) {
           await time.increaseTo(
             this.openingTime.add(time.duration.minutes(10))
           );
-          await this.auction.placeBids(investor, { value, from: purchaser });
+          await this.auction.placeBids({ value, from: purchaser });
 
           const currentTime = await time.latest();
           const elapsedTime = currentTime.sub(this.openingTime);
@@ -228,8 +228,35 @@ contract("DecreasingPriceAuction", function (accounts) {
             .div(this.closingTime.sub(this.openingTime));
           const currentPrice = initialPrice.add(elapsedTime.mul(rate));
 
-          const actualPrice = await this.auction.getCurrentPrice();
+          const actualPrice = await this.auction.price();
           expect(actualPrice).to.be.bignumber.equal(currentPrice);
+        });
+      });
+      
+      describe("Getting correct prices", function () {
+        it("ReturnPriceWithTimeAndBidAdjustment - Should return correct demand expected price when time-decreased price is lower.", async function () {
+          // 10 minutes after auction start
+          // TODO: Fill the test case
+
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(10))
+          );
+          await this.auction.placeBids({ value, from: purchaser });
+
+          const currentTime = await time.latest();
+          const elapsedTime = currentTime.sub(this.openingTime);
+          // Analogy math.floor because this is the expected code logic
+          const rate = finalPrice
+            .sub(initialPrice)
+            .div(this.closingTime.sub(this.openingTime));
+          const currentPrice = initialPrice.add(elapsedTime.mul(rate));
+          expect(await this.auction.price()).to.be.bignumber.equal(currentPrice);
+
+          // Increase the time
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(15))
+          );
+          expect(await this.auction.price()).to.be.bignumber.equal(currentPrice);
         });
       });
     }

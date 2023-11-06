@@ -95,6 +95,7 @@ abstract contract TimedAuction is Auction {
     function _preValidateBids(address beneficiary, uint256 weiAmount) 
     internal 
     override
+    virtual
     onlyWhileOpen
      view {
         super._preValidateBids(beneficiary, weiAmount);
@@ -103,12 +104,12 @@ abstract contract TimedAuction is Auction {
     /**
      * @dev Extend parent behavior requiring finalization to be after auction starts.
      */
-    function _finalization() 
+    function _preValidateFinalization() 
     internal 
     virtual 
     override
     onlyAfterOpen {
-        super._finalization();
+       //cosole.log("In TimedAuction, _preValidateFinalization()");
     }
 
 

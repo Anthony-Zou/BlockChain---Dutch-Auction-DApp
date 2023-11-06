@@ -41,14 +41,6 @@ abstract contract DecreasingPriceAuction is TimedAuction {
     }
 
     /**
-     * The base price function is overridden to revert, since this Auction doesn't use it, and
-     * all calls to it are a mistake.
-     */
-    function price() public view override returns (uint256) {
-        return getCurrentPrice();
-    }
-
-    /**
      * @return the initial price of the Auction.
      */
     function initialPrice() public view returns (uint256) {
@@ -66,8 +58,25 @@ abstract contract DecreasingPriceAuction is TimedAuction {
      * @dev Returns the price of tokens per wei at the present time.
      * Note that, as price _increases_ with time, the price _decreases_.
      * @return The number of tokens a buyer gets per wei at a given time
+     * @dev     // Dutch Auction Price Function
+    // ============================
+    //  
+    // Start Price ----- 
+    //                   \ 
+    //                    \
+    //                     \
+    //                      \ ------------ Clearing Price
+    //                     / \            = AmountRaised/TokenSupply
+    //      Token Price  --   \
+    //                  /      \ 
+    //                --        ----------- Minimum Price
+    // Amount raised /          End Time
+    //
      */
-    function getCurrentPrice() public view returns (uint256) {
+    function price() public view override virtual returns (uint256) {
+       //console.log("in DecreasingPriceAuction, price() called");
+       //console.log("in DecreasingPriceAuction, _getTimedPrice()", _getTimedPrice());
+       //console.log("in DecreasingPriceAuction, _getDemandPrice()", _getDemandPrice());
         return Math.max(_getTimedPrice(), _getDemandPrice());
     }
 
@@ -79,12 +88,12 @@ abstract contract DecreasingPriceAuction is TimedAuction {
             return _finalPrice;
         }
         /**
-        console.log(
-            "block.timestamp.sub(openingTime()",
+       console.log(
+            "block.timestamp.sub(openingTime())",
             block.timestamp.sub(openingTime())
         );
-        console.log("_discountRate", _discountRate);
-        console.log(
+       console.log("_discountRate", _discountRate);
+       console.log(
             "before return, the return expression",
             _initialPrice.sub(
                 (block.timestamp.sub(openingTime())).mul(_discountRate)
@@ -99,17 +108,7 @@ abstract contract DecreasingPriceAuction is TimedAuction {
     }
 
     function _getDemandPrice() internal view returns (uint256) {
+        //console.log("weiRaised().div(tokenMaxAmount())", weiRaised().div(tokenMaxAmount()));
         return weiRaised().div(tokenMaxAmount());
-    }
-
-    /**
-     * @dev Overrides parent method taking into account variable price.
-     * @param weiAmount The value in wei to be converted into tokens
-     * @return The number of tokens _weiAmount wei will buy at present time
-     */
-    function _getTokenAmount(
-        uint256 weiAmount
-    ) internal view override returns (uint256) {
-        return weiAmount.div(getCurrentPrice());
     }
 }

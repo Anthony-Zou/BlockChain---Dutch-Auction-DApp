@@ -9,8 +9,12 @@ contract RefundableAuctionImpl is RefundableAuction {
         uint256 tokenMaxAmount,
         uint256 rate,
         address payable wallet,
-        IERC20 token
-    ) Auction(rate, wallet, token, tokenMaxAmount) RefundableAuction() {
+        IERC20 token,
+        uint256 minimalGoal
+    )
+        Auction(rate, wallet, token, tokenMaxAmount)
+        RefundableAuction(minimalGoal)
+    {
         // solhint-disable-previous-line no-empty-blocks
     }
 }

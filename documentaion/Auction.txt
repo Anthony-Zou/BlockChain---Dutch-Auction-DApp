@@ -1,0 +1,19 @@
+participant Owner
+participant Bidder
+participant AuctionContract
+participant TokenContract
+
+Owner->AuctionContract: Deploy Auction Contract
+note right of AuctionContract: Constructor\nInitialization\n(price, owner, token, maxAmount)
+Bidder->AuctionContract: Place Bids (fallback function)
+note right of AuctionContract:placeBids()\n_preValidateBids()\n_updatePurchasingState()\n_forwardFunds()\n_postValidateBids()\nEmit BidsPlaced event
+AuctionContract->Bidder: Return Excess ETH
+Owner->AuctionContract: Finalize Auction
+note right of AuctionContract:finalize()\n_processPurchase()\n_deliverTokens()\nEmit TokensEmissioned event
+TokenContract->Bidder:Transfer Tokens
+Owner->AuctionContract: Burn Remaining Tokens
+note right of AuctionContract:burnToken()\nBurn Tokens\nUpdate _tokenCleanedup\nEmit TokensBurned event
+Owner->AuctionContract: Withdraw Remaining Tokens
+note right of AuctionContract:withdrawToken()\nSend token back to owner\nUpdate _tokenCleanedup\nEmit TokensEmissioned event
+Owner->AuctionContract: Withdraw Funds
+note right of AuctionContract:withdrawFunds()\nValidation\nUpdate _fundsWithdrawn\nTransfer Funds

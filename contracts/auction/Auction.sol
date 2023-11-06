@@ -53,20 +53,18 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     // Whether the auction funds is withdrawn by the owner
     bool private _fundsWithdrawn;
 
+    // Whether the token is withdrawn or burnt by the owner
+    bool private _tokenCleanedUp;
+
     // Max amount of token to be sold in the auction
     uint256 private _tokenMaxAmount;
 
     /**
      * Event for token purchase logging
      * @param purchaser who paid for the tokens
-     * @param beneficiary who got the tokens
      * @param value weis paid for purchase
      */
-    event BidsPlaced(
-        address indexed purchaser,
-        address indexed beneficiary,
-        uint256 value
-    );
+    event BidsPlaced(address indexed purchaser, uint256 value);
 
     /**
      * Event for token emission logging
@@ -132,6 +130,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
 
         _finalized = false;
         _fundsWithdrawn = false;
+        _tokenCleanedUp = false;
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
@@ -143,11 +142,11 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * placeBids directly when purchasing tokens from a contract.
      */
     fallback() external payable {
-        placeBids(_msgSender());
+        placeBids();
     }
 
     receive() external payable {
-        placeBids(_msgSender());
+        placeBids();
     }
 
     // Get functions
@@ -222,33 +221,53 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @dev low level token purchase ***DO NOT OVERRIDE***
      * This function has a non-reentrancy guard, so it shouldn't be called by
      * another `nonReentrant` function.
-     * @param beneficiary Recipient of the token purchase
      */
-    function placeBids(
-        address beneficiary
-    ) public payable virtual nonReentrant {
+    function placeBids() public payable virtual nonReentrant {
+        // By right, there will never be msg from ZERO_ADDRESS
+        // console.log("_msgSender() != address(0)", _msgSender() != address(0));
+        // require(
+        //     _msgSender() != address(0),
+        //     "Auction: beneficiary is the zero address"
+        // );
+
         uint256 weiAmount = msg.value;
-        _preValidateBids(beneficiary, weiAmount);
-        _updatePurchasingState(beneficiary, weiAmount);
+        //console.log("weiAmount", weiAmount);
+        _preValidateBids(_msgSender(), weiAmount);
+
+        uint256 contributionRecorded = _updatePurchasingState(
+            _msgSender(),
+            weiAmount
+        );
+
+        // Return any ETH to be refunded
+        if (weiAmount > contributionRecorded) {
+            payable(_msgSender()).transfer(weiAmount.sub(contributionRecorded));
+        }
 
         _forwardFunds();
-        _postValidateBids(beneficiary, weiAmount);
-        emit BidsPlaced(_msgSender(), beneficiary, weiAmount);
+        _postValidateBids(_msgSender(), weiAmount);
+        emit BidsPlaced(_msgSender(), weiAmount);
     }
 
     /**
      * @dev Must be called after Auction ends, to do some extra finalization
      * work. Calls the contract's finalization function.
      */
-    function finalize() public virtual onlyWhileNotFinalized nonReentrant {
+    function finalize() public virtual onlyWhileNotFinalized nonReentrant onlyOwner {
+        _preValidateFinalization();
         _finalized = true;
 
         _finalization();
+        _postValidateFinalization();
         emit AuctionFinalized();
     }
 
     function burnToken() public virtual onlyWhileFinalized onlyOwner {
         // Burn the remaining tokens only allowed after finalization
+        require(
+            !_tokenCleanedUp,
+            "Auction: Token already withdrawn or burnt by owner."
+        );
         uint256 remainingTokens = tokenMaxAmount() -
             _getTokenAmount(weiRaised());
 
@@ -256,9 +275,14 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             _token.burn(remainingTokens); // Burn tokens directly
             emit TokensBurned(remainingTokens);
         }
+        _tokenCleanedUp = true;
     }
 
     function withdrawToken() public virtual onlyWhileFinalized onlyOwner {
+        require(
+            !_tokenCleanedUp,
+            "Auction: Token already withdrawn or burnt by owner."
+        );
         // Burn the remaining tokens only allowed after finalization
         uint256 remainingTokens = tokenMaxAmount() -
             _getTokenAmount(weiRaised());
@@ -267,6 +291,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             _deliverTokens(_owner, remainingTokens);
             emit TokensEmissioned(_owner, 0, remainingTokens);
         }
+        _tokenCleanedUp = true;
     }
 
     function withdrawFunds() external onlyWhileFinalized onlyOwner {
@@ -297,22 +322,9 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         address beneficiary,
         uint256 weiAmount
     ) internal view virtual onlyWhileNotFinalized {
-        require(
-            beneficiary != address(0),
-            "Auction: beneficiary is the zero address"
-        );
+        //console.log("in _preValidateBids, beneficiary: ",beneficiary);
         require(weiAmount > 0, "Auction: weiAmount is 0");
-
-        //console.log("in Auction _preValidateBids weiAmount", weiAmount);
-        uint256 newDemand = _getTokenAmount((weiAmount));
-        //console.log("in Auction _preValidateBids newDemand", newDemand);
-        //console.log("in Auction _preValidateBids remainingSupply()", remainingSupply());
-        require(
-            remainingSupply() >= newDemand,
-            "Auction: demand exceeded supply"
-        );
         //console.log("_preValidateBids check passed");
-        this; // silence state mutability warning without generating bytecode - see https://github.com/ethereum/solidity/issues/2691
     }
 
     /**
@@ -372,18 +384,21 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _updatePurchasingState(
         address beneficiary,
         uint256 weiAmount
-    ) internal virtual {
+    ) internal virtual returns (uint256) {
+        uint256 maxAllowed = remainingSupply() * price();
+        ////cosole.log("in Auction _updatePurchasingState maxAllowed", maxAllowed);
+        uint256 recordedAmount = Math.min(maxAllowed, weiAmount);
         // update state
-        _weiRaised = _weiRaised.add(weiAmount);
+        _weiRaised = _weiRaised.add(recordedAmount);
         if (_contributions[beneficiary] == 0) {
             // Push only if the beneficiary only placed bid once
             _queue.push(beneficiary);
             //console.log("Added beneficiary to queue", beneficiary);
         }
         _contributions[beneficiary] = _contributions[beneficiary].add(
-            weiAmount
+            recordedAmount
         );
-        //console.log("Added funds to beneficiary, after add:", _contributions[beneficiary].add(weiAmount));
+        return recordedAmount;
     }
 
     /**
@@ -397,7 +412,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         //console.log("weiAmount", weiAmount);
         //console.log("_price", _price);
         //console.log("weiAmount.div(_price)", weiAmount.div(_price));
-        return weiAmount.div(_price);
+        return weiAmount.div(price());
     }
 
     /**
@@ -409,6 +424,13 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
+     * @dev Can be overridden to add finalization validation logic.
+     */
+    function _preValidateFinalization() internal virtual {
+        //cosole.log("In Auction, _preValidateFinalization()");
+    }
+
+    /**
      * @dev Can be overridden to add finalization logic. The overriding function
      * should call super._finalization() to ensure the chain of finalization is
      * executed entirely.
@@ -416,7 +438,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _finalization() internal virtual {
         // solhint-disable-previous-line no-empty-blocks
         // The simplest logic:
-        //console.log("In _finalization, length of queue: ", _queue.length);
+        //cosole.log("In Auction, _finalization, length of queue: ", _queue.length);
         for (uint i = 0; i < _queue.length; i++) {
             // get the corresponding weiAmount from the map
             uint256 weiAmount = contribution(_queue[i]);
@@ -425,4 +447,9 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         }
         //console.log("Out of loop, before return");
     }
+
+    /**
+     * @dev Can be overridden to add post finalization validation logic.
+     */
+    function _postValidateFinalization() internal virtual {}
 }

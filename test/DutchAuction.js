@@ -5,29 +5,49 @@ const {
   ether,
   expectEvent,
   expectRevert,
+  time,
 } = require("@openzeppelin/test-helpers");
 const { ZERO_ADDRESS } = constants;
 const { expect } = require("chai");
 
-const Auction = artifacts.require("Auction");
+const DutchAuction = artifacts.require("DutchAuction");
 const SimpleToken = artifacts.require("Token");
 
-contract("Auction", function (accounts) {
+contract("DutchAuction", function (accounts) {
   const [investor, owner, purchaser] = accounts;
 
-  const price = ether("1");
+  const initialPrice = new BN("2400"); // Set your initial price here
+  const finalPrice = new BN("1200"); // Set your initial price here
   const value = ether("10");
   const exceedingValue = ether("100");
   const tokenSupply = new BN("10").pow(new BN("35"));
   const insufficientTokenSupply = new BN("10"); // 1 ether = 10^18 wei
 
-  const expectedTokenAmount = value.div(price);
+  before(async function () {
+    // Advance to the next block to correctly read time in the solidity "now" function interpreted by ganache
+    await time.advanceBlock();
+  });
+
+  beforeEach(async function () {
+    this.openingTime = (await time.latest()).add(time.duration.minutes(20));
+    this.closingTime = this.openingTime.add(time.duration.minutes(20));
+    this.afterClosingTime = this.closingTime.add(time.duration.seconds(1));
+    this.token = await SimpleToken.new(tokenSupply);
+  });
   const expectedGasFee = new BN("10").pow(new BN("15")); // 0.001 wei
 
-  context("1. Auction Setup Validation Tests", async function () {
+  context("1. DutchAuction Setup Validation Tests", async function () {
     it("NonNullToken - Requires a non-null token to initiate auction", async function () {
       await expectRevert(
-        Auction.new(price, owner, ZERO_ADDRESS, tokenSupply),
+        DutchAuction.new(
+          this.openingTime,
+          this.closingTime,
+          initialPrice,
+          finalPrice,
+          owner,
+          ZERO_ADDRESS,
+          tokenSupply
+        ),
         "Auction: token is the zero address"
       );
     });
@@ -35,32 +55,157 @@ contract("Auction", function (accounts) {
       this.token = await SimpleToken.new(tokenSupply);
     });
 
-    it("NonZeroPrice - Requires a non-zero price for the auction.", async function () {
+    it("NonZeroPrice - Reverts if the initial price is 0", async function () {
       await expectRevert(
-        Auction.new(0, owner, this.token.address, tokenSupply),
+        DutchAuction.new(
+          this.openingTime,
+          this.closingTime,
+          0,
+          finalPrice,
+          owner,
+          this.token.address,
+          tokenSupply
+        ),
         "Auction: price is 0"
       );
     });
 
+    it("NonZeroPrice - Reverts if the final price is smaller than the initial price", async function () {
+      //console.log("****************************************");
+      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+      await expectRevert(
+        DutchAuction.new(
+          this.openingTime,
+          this.closingTime,
+          initialPrice,
+          0,
+          owner,
+          this.token.address,
+          tokenSupply
+        ),
+        "DecreasingPriceAuction: final price is 0"
+      );
+    });
+
+    it("NonZeroPrice - Reverts if the initial price is euqal to the final price", async function () {
+      //console.log("****************************************");
+      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+      await expectRevert(
+        DutchAuction.new(
+          this.openingTime,
+          this.closingTime,
+          initialPrice,
+          initialPrice,
+          owner,
+          this.token.address,
+          tokenSupply
+        ),
+        "DecreasingPriceAuction: initial price is not greater than final price"
+      );
+    });
+
+    it("NonZeroPrice - Reverts if the price difference is smaller than the time range", async function () {
+      //console.log("****************************************");
+      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+      await expectRevert(
+        DutchAuction.new(
+          this.openingTime,
+          this.closingTime,
+          new BN(2),
+          new BN(1),
+          owner,
+          this.token.address,
+          tokenSupply
+        ),
+        "DecreasingPriceAuction: price discount rate is 0"
+      );
+    });
     it("NonNullOwner - Requires a non-null owner for the auction.", async function () {
       await expectRevert(
-        Auction.new(price, ZERO_ADDRESS, this.token.address, tokenSupply),
+        DutchAuction.new(
+          this.openingTime,
+          this.closingTime,
+          new BN(2),
+          new BN(1),
+          ZERO_ADDRESS,
+          this.token.address,
+          tokenSupply
+        ),
         "Auction: owner is the zero address"
       );
     });
 
     it("NonZeroTokenMaxAmount - Requires a non-zero tokenMaxAmount for the auction.", async function () {
       await expectRevert(
-        Auction.new(price, owner, this.token.address, 0),
+        DutchAuction.new(
+          this.openingTime,
+          this.closingTime,
+          new BN(2),
+          new BN(1),
+          owner,
+          this.token.address,
+          0
+        ),
         "Auction: tokenMaxAmount is 0"
       );
     });
+
+    it("ValidTime - Reverts if the opening time is in the past", async function () {
+      //console.log("****************************************");
+      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
+      await expectRevert(
+        DutchAuction.new(
+          (await time.latest()).sub(time.duration.days(1)),
+          this.closingTime,
+          new BN(2),
+          new BN(1),
+          owner,
+          this.token.address,
+          tokenSupply
+        ),
+        "TimedAuction: opening time is before current time"
+      );
+    });
+
+    it("ValidTime - Reverts if the closing time is before the opening time", async function () {
+      await expectRevert(
+        DutchAuction.new(
+          this.openingTime,
+          this.openingTime.sub(time.duration.seconds(1)),
+          new BN(2),
+          new BN(1),
+          owner,
+          this.token.address,
+          tokenSupply
+        ),
+        "TimedAuction: opening time is not before closing time"
+      );
+    });
+
+    it("ValidTime - Reverts if the closing time equals the opening time", async function () {
+      await expectRevert(
+        DutchAuction.new(
+          this.openingTime,
+          this.openingTime,
+          new BN(2),
+          new BN(1),
+          owner,
+          this.token.address,
+          tokenSupply
+        ),
+        "TimedAuction: opening time is not before closing time"
+      );
+    });
   });
+
   context("2. Deployment and Getter Functions Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
-      this.auction = await Auction.new(
-        price,
+      this.auction = await DutchAuction.new(
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        finalPrice,
         owner,
         this.token.address,
         tokenSupply
@@ -68,7 +213,7 @@ contract("Auction", function (accounts) {
       await this.token.transfer(this.auction.address, tokenSupply);
     });
     it("PriceGetter - Should return the price of the auction.", async function () {
-      expect(await this.auction.price()).to.be.bignumber.equal(price); // Change this to the expected price
+      expect(await this.auction.price()).to.be.bignumber.equal(initialPrice); // Change this to the expected price
     });
 
     it("FinalizedStateGetter - Should return the finalized state of the auction.", async function () {
@@ -93,16 +238,22 @@ contract("Auction", function (accounts) {
       expect(await this.auction.remainingSupply()).to.equal(tokenSupply); // Change this to the expected price
     });
   });
+
   context("3. Accepting Payments and Bids Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
-      this.auction = await Auction.new(
-        price,
+      this.auction = await DutchAuction.new(
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        finalPrice,
         owner,
         this.token.address,
         tokenSupply
       );
       await this.token.transfer(this.auction.address, tokenSupply);
+      // fast forward to opening time
+      await time.increaseTo(this.openingTime);
     });
     it("AcceptBarePayments - Should accept valid payments.", async function () {
       await this.auction.send(value, { from: purchaser });
@@ -133,16 +284,22 @@ contract("Auction", function (accounts) {
     //   );
     // });
   });
+
   context("4. High-Level Bidding Functionality Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
-      this.auction = await Auction.new(
-        price,
+      this.auction = await DutchAuction.new(
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        finalPrice,
         owner,
         this.token.address,
         tokenSupply
       );
       await this.token.transfer(this.auction.address, tokenSupply);
+      // fast forward to opening time
+      await time.increaseTo(this.openingTime);
     });
     it("LogBid - Should log bid details correctly.", async function () {
       const { logs } = await this.auction.sendTransaction({
@@ -184,22 +341,30 @@ contract("Auction", function (accounts) {
   context("5. Finalization Functionality Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
-      this.auction = await Auction.new(
-        price,
+      this.auction = await DutchAuction.new(
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        finalPrice,
         owner,
         this.token.address,
         tokenSupply
       );
       await this.token.transfer(this.auction.address, tokenSupply);
+      // fast forward to after opening time
+      await time.increaseTo(this.openingTime.add(time.duration.minutes(1)));
     });
     it("FinalizedState - Should correctly return finalized() as true.", async function () {
-      await this.auction.finalize({from:owner});
+      await this.auction.finalize({ from: owner });
       expect(await this.auction.finalized()).to.equal(true);
     });
 
     it("RejectReFinalization - Should not accept re-finalization.", async function () {
-      await this.auction.finalize({from:owner});
-      await expectRevert(this.auction.finalize({from:owner}), "Auction: already finalized");
+      await this.auction.finalize({ from: owner });
+      await expectRevert(
+        this.auction.finalize({ from: owner }),
+        "Auction: already finalized"
+      );
     });
 
     it("WithdrawalRestriction - Shouldn't allow funds withdrawl before finalization", async function () {
@@ -219,36 +384,28 @@ contract("Auction", function (accounts) {
         expectedGasFee
       );
     });
-    it("LogTokenEmissionAndFinalization - Should log TokenEmission and AuctionFinalized events.", async function () {
+    it("LogTokenEmissionAndFinalization - Should log AuctionFinalized events.", async function () {
       await this.auction.placeBids({ value: value, from: investor });
-      const receipt = await this.auction.finalize({from:owner});
+      const receipt = await this.auction.finalize({ from: owner });
       //console.log(receipt);
+      expect(await this.auction.minimalGoalMet()).to.equal(false);
       await expectEvent.inLogs(receipt.logs, "AuctionFinalized", {});
-      await expectEvent.inLogs(receipt.logs, "TokensEmissioned", {
-        beneficiary: investor,
-        value: value,
-        amount: expectedTokenAmount,
-      });
     });
 
     it("AssignTokensToBeneficiary - Should assign tokens to beneficiary after finalization.", async function () {
       // receive function
       await this.auction.sendTransaction({ value: value, from: purchaser });
       await this.auction.placeBids({ value, from: investor });
-      await this.auction.finalize({from:owner});
-      expect(await this.token.balanceOf(investor)).to.be.bignumber.equal(
-        expectedTokenAmount
-      );
-      expect(await this.token.balanceOf(purchaser)).to.be.bignumber.equal(
-        expectedTokenAmount
-      );
+      await this.auction.finalize({ from: owner });
+      expect(await this.token.balanceOf(investor)).to.equal(0);
+      expect(await this.token.balanceOf(purchaser)).to.equal(0);
     });
 
     it("FundsWithdrawalToOwner - Should allow funds withdrawal to owner after finalization.", async function () {
       const balanceTracker = await balance.tracker(owner);
       await this.auction.placeBids({ value, from: purchaser });
       await this.auction.sendTransaction({ value: value, from: investor });
-      await this.auction.finalize({from:owner});
+      await this.auction.finalize({ from: owner });
       await this.auction.withdrawFunds({ from: owner });
       expect(await balanceTracker.delta()).to.closeTo(
         value.mul(new BN(2)),
@@ -259,7 +416,7 @@ contract("Auction", function (accounts) {
     it("RejectDoubleWithdrawal - Shouldn't allow double withdrawal to owner after finalization.", async function () {
       await this.auction.placeBids({ value, from: purchaser });
       await this.auction.sendTransaction({ value: value, from: investor });
-      await this.auction.finalize({from:owner});
+      await this.auction.finalize({ from: owner });
       await this.auction.withdrawFunds({ from: owner });
       const balanceTracker = await balance.tracker(owner);
       await expectRevert(
@@ -276,7 +433,7 @@ contract("Auction", function (accounts) {
       const balanceTracker = await balance.tracker(owner);
       await this.auction.placeBids({ value, from: purchaser });
       await this.auction.sendTransaction({ value: value, from: investor });
-      await this.auction.finalize({from:owner});
+      await this.auction.finalize({ from: owner });
       await expectRevert(
         this.auction.withdrawFunds({ from: investor }),
         "Auction: not owner"
@@ -290,8 +447,11 @@ contract("Auction", function (accounts) {
       beforeEach(async function () {
         this.token = await SimpleToken.new(tokenSupply);
         // Initialize the tested contract with the initialRate
-        this.auction = await Auction.new(
-          price,
+        this.auction = await DutchAuction.new(
+          this.openingTime,
+          this.closingTime,
+          initialPrice,
+          finalPrice,
           owner,
           this.token.address,
           insufficientTokenSupply
@@ -302,6 +462,9 @@ contract("Auction", function (accounts) {
           this.auction.address,
           insufficientTokenSupply
         );
+
+        // fast forward to after opening time
+        await time.increaseTo(this.openingTime);
       });
 
       it("AcceptPaymentsWithinBalance - Should accept payments when the request is within balance.", async function () {
@@ -309,14 +472,15 @@ contract("Auction", function (accounts) {
         await this.auction.send(value, { from: investor });
         // Check contribution
         //console.log("1");
-
+        const currentPrice = await this.auction.price();
+        const maxBid = currentPrice.mul(insufficientTokenSupply);
         expect(await this.auction.contribution(investor)).to.be.bignumber.equal(
-          value
+          maxBid
         );
 
         //console.log("2");
         // Check weiRaised
-        expect(await this.auction.weiRaised()).to.be.bignumber.equal(value);
+        expect(await this.auction.weiRaised()).to.be.bignumber.equal(maxBid);
 
         //console.log("3");
         // Check fund forwarding (shouldn't forward fund yet)
@@ -326,41 +490,50 @@ contract("Auction", function (accounts) {
         // Check remaining supply
         expect(await this.auction.remainingSupply()).to.equal(0);
       });
-      it("RejectOverMaxAllowed - Should refund bids over tokenMaxAllowed.", async function () {
+      it("RejectOverMaxAllowed - Should refund excess ether.", async function () {
         const balanceTracker = await balance.tracker(purchaser);
         await this.auction.placeBids({
           value: exceedingValue,
           from: purchaser,
         });
-        const maxBid = insufficientTokenSupply.mul(price);
+        const currentPrice = await this.auction.price();
+        const maxBid = currentPrice.mul(insufficientTokenSupply);
+        console.log("currentPrice", currentPrice);
+        expect(await this.auction.contribution(purchaser)).to.be.bignumber.equal(maxBid
+        );
+        console.log("1");
         // Check contribution
-        expect(
-          await this.auction.contribution(purchaser)
-        ).to.be.bignumber.equal(maxBid);
 
         // Check weiRaised
         expect(await this.auction.weiRaised()).to.be.bignumber.equal(maxBid);
+        console.log("2");
 
         // Check remaining supply
         expect(await this.auction.remainingSupply()).to.equal(0);
+        console.log("3");
 
         // Check fund forwarding
         const actualRefund = await balanceTracker.delta();
-        expect((-actualRefund).toString()).to.be.bignumber.closeTo(maxBid, expectedGasFee);
+        console.log("actualRefund", actualRefund);
+        expect((-actualRefund).toString()).to.be.bignumber.closeTo(
+          maxBid,
+          expectedGasFee
+        );
       });
 
       it("AllowUnderMaxAllowed - Should allow bids under tokenMaxAllowed.", async function () {
         const balanceTracker = await balance.tracker(owner);
         // Shouldn't reject this next bid with smaller demand
         await this.auction.placeBids({ value: value, from: purchaser });
-
+        const currentPrice = await this.auction.price();
+        const maxBid = insufficientTokenSupply.mul(currentPrice);
         // Check contribution
         expect(
           await this.auction.contribution(purchaser)
-        ).to.be.bignumber.equal(value);
+        ).to.be.bignumber.equal(maxBid);
 
         // Check weiRaised
-        expect(await this.auction.weiRaised()).to.equal(value);
+        expect(await this.auction.weiRaised()).to.equal(maxBid);
 
         // Check remaining supply
         expect(await this.auction.remainingSupply()).to.equal(0);
