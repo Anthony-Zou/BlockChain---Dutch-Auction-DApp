@@ -28,8 +28,10 @@ async function main() {
   await da.deployed();
   await writeDeploymentInfo(token, "token.json");
   await writeDeploymentInfo(da, "da.json");
-  console.log(await da.initialPrice());
-  console.log(await da.price());
+
+  console.log((await ethers.provider.getBlock("latest")).timestamp);
+  console.log(await da.openingTime());
+  console.log(await da.closingTime());
 }
 
 async function writeDeploymentInfo(contract, filename = "") {

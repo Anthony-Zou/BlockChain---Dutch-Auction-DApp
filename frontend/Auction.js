@@ -103,7 +103,7 @@ async function getTokenPrice() {
 
 async function getTokenAmount() {
   await getAccess();
-  const tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
+  const tokenMaxAmount = await dutchAuctionContract.remainingSupply();
   document.getElementById("tokenmaxamount").innerHTML = tokenMaxAmount;
 }
 
