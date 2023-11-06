@@ -13,7 +13,7 @@ const RefundableAuctionImpl = artifacts.require("RefundableAuctionImpl"); // Rep
 const SimpleToken = artifacts.require("Token");
 
 contract("RefundableAuction", function (accounts) {
-  const [investor, wallet, purchaser] = accounts;
+  const [investor, owner, purchaser] = accounts;
 
   const value = ether("1");
   const minimalGoal = ether("2");
@@ -32,7 +32,7 @@ contract("RefundableAuction", function (accounts) {
         RefundableAuctionImpl.new(
           tokenSupply,
           price,
-          wallet,
+          owner,
           this.token.address,
           0
         ),
@@ -44,7 +44,7 @@ contract("RefundableAuction", function (accounts) {
         RefundableAuctionImpl.new(
           tokenSupply,
           price,
-          wallet,
+          owner,
           this.token.address,
           ether("10000")
         ),
@@ -59,7 +59,7 @@ contract("RefundableAuction", function (accounts) {
       this.auction = await RefundableAuctionImpl.new(
         insufficientTokenSupply,
         price,
-        wallet,
+        owner,
         this.token.address,
         minimalGoal
       );
@@ -91,7 +91,7 @@ contract("RefundableAuction", function (accounts) {
       this.auction = await RefundableAuctionImpl.new(
         tokenSupply,
         price,
-        wallet,
+        owner,
         this.token.address,
         minimalGoal
       );
@@ -115,7 +115,7 @@ contract("RefundableAuction", function (accounts) {
       this.auction = await RefundableAuctionImpl.new(
         tokenSupply,
         price,
-        wallet,
+        owner,
         this.token.address,
         minimalGoal
       );
@@ -125,7 +125,7 @@ contract("RefundableAuction", function (accounts) {
     });
 
     it("RevertNoRefundForBeneficiary - Ensures that the contract reverts if there's an attempt to claim a refund when none is available for the beneficiary.", async function () {
-      await this.auction.finalize();
+      await this.auction.finalize({from:owner});
       expect(await this.auction.finalized()).to.equal(true);
       expect(await this.auction.allowRefund()).to.equal(true);
       await expectRevert(
@@ -136,7 +136,7 @@ contract("RefundableAuction", function (accounts) {
 
     it("AllowValidRefund - Allows refund for the right beneficiary", async function () {
       await this.auction.placeBids({value: value, from: investor});
-      await this.auction.finalize();
+      await this.auction.finalize({from:owner});
       expect(await this.auction.finalized()).to.equal(true);
       expect(await this.auction.allowRefund()).to.equal(true);
       expect(await this.auction.minimalGoalMet()).to.equal(false);

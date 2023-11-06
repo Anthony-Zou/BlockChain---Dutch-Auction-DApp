@@ -352,13 +352,13 @@ contract("DutchAuction", function (accounts) {
       await this.token.transfer(this.auction.address, tokenSupply);
     });
     it("FinalizedState - Should correctly return finalized() as true.", async function () {
-      await this.auction.finalize();
+      await this.auction.finalize({from:owner});
       expect(await this.auction.finalized()).to.equal(true);
     });
 
     it("RejectReFinalization - Should not accept re-finalization.", async function () {
-      await this.auction.finalize();
-      await expectRevert(this.auction.finalize(), "Auction: already finalized");
+      await this.auction.finalize({from:owner});
+      await expectRevert(this.auction.finalize({from:owner}), "Auction: already finalized");
     });
 
     it("WithdrawalRestriction - Shouldn't allow funds withdrawl before finalization", async function () {
@@ -380,7 +380,7 @@ contract("DutchAuction", function (accounts) {
     });
     it("LogTokenEmissionAndFinalization - Should log TokenEmission and AuctionFinalized events.", async function () {
       await this.auction.placeBids({ value: value, from: investor });
-      const receipt = await this.auction.finalize();
+      const receipt = await this.auction.finalize({from:owner});
       //console.log(receipt);
       await expectEvent.inLogs(receipt.logs, "AuctionFinalized", {});
       await expectEvent.inLogs(receipt.logs, "TokensEmissioned", {
@@ -394,7 +394,7 @@ contract("DutchAuction", function (accounts) {
       // receive function
       await this.auction.sendTransaction({ value: value, from: purchaser });
       await this.auction.placeBids({ value, from: investor });
-      await this.auction.finalize();
+      await this.auction.finalize({from:owner});
       expect(await this.token.balanceOf(investor)).to.be.bignumber.equal(
         expectedTokenAmount
       );
@@ -407,7 +407,7 @@ contract("DutchAuction", function (accounts) {
       const balanceTracker = await balance.tracker(owner);
       await this.auction.placeBids({ value, from: purchaser });
       await this.auction.sendTransaction({ value: value, from: investor });
-      await this.auction.finalize();
+      await this.auction.finalize({from:owner});
       await this.auction.withdrawFunds({ from: owner });
       expect(await balanceTracker.delta()).to.closeTo(
         value.mul(new BN(2)),
@@ -418,7 +418,7 @@ contract("DutchAuction", function (accounts) {
     it("RejectDoubleWithdrawal - Shouldn't allow double withdrawal to owner after finalization.", async function () {
       await this.auction.placeBids({ value, from: purchaser });
       await this.auction.sendTransaction({ value: value, from: investor });
-      await this.auction.finalize();
+      await this.auction.finalize({from:owner});
       await this.auction.withdrawFunds({ from: owner });
       const balanceTracker = await balance.tracker(owner);
       await expectRevert(
@@ -435,7 +435,7 @@ contract("DutchAuction", function (accounts) {
       const balanceTracker = await balance.tracker(owner);
       await this.auction.placeBids({ value, from: purchaser });
       await this.auction.sendTransaction({ value: value, from: investor });
-      await this.auction.finalize();
+      await this.auction.finalize({from:owner});
       await expectRevert(
         this.auction.withdrawFunds({ from: investor }),
         "Auction: not owner"
