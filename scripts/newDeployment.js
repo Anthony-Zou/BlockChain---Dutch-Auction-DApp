@@ -8,10 +8,9 @@ async function main() {
 
   const DutchAuction = await hre.ethers.getContractFactory("DutchAuction");
   const openingTime = (await ethers.provider.getBlock("latest")).timestamp + 1;
-  const closingTime =
-    (await ethers.provider.getBlock("latest")).timestamp + 1200;
-  const initialPrice = 8000;
-  const finalPrice = 500;
+  const closingTime = openingTime + 1200;
+  const initialPrice = 80000;
+  const finalPrice = 10000;
   const tokenMaxAmount = 10000;
   const [deployer] = await hre.ethers.getSigners(); // This will get the deployer's address
   const wallet = deployer.address;

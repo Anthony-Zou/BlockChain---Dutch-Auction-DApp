@@ -73,5 +73,10 @@ contract DutchAuction is DecreasingPriceAuction, RefundableAuction {
     {
         super._postValidateFinalization();
     }
+
     // Additional functions specific to DutchAuction can be added here.
+
+    function getCurrentTime() public view returns (uint256) {
+        return block.timestamp;
+    }
 }

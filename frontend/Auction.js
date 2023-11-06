@@ -1,5 +1,3 @@
-const { time } = require("@openzeppelin/test-helpers");
-
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer;
 
@@ -45,10 +43,9 @@ const dutchAuctionAbi = [
   "function tokenMaxAmount() view returns (uint256)",
   "function weiRaised() view returns (uint256)",
   "function withdrawFunds()",
+  "function getCurrentTime() view returns (uint256)",
   "function withdrawToken()",
 ];
-const dutchAuctionAddress = "0x5fc8d32690cc91d4c39d9d3abcbd16989f875707";
-let dutchAuctionContract = null;
 
 const tokenAbi = [
   "constructor(uint256 initialSupply)",
@@ -73,7 +70,11 @@ const tokenAbi = [
   "function transferFrom(address from, address to, uint256 amount) returns (bool)",
   "function transferOwnership(address newOwner)",
 ];
-const tokenAddress = "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9";
+
+const tokenAddress = "0x0b306bf915c4d645ff596e518faf3f9669b97016";
+const dutchAuctionAddress = "0x959922be3caee4b8cd9a407cc3ac1c251c2007b1";
+
+let dutchAuctionContract = null;
 let tokenContract = null;
 
 async function getAccess() {
@@ -93,7 +94,9 @@ async function getAccess() {
 async function getTokenPrice() {
   await getAccess();
   const price = await dutchAuctionContract.price();
-  console.log((await ethers.provider.getBlock("latest")).timestamp);
+  console.log(new Date());
+  console.log(await dutchAuctionContract.getCurrentTime());
+  console.log(await dutchAuctionContract.openingTime());
   console.log(price);
   document.getElementById("price").innerHTML = price;
 }
@@ -102,4 +105,15 @@ async function getTokenAmount() {
   await getAccess();
   const tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
   document.getElementById("tokenmaxamount").innerHTML = tokenMaxAmount;
+}
+
+async function placeBids() {
+  await getAccess();
+  const numEthToSpend = document.getElementById("tokensToBuy").value;
+  await dutchAuctionContract
+    .placeBids({
+      value: numEthToSpend,
+    })
+    .then(() => alert("Bid Placed"))
+    .catch((error) => alert(`Failed to purchase Place Bid: ${error}`));
 }

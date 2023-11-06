@@ -42,6 +42,18 @@
           <h3>Token Amount (wei): <span id="tokenmaxamount"></span></h3>
           <button onclick="getTokenAmount()">Update Token Amount</button>
         </div>
+        <div class="item">
+          <h3>Buy Tokens (wei)</h3>
+          <div>
+            <input
+              type="number"
+              min="0"
+              placeholder="Enter number of tokens"
+              id="tokensToBuy"
+            />
+            <button onclick="placeBids()">Buy</button>
+          </div>
+        </div>
       </div>
     </div>
     <script
