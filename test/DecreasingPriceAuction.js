@@ -218,7 +218,8 @@ contract("DecreasingPriceAuction", function (accounts) {
           await time.increaseTo(
             this.openingTime.add(time.duration.minutes(10))
           );
-          await this.auction.placeBids({ value, from: purchaser });
+  
+          await this.auction.placeBids({ value: ether("0.5"), from: purchaser });
 
           const currentTime = await time.latest();
           const elapsedTime = currentTime.sub(this.openingTime);
@@ -241,7 +242,7 @@ contract("DecreasingPriceAuction", function (accounts) {
           await time.increaseTo(
             this.openingTime.add(time.duration.minutes(10))
           );
-          await this.auction.placeBids({ value, from: purchaser });
+          await this.auction.placeBids({ value: ether("1.5"), from: purchaser });
 
           const currentTime = await time.latest();
           const elapsedTime = currentTime.sub(this.openingTime);
@@ -254,11 +255,47 @@ contract("DecreasingPriceAuction", function (accounts) {
 
           // Increase the time
           await time.increaseTo(
-            this.openingTime.add(time.duration.minutes(15))
+            this.openingTime.add(time.duration.minutes(20))
           );
-          expect(await this.auction.price()).to.be.bignumber.equal(currentPrice);
+         
+          // Calculate the new current time
+          const newCurrentTime = await time.latest();
+          // Calculate the new elapsed time
+          const newElapsedTime = newCurrentTime.sub(this.openingTime);
+          // Calculate the new rate based on the updated time
+          const newRate = finalPrice
+            .sub(currentPrice)  // Adjust based on the current price
+            .div(this.closingTime.sub(this.openingTime));
+
+          // Calculate the new expected current price based on the updated rate
+          const newCurrentPrice = currentPrice.add(newElapsedTime.mul(newRate));
+
+          expect(await this.auction.price()).to.be.bignumber.equal(newCurrentPrice);
         });
       });
+
+      describe("Getting correct prices", function () {
+        it("ReturnPriceWithTimeAndBidAdjustment - Should return correct time-decreased price equal to demand expected price.", async function () {
+          // 10 minutes after auction start
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(10))
+          );
+          await this.auction.placeBids({ value, from: purchaser });
+      
+          const currentTime = await time.latest();
+          const elapsedTime = currentTime.sub(this.openingTime);
+          // Calculate a rate that results in demandPrice equal to timedPrice
+          const rate = finalPrice
+            .sub(initialPrice)
+            .div(this.closingTime.sub(this.openingTime));
+          // Calculate demandPrice equal to timedPrice
+          const demandPrice = initialPrice.add(elapsedTime.mul(rate));
+      
+          const actualPrice = await this.auction.price();
+          expect(actualPrice).to.be.bignumber.equal(demandPrice);
+        });
+      });
+      
     }
   );
 });
