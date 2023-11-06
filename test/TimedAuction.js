@@ -11,7 +11,7 @@ const TimedAuctionImpl = artifacts.require("TimedAuctionImpl");
 const SimpleToken = artifacts.require("Token");
 
 contract("TimedAuction", function (accounts) {
-  const [investor, wallet, purchaser] = accounts;
+  const [investor, owner, purchaser] = accounts;
   const rate = new BN(1);
   const value = ether("42");
   const tokenSupply = new BN("10").pow(new BN("22"));
@@ -36,7 +36,7 @@ contract("TimedAuction", function (accounts) {
           (await time.latest()).sub(time.duration.days(1)),
           this.closingTime,
           rate,
-          wallet,
+          owner,
           this.token.address,
           tokenSupply
         ),
@@ -50,7 +50,7 @@ contract("TimedAuction", function (accounts) {
           this.openingTime,
           this.openingTime.sub(time.duration.seconds(1)),
           rate,
-          wallet,
+          owner,
           this.token.address,
           tokenSupply
         ),
@@ -64,7 +64,7 @@ contract("TimedAuction", function (accounts) {
           this.openingTime,
           this.openingTime,
           rate,
-          wallet,
+          owner,
           this.token.address,
           tokenSupply
         ),
@@ -78,7 +78,7 @@ contract("TimedAuction", function (accounts) {
         this.openingTime,
         this.closingTime,
         rate,
-        wallet,
+        owner,
         this.token.address,
         tokenSupply
       );
@@ -88,7 +88,7 @@ contract("TimedAuction", function (accounts) {
     it("Finalization Timing	- Rreverts if the finalize() function is called before opening time", async function () {
       expect(await this.Auction.isOpen()).to.equal(false);
       expect(await this.Auction.afterOpen()).to.equal(false);
-      await expectRevert(this.Auction.finalize(), "TimedAuction: hasn't open");
+      await expectRevert(this.Auction.finalize({from:owner}), "TimedAuction: hasn't open");
     });
 
     it("End State Recognition	- Auction should be ended only after end", async function () {
