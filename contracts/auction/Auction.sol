@@ -53,6 +53,9 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     // Whether the auction funds is withdrawn by the owner
     bool private _fundsWithdrawn;
 
+    // Whether the token is withdrawn or burnt by the owner
+    bool private _tokenCleanedUp;
+
     // Max amount of token to be sold in the auction
     uint256 private _tokenMaxAmount;
 
@@ -130,6 +133,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
 
         _finalized = false;
         _fundsWithdrawn = false;
+        _tokenCleanedUp = false;
 
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
@@ -262,6 +266,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
 
     function burnToken() public virtual onlyWhileFinalized onlyOwner {
         // Burn the remaining tokens only allowed after finalization
+        require(!_tokenCleanedUp, "Auction: Token already withdrawn or burnt by owner.");
         uint256 remainingTokens = tokenMaxAmount() -
             _getTokenAmount(weiRaised());
 
@@ -269,9 +274,11 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             _token.burn(remainingTokens); // Burn tokens directly
             emit TokensBurned(remainingTokens);
         }
+        _tokenCleanedUp = true;
     }
 
     function withdrawToken() public virtual onlyWhileFinalized onlyOwner {
+        require(!_tokenCleanedUp, "Auction: Token already withdrawn or burnt by owner.");
         // Burn the remaining tokens only allowed after finalization
         uint256 remainingTokens = tokenMaxAmount() -
             _getTokenAmount(weiRaised());
@@ -280,6 +287,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             _deliverTokens(_owner, remainingTokens);
             emit TokensEmissioned(_owner, 0, remainingTokens);
         }
+        _tokenCleanedUp = true;
     }
 
     function withdrawFunds() external onlyWhileFinalized onlyOwner {
