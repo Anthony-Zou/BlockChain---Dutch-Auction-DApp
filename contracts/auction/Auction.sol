@@ -231,6 +231,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         
 
         uint256 weiAmount = msg.value;
+        //console.log("weiAmount", weiAmount);
         _preValidateBids(_msgSender(), weiAmount);
     
         uint256 contributionRecorded = _updatePurchasingState(_msgSender(), weiAmount);
@@ -250,10 +251,13 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * work. Calls the contract's finalization function.
      */
     function finalize() public virtual onlyWhileNotFinalized nonReentrant {
+        _preValidateFinalization();
         _finalized = true;
 
         _finalization();
+        _postValidateFinalization();
         emit AuctionFinalized();
+        
     }
 
     function burnToken() public virtual onlyWhileFinalized onlyOwner {
@@ -371,7 +375,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     ) internal virtual returns(uint256){
         
         uint256 maxAllowed = remainingSupply() * price();
-        // console.log("in Auction _updatePurchasingState maxAllowed", maxAllowed);
+        ////cosole.log("in Auction _updatePurchasingState maxAllowed", maxAllowed);
         uint256 recordedAmount = Math.min(maxAllowed, weiAmount);
         // update state
         _weiRaised = _weiRaised.add(recordedAmount);
@@ -409,6 +413,13 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
+     * @dev Can be overridden to add finalization validation logic. 
+     */
+     function _preValidateFinalization() internal virtual{
+       //cosole.log("In Auction, _preValidateFinalization()");
+     }
+
+    /**
      * @dev Can be overridden to add finalization logic. The overriding function
      * should call super._finalization() to ensure the chain of finalization is
      * executed entirely.
@@ -416,7 +427,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _finalization() internal virtual {
         // solhint-disable-previous-line no-empty-blocks
         // The simplest logic:
-        //console.log("In _finalization, length of queue: ", _queue.length);
+       //cosole.log("In Auction, _finalization, length of queue: ", _queue.length);
         for (uint i = 0; i < _queue.length; i++) {
             // get the corresponding weiAmount from the map
             uint256 weiAmount = contribution(_queue[i]);
@@ -425,4 +436,11 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         }
         //console.log("Out of loop, before return");
     }
+
+    /**
+     * @dev Can be overridden to add post finalization validation logic. 
+     */
+     function _postValidateFinalization() internal virtual{
+
+     }
 }

@@ -74,7 +74,9 @@ abstract contract DecreasingPriceAuction is TimedAuction {
     //
      */
     function price() public view override virtual returns (uint256) {
-        console.log("in DecreasingPriceAuction, price() called");
+       //console.log("in DecreasingPriceAuction, price() called");
+       //console.log("in DecreasingPriceAuction, _getTimedPrice()", _getTimedPrice());
+       //console.log("in DecreasingPriceAuction, _getDemandPrice()", _getDemandPrice());
         return Math.max(_getTimedPrice(), _getDemandPrice());
     }
 
@@ -86,12 +88,12 @@ abstract contract DecreasingPriceAuction is TimedAuction {
             return _finalPrice;
         }
         /**
-        console.log(
+       console.log(
             "block.timestamp.sub(openingTime())",
             block.timestamp.sub(openingTime())
         );
-        console.log("_discountRate", _discountRate);
-        console.log(
+       console.log("_discountRate", _discountRate);
+       console.log(
             "before return, the return expression",
             _initialPrice.sub(
                 (block.timestamp.sub(openingTime())).mul(_discountRate)

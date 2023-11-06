@@ -240,7 +240,6 @@ contract("DutchAuction", function (accounts) {
     });
   });
   
-  /**
   context("3. Accepting Payments and Bids Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
@@ -254,6 +253,8 @@ contract("DutchAuction", function (accounts) {
           tokenSupply
       );
       await this.token.transfer(this.auction.address, tokenSupply);
+      // fast forward to opening time
+      await time.increaseTo(this.openingTime);
     });
     it("AcceptBarePayments - Should accept valid payments.", async function () {
       await this.auction.send(value, { from: purchaser });
@@ -289,12 +290,17 @@ contract("DutchAuction", function (accounts) {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
       this.auction = await DutchAuction.new(
-        price,
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        finalPrice,
         owner,
         this.token.address,
         tokenSupply
       );
       await this.token.transfer(this.auction.address, tokenSupply);
+      // fast forward to opening time
+      await time.increaseTo(this.openingTime);
     });
     it("LogBid - Should log bid details correctly.", async function () {
       const { logs } = await this.auction.sendTransaction({
@@ -333,6 +339,7 @@ contract("DutchAuction", function (accounts) {
       expect(await balanceTracker.delta()).to.be.equal(0);
     });
   });
+  /**
   context("5. Finalization Functionality Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);

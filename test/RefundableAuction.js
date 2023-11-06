@@ -16,60 +16,84 @@ contract("RefundableAuction", function (accounts) {
   const [investor, wallet, purchaser] = accounts;
 
   const value = ether("1");
-  const rate = new BN("10");
-  const tokenSupply = new BN("10").pow(new BN("22"));
-  const insufficientTokenSupply = new BN("10").pow(new BN("19")); // 1 ether = 10^18 wei, multiply by rate = 10^19
+  const minimalGoal = ether("2");
+  const price = new BN("10");
+  const tokenSupply = new BN("10").pow(new BN("19"));
+  const insufficientTokenSupply = new BN("10").pow(new BN("18")); // 1 ether = 10^18 wei, multiply by price = 10^19
+  const expectedGasFee = new BN("10").pow(new BN("15")); // 0.001 wei
 
   beforeEach(async function () {
     this.token = await SimpleToken.new(tokenSupply);
   });
 
-  context("1. Auction with sufficient token balance", function () {
-    beforeEach(async function () {
-      // Initialize the tested contract with the initialRate
-      this.auction = await RefundableAuctionImpl.new(
-        tokenSupply,
-        rate,
-        wallet,
-        this.token.address
+  context("1. Initialization Validity Tests", function () {
+    it("RevertsIfMinimalGoalIsZero - Reverts if the minimal goal is 0.", async function () {
+      await expectRevert(
+        RefundableAuctionImpl.new(
+          tokenSupply,
+          price,
+          wallet,
+          this.token.address,
+          0
+        ),
+        "RefundableAuction: minimal goal is 0"
       );
-
-      // Transfer tokens to the Auction contract
-      await this.token.transfer(this.auction.address, tokenSupply);
     });
-    it("ReturnAllowRefundState - Should return the allowRefund state of the auction", async function () {
-      expect(await this.auction.allowRefund()).to.equal(false); // Change this to the expected rate
+    it("RevertsIfMinimalGoalIsBiggerThanSupply - Reverts if the minimal goal is larger than supply.", async function () {
+      await expectRevert(
+        RefundableAuctionImpl.new(
+          tokenSupply,
+          price,
+          wallet,
+          this.token.address,
+          ether("10000")
+        ),
+        "RefundableAuction: minimal goal larger than max supply"
+      );
     });
-    // describe("basic getter functions", function () {
-    //   it("ReturnAllowRefundState - Should return the allowRefund state of the auction", async function () {
-    //     expect(await this.auction.allowRefund()).to.equal(false); // Change this to the expected rate
-    //   });
-    // });
   });
 
-  context("2. Auction with insufficient token balance", function () {
+  context("2. MinimalGoal Retrieval Tests", function () {
     beforeEach(async function () {
-      // Initialize the tested contract with the initialRate
+      // Initialize the tested contract with the initialprice
       this.auction = await RefundableAuctionImpl.new(
         insufficientTokenSupply,
-        rate,
+        price,
         wallet,
-        this.token.address
+        this.token.address,
+        minimalGoal
       );
 
       // Transfer tokens to the Auction contract
       await this.token.transfer(this.auction.address, insufficientTokenSupply);
     });
+
+    it("RecordMinimalGoal - Should record the minimal goal of the auction correctly.", async function () {
+      // Check if the initial price is set correctly
+      expect(await this.auction.minimalGoal()).to.be.bignumber.equal(minimalGoal);
+    });
+
+    it("ReturnRefundableStatusCorrectly - Should return True if minimal goal met.", async function () {
+      // Check if the initial price is set correctly
+      await this.auction.placeBids({value: ether("10"), from:investor});
+      expect(await this.auction.minimalGoalMet()).to.be.equal(true);
+    });
+
+    it("ReturnRefundableStatusCorrectly - Should return False if minimal goal is not met.", async function () {
+      // Check if the initial price is set correctly
+      expect(await this.auction.minimalGoalMet()).to.be.equal(false);
+    });
   });
 
   context("3. Before Finalization", function () {
     beforeEach(async function () {
-      // Initialize the tested contract with the initialRate
+      // Initialize the tested contract with the initialprice
       this.auction = await RefundableAuctionImpl.new(
         tokenSupply,
-        rate,
+        price,
         wallet,
-        this.token.address
+        this.token.address,
+        minimalGoal
       );
 
       // Transfer tokens to the Auction contract
@@ -85,14 +109,15 @@ contract("RefundableAuction", function (accounts) {
     });
   });
 
-  context("4. After finalization", function () {
+  context("4. After finalization, auction minimal goal not met", function () {
     beforeEach(async function () {
-      // Initialize the tested contract with the initialRate
+      // Initialize the tested contract with the initialprice
       this.auction = await RefundableAuctionImpl.new(
         tokenSupply,
-        rate,
+        price,
         wallet,
-        this.token.address
+        this.token.address,
+        minimalGoal
       );
 
       // Transfer tokens to the Auction contract
@@ -109,17 +134,15 @@ contract("RefundableAuction", function (accounts) {
       );
     });
 
-    // Currently no scenario for refund as exceeding demand will be directly rejected
-    /**
-    it("should allow refund for the right beneficiary", async function () {
+    it("AllowValidRefund - Allows refund for the right beneficiary", async function () {
+      await this.auction.placeBids({value: value, from: investor});
       await this.auction.finalize();
       expect(await this.auction.finalized()).to.equal(true);
       expect(await this.auction.allowRefund()).to.equal(true);
-      await expectRevert(
-        this.auction.claimRefund({ from: purchaser }),
-        "RefundableAuction: no refunds available"
-        );
-      });
-      */
+      expect(await this.auction.minimalGoalMet()).to.equal(false);
+      const balanceTracker = await balance.tracker(investor);
+      await this.auction.claimRefund({ from: investor });
+      expect(await balanceTracker.delta()).to.be.bignumber.closeTo(value, expectedGasFee);
+    });
   });
 });

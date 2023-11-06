@@ -7,8 +7,11 @@ import "./auction/RefundableAuction.sol";
 /**
  * @title DutchAuction
  * @dev Combined auction contract that inherits behavior from both RefundableAuction and DecreasingPriceAuction.
+ * @dev Note, DecreasingPriceAuction needs to be implemented before RefundableAuction for expected behaviour
  */
-contract DutchAuction is RefundableAuction, DecreasingPriceAuction {
+contract DutchAuction is DecreasingPriceAuction, RefundableAuction {
+    using SafeMath for uint256;
+
     constructor(
         uint256 openingTime,
         uint256 closingTime,
@@ -21,7 +24,7 @@ contract DutchAuction is RefundableAuction, DecreasingPriceAuction {
         Auction(initialPrice, wallet, token, tokenMaxAmount)
         TimedAuction(openingTime, closingTime)
         DecreasingPriceAuction(initialPrice, finalPrice)
-        RefundableAuction()
+        RefundableAuction(finalPrice.mul(tokenMaxAmount))
     {}
 
     // Explicitly override price function
@@ -55,16 +58,20 @@ contract DutchAuction is RefundableAuction, DecreasingPriceAuction {
         super._processPurchase(beneficiary, weiAmount);
     }
 
-    /**
-     * @dev Overrides the finalization behavior to combine both parent contracts.
-     */
-    function _finalization()
+    // Explicitly override _preValidateBids from RefundableAuction
+    function _preValidateFinalization()
         internal
-        override(RefundableAuction, TimedAuction)
+        override(Auction, TimedAuction)
     {
-        // Add your custom logic here or use behavior from both parent contracts
-        super._finalization();
+        super._preValidateFinalization();
     }
 
+    // Explicitly override _preValidateBids from RefundableAuction
+    function _postValidateFinalization()
+        internal
+        override(Auction, RefundableAuction)
+    {
+        super._postValidateFinalization();
+    }
     // Additional functions specific to DutchAuction can be added here.
 }

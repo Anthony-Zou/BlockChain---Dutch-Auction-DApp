@@ -16,6 +16,7 @@ abstract contract RefundableAuction is Auction {
 
     mapping(address => uint256) private _refunds;
     bool _allowRefund = false;
+    uint256 _minimalGoal;
 
     event ClaimableRefund(address indexed beneficiary, uint256 value);
 
@@ -25,6 +26,48 @@ abstract contract RefundableAuction is Auction {
     modifier onlyWhileRefundable() {
         require(_allowRefund, "RefundableAuction: refund not allowed");
         _;
+    }
+
+    /**
+     * @dev Constructor, takes Auction opening and closing times.
+     * @param minimalGoal_ Auction minimal weiAmountRaised
+     */
+    constructor(uint256 minimalGoal_) {
+        // solhint-disable-next-line not-rely-on-time
+        require(minimalGoal_ > 0, "RefundableAuction: minimal goal is 0");
+       /**
+       cosole.log(
+            "In RefundableAuction constructor, minimalGoal_",
+            minimalGoal_
+        );
+       cosole.log(
+            "In RefundableAuction constructor, tokenMaxAmount())",
+            tokenMaxAmount()
+        );
+       cosole.log(
+            "In RefundableAuction constructor, price())",
+            price()
+        );
+       cosole.log(
+            "In RefundableAuction constructor, SafeMath.mul(tokenMaxAmount(), price())",
+            SafeMath.mul(tokenMaxAmount(), price())
+        );
+        */
+        require(
+            minimalGoal_ <= SafeMath.mul(tokenMaxAmount(), price()),
+            "RefundableAuction: minimal goal larger than max supply"
+        );
+        _minimalGoal = minimalGoal_;
+    }
+
+    function minimalGoal() public view returns (uint256) {
+        return _minimalGoal;
+    }
+
+    function minimalGoalMet() public view returns (bool) {
+        // console.log("minimalGoal_", _minimalGoal);
+        // console.log("weiRaised()", weiRaised());
+        return weiRaised() >= _minimalGoal;
     }
 
     function allowRefund() public view returns (bool) {
@@ -53,6 +96,12 @@ abstract contract RefundableAuction is Auction {
         address beneficiary,
         uint256 weiAmount
     ) internal virtual override {
+        if (!minimalGoalMet()) {
+            _refunds[beneficiary] += weiAmount;
+            emit ClaimableRefund(beneficiary, weiAmount);
+            return;
+        }
+
         uint256 demand = _getTokenAmount(weiAmount);
         uint256 supply = remainingSupply();
 
@@ -77,8 +126,8 @@ abstract contract RefundableAuction is Auction {
     /**
      * @dev Escrow finalization task, called when finalize() is called.
      */
-    function _finalization() internal virtual override {
-        super._finalization();
+    function _postValidateFinalization() internal virtual override {
+       // console.log("In RefundableAuction, _postValidateFinalization()");
         _allowRefund = true;
     }
 }
