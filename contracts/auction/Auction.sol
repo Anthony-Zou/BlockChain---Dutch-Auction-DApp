@@ -258,8 +258,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         }
 
         _forwardFunds();
-        _postValidateBids(_msgSender(), weiAmount);
-        emit BidsPlaced(_msgSender(), weiAmount);
+        _postValidateBids(_msgSender(), contributionRecorded);
+        emit BidsPlaced(_msgSender(), contributionRecorded);
     }
 
     /**
