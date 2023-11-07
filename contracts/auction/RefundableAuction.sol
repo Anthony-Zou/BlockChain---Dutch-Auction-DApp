@@ -7,8 +7,8 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
  * @title RefundableAuction
- * @dev Extension of `Auction` contract that adds a max token amount, and the possibility of users
- * getting a refund if the token is oversold.
+ * @dev Extension of `Auction` contract that adds a minimal auction goal, and the possibility of users
+ * getting a refund if the token is oversold(auction goal not met).
  */
 abstract contract RefundableAuction is Auction {
     using SafeMath for uint256;
@@ -34,24 +34,6 @@ abstract contract RefundableAuction is Auction {
     constructor(uint256 minimalGoal_) {
         // solhint-disable-next-line not-rely-on-time
         require(minimalGoal_ > 0, "RefundableAuction: minimal goal is 0");
-       /**
-       cosole.log(
-            "In RefundableAuction constructor, minimalGoal_",
-            minimalGoal_
-        );
-       cosole.log(
-            "In RefundableAuction constructor, tokenMaxAmount())",
-            tokenMaxAmount()
-        );
-       cosole.log(
-            "In RefundableAuction constructor, price())",
-            price()
-        );
-       cosole.log(
-            "In RefundableAuction constructor, SafeMath.mul(tokenMaxAmount(), price())",
-            SafeMath.mul(tokenMaxAmount(), price())
-        );
-        */
         require(
             minimalGoal_ <= SafeMath.mul(tokenMaxAmount(), price()),
             "RefundableAuction: minimal goal larger than max supply"
@@ -64,9 +46,7 @@ abstract contract RefundableAuction is Auction {
     }
 
     function minimalGoalMet() public view returns (bool) {
-        // console.log("minimalGoal_", _minimalGoal);
-        // console.log("weiRaised()", weiRaised());
-        return weiRaised() >= _minimalGoal;
+        return weiRaised() >= minimalGoal();
     }
 
     function allowRefund() public view returns (bool) {
@@ -88,7 +68,8 @@ abstract contract RefundableAuction is Auction {
     }
 
     /**
-     * @dev Extending parent behaviour to keep change if the tokenAmount is not sufficient for the weiAmount
+     * @dev Extending parent behaviour to refund/change if the tokenAmount is not sufficient for the
+     * beneficiary contributed weiAmount
      * @param beneficiary Address performing the token purchase
      * @param weiAmount Number of weiAmount contributed to this beneficiary
      */
@@ -96,6 +77,7 @@ abstract contract RefundableAuction is Auction {
         address beneficiary,
         uint256 weiAmount
     ) internal virtual override {
+        // Refund everything if the minimal goal is not reached
         if (!minimalGoalMet()) {
             _refunds[beneficiary] += weiAmount;
             emit ClaimableRefund(beneficiary, weiAmount);
@@ -122,7 +104,7 @@ abstract contract RefundableAuction is Auction {
     }
 
     /**
-     * @dev Escrow finalization task, called when finalize() is called.
+     * @dev Extends parent behaviour to only allow fund withdrawl if the auction is successful.
      */
     function _postValidateFinalization() internal virtual override {
         if(minimalGoalMet())

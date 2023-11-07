@@ -238,15 +238,9 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * another `nonReentrant` function.
      */
     function placeBids() public payable virtual nonReentrant {
-        // By right, there will never be msg from ZERO_ADDRESS
-        // console.log("_msgSender() != address(0)", _msgSender() != address(0));
-        // require(
-        //     _msgSender() != address(0),
-        //     "Auction: beneficiary is the zero address"
-        // );
-
+        // No requirement on non-null bidder because 
+        // by right there will never be msg from ZERO_ADDRESS
         uint256 weiAmount = msg.value;
-        //console.log("weiAmount", weiAmount);
         _preValidateBids(_msgSender(), weiAmount);
 
         uint256 contributionRecorded = _updatePurchasingState(
@@ -254,7 +248,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             weiAmount
         );
 
-        // Return any ETH to be refunded
+        // Return excess ETH
         if (weiAmount > contributionRecorded) {
             payable(_msgSender()).transfer(weiAmount.sub(contributionRecorded));
         }
@@ -363,11 +357,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     // customizeable funtions (overrides)
 
     /**
-     * @dev Validation of an incoming purchase. Use require statements to revert state when conditions are not met.
+     * @dev Validation of an incoming bid. Use require statements to revert state when conditions are not met.
      * Use `super` in contracts that inherit from Auction to extend their validations.
-     * Example from CappedAuction.sol's _preValidateBids method:
-     *     super._preValidateBids(beneficiary, weiAmount);
-     *     require(weiRaised().add(weiAmount) <= cap);
      * @param beneficiary Address performing the token purchase
      * @param weiAmount Value in wei involved in the purchase
      */
@@ -398,8 +389,9 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Source of tokens. Override this method to modify the way in which the Auction ultimately gets and sends
-     * its tokens.
+     * @dev Process bids after finalization. 
+     * Override this method to modify the way in which the Auction ultimately 
+     * process bids
      * @param beneficiary Address performing the token purchase
      * @param weiAmount Number of weiAmount contributed to this beneficiary
      */
@@ -475,7 +467,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Determines how ETH is stored/forwarded on purchases.
+     * @dev Determines how ETH is stored/forwarded on receiving bids.
      */
     function _forwardFunds() internal {
         //_owner.transfer(msg.value);

@@ -95,7 +95,7 @@ abstract contract TimedAuction is Auction {
     }
 
     /**
-     * @dev Extend parent behavior requiring finalization to be after auction starts.
+     * @dev Extend parent behavior requiring finalization to be after auction closes.
      */
     function _preValidateFinalization() 
     internal 
