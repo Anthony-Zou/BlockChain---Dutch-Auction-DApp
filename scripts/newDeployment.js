@@ -24,7 +24,7 @@ async function main() {
     token.address,
     tokenMaxAmount
   );
-
+  await token.transfer(da.address, tokenAddress);
   await da.deployed();
   await writeDeploymentInfo(token, "token.json");
   await writeDeploymentInfo(da, "da.json");
