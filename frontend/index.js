@@ -94,10 +94,6 @@ async function getAccess() {
 async function getTokenPrice() {
   await getAccess();
   const price = await dutchAuctionContract.price();
-
-  console.log(await dutchAuctionContract.getCurrentTime());
-  console.log(await dutchAuctionContract.openingTime());
-  console.log(price);
   document.getElementById("price").innerHTML = price;
 }
 
@@ -109,141 +105,19 @@ async function getTokenAmount() {
 
 async function placeBids() {
   await getAccess();
-  const numEthToSpend = document.getElementById("bid").value;
+  const numEthToSpend = document.getElementById("tokensToBuy").value;
   await dutchAuctionContract
     .placeBids({
       value: numEthToSpend,
     })
     .then(() => alert("Bid Placed"))
-    .catch((error) =>
-      alert(`Failed to purchase Place Bid: ${error["data"]["message"]}`)
-    );
+    .catch((error) => alert(`Failed to purchase Place Bid: ${error}`));
 }
+
 async function UpdateStatus() {
   await getAccess();
   const price = await dutchAuctionContract.price();
   const tokenMaxAmount = await dutchAuctionContract.remainingSupply();
-  // Convert Unix timestamp to milliseconds and create a Date object
-
-  document.getElementById("CurrentTokenAmtInput").value = tokenMaxAmount;
-  document.getElementById("priceInput").value = price;
-  document.getElementById("timeInput").value = convertTime(
-    await dutchAuctionContract.getCurrentTime()
-  );
-
-  console.log(
-    "getCurrentTime" + convertTime(await dutchAuctionContract.getCurrentTime())
-  );
-  console.log(
-    "openingTime" + convertTime(await dutchAuctionContract.openingTime())
-  );
-  console.log(
-    "closingTime" + convertTime(await dutchAuctionContract.closingTime())
-  );
-
-  console.log("afterOpen " + (await dutchAuctionContract.afterOpen()));
-  console.log("allowRefund " + (await dutchAuctionContract.allowRefund()));
-  console.log("closingTime " + (await dutchAuctionContract.closingTime()));
-  console.log("finalized " + (await dutchAuctionContract.finalized()));
-  console.log("hasClosed " + (await dutchAuctionContract.hasClosed()));
-  console.log("initialPrice " + (await dutchAuctionContract.initialPrice()));
-  console.log("isOpen " + (await dutchAuctionContract.isOpen()));
-  console.log("minimalGoal " + (await dutchAuctionContract.minimalGoal()));
-  console.log(
-    "minimalGoalMet " + (await dutchAuctionContract.minimalGoalMet())
-  );
-  console.log("openingTime " + (await dutchAuctionContract.openingTime()));
-  console.log("owner " + (await dutchAuctionContract.owner()));
-  console.log("price " + (await dutchAuctionContract.price()));
-  console.log(
-    "remainingSupply " + (await dutchAuctionContract.remainingSupply())
-  );
-  console.log(
-    "remainingSupply " + (await dutchAuctionContract.remainingSupply())
-  );
-  console.log("token " + (await dutchAuctionContract.token()));
-  console.log(
-    "tokenMaxAmount " + (await dutchAuctionContract.tokenMaxAmount())
-  );
-  console.log("weiRaised " + (await dutchAuctionContract.weiRaised()));
-  console.log(
-    "getCurrentTime " + (await dutchAuctionContract.getCurrentTime())
-  );
-  // console.log(
-  //   "getcontribution " +
-  //     (await dutchAuctionContract.contribution(
-  //       "await dutchAuctionContract.owner()"
-  //     ))
-  // );
-  getMetaMaskAccount().then((account) => {
-    console.log("Current MetaMask account:", account);
-  });
+  document.getElementById("CurrentTokenAmt").innerHTML = tokenMaxAmount;
+  document.getElementById("price").innerHTML = price;
 }
-async function getMetaMaskAccount() {
-  // Check if MetaMask is installed
-  if (window.ethereum) {
-    try {
-      // Request account access if needed
-      const accounts = await window.ethereum.request({
-        method: "eth_requestAccounts",
-      });
-
-      // Accounts now exposed, return the first account address
-      return accounts[0];
-    } catch (error) {
-      console.error("User denied account access or an error occurred:", error);
-    }
-  } else {
-    console.log(
-      "MetaMask is not installed. Please consider installing it: https://metamask.io/download.html"
-    );
-  }
-}
-
-function convertTime(hex) {
-  const hexTimestamp = hex; // Replace with the value from your contract call
-  const decimalTimestamp = parseInt(hexTimestamp * 1000); // Convert hexadecimal to decimal
-  const date = new Date(decimalTimestamp);
-  return date.toISOString();
-}
-
-async function burnToken() {
-  await getAccess();
-  await dutchAuctionContract
-    .burnToken()
-    .then(() => alert("Token Burned"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
-}
-async function claimRefund() {
-  await getAccess();
-  await dutchAuctionContract
-    .claimRefund()
-    .then(() => alert("Fund Claimed"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
-}
-
-async function finalize() {
-  await getAccess();
-  await dutchAuctionContract
-    .finalize()
-    .then(() => alert("Finalized"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
-}
-
-async function withdrawFunds() {
-  await getAccess();
-  await dutchAuctionContract
-    .withdrawFunds()
-    .then(() => alert("Fund Withdrawn"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
-}
-
-async function withdrawToken() {
-  await getAccess();
-  await dutchAuctionContract
-    .withdrawToken()
-    .then(() => alert("Token Withdrawn"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
-}
-
-// function contribution(address beneficiary) view returns (uint256)",

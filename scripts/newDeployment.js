@@ -29,9 +29,18 @@ async function main() {
   await writeDeploymentInfo(token, "token.json");
   await writeDeploymentInfo(da, "da.json");
 
-  console.log((await ethers.provider.getBlock("latest")).timestamp);
-  console.log(await da.openingTime());
-  console.log(await da.closingTime());
+  // Mine blocks at intervals after deployment
+  for (let i = 0; i < 20; i++) {
+    // Forward time by 1 minute
+    const newTimestampInSeconds =
+      (await ethers.provider.getBlock("latest")).timestamp + 60;
+    await ethers.provider.send("evm_mine", [newTimestampInSeconds]);
+    console.log(
+      `Time forwarded by 1 minute and new block mined. Current block timestamp: ${newTimestampInSeconds}`
+    );
+    // Wait for 1 minute in real time if needed
+    // await new Promise(resolve => setTimeout(resolve, 60 * 1000));
+  }
 }
 
 async function writeDeploymentInfo(contract, filename = "") {
@@ -48,7 +57,9 @@ async function writeDeploymentInfo(contract, filename = "") {
   await fs.writeFile(filename, content, { encoding: "utf-8" });
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

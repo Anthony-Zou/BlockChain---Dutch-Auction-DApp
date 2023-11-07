@@ -32,15 +32,140 @@
   <body>
     <div class="container">
       <h2>Dutch Auction</h2>
+      <p class="lead">
+        Welcome to the forefront of decentralized auctions: our Blockchain
+        Dutch Auction WebApp seamlessly combines transparency, fairness, and
+        innovation to revolutionize the way you experience asset trading.
+      </p>
+    
 
+      <div class="row g-5">
+      <div class="col-md-5 col-lg-4 order-md-last">
+        <h4 class="d-flex justify-content-between align-items-center mb-3">
+          <span class="text-primary">Bid List</span>
+          <span class="badge bg-primary rounded-pill">3</span>
+        </h4>
+        <ul class="list-group mb-3">
+          <li class="list-group-item d-flex justify-content-between lh-sm">
+            <div>
+              <h6 class="my-0">Address 1</h6>
+              <small class="text-body-secondary">X Coin  </small>
+            </div>
+            <span class="text-body-secondary">$xxx</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between lh-sm">
+            <div>
+              <h6 class="my-0">Address 2</h6>
+              <small class="text-body-secondary">X Coin  </small>
+            </div>
+            <span class="text-body-secondary">$xxx</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between lh-sm">
+            <div>
+              <h6 class="my-0">Address 3</h6>
+              <small class="text-body-secondary">X Coin  </small>
+            </div>
+            <span class="text-body-secondary">$xxx</span>
+
+        </ul>
+
+        <div class="card p-2">
+          <div class="input-group">
+            <input
+              type="text"
+              class="form-control"
+              placeholder="Promo code"
+              id="bid"
+            />
+            <button  class="btn btn-secondary" onclick="placeBids()">PlaceBids</button>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-7 col-lg-8">
+        <div class="row g-3">
+          <div class="col-sm-4">
+            <label for="firstName" class="form-label">Token Price</label>
+            <input
+              type="text"   
+              class="form-control"         
+              id="priceInput"
+              placeholder=""
+              disabled
+            />
+          </div>
+          <div class="col-sm-4">
+            <label for="firstName" class="form-label">Token Pool</label>
+            <input
+              type="text"
+              class="form-control"
+              id="CurrentTokenAmtInput"
+ 
+              disabled
+            />
+          </div>
+          <div class="col-sm-4">
+            <label for="lastName" class="form-label">Time</label>
+            <input
+              type="text"
+              class="form-control"
+              id="timeInput"
+  
+              disabled
+            />
+          </div>
+          <button class="btn btn-primary" onclick="UpdateStatus()">
+            Update status
+          </button>
+          <hr class="my-4 " />
+          <div class=""><table>
+    
+          <tr>
+            <td><button type="button" class="btn btn-outline-secondary" onclick="withdrawToken()">Withdraw Token</button></td>
+       
+        
+            <td><button type="button" class="btn btn-outline-success" onclick="withdrawFunds()">Withdraw Funds</button></td>
+          
+          </tr>
+          <tr></tr>
+          <tr>
+            <td><button type="button" class="btn btn-outline-danger" onclick="burnToken()">BurnToken</button></td>
+         
+          
+            <td><button type="button" class="btn btn-outline-warning" onclick="claimRefund()">ClaimRefund</button></td>
+       
+          
+            <td><button type="button" class="btn btn-outline-info" onclick="finalize()">Finalize</button></td>
+       
+          </tr>
+
+          </table>
+          
+          </div>
+      </div>
+      
+        </div>
+        </div>
+<!-- 
       <div class="row">
         <div class="item">
           <h3>Token Price (wei): <span id="price"></span></h3>
-          <button onclick="getTokenPrice()">Update Price</button>
+          <button
+            class="btn btn-primary rounded-pill px-3"
+            type="button"
+            onclick="getTokenPrice()"
+          >
+            Update Price
+          </button>
         </div>
         <div class="item">
           <h3>Token Amount (wei): <span id="tokenmaxamount"></span></h3>
-          <button onclick="getTokenAmount()">Update Token Amount</button>
+          <button
+            class="btn btn-primary rounded-pill px-3"
+            type="button"
+            onclick="getTokenAmount()"
+          >
+            Update Token Amount
+          </button>
         </div>
         <div class="item">
           <h3>Buy Tokens (wei)</h3>
@@ -51,15 +176,39 @@
               placeholder="Enter number of tokens"
               id="tokensToBuy"
             />
-            <button onclick="placeBids()">Buy</button>
+            <button
+              class="btn btn-primary rounded-pill px-3"
+              type="button"
+              onclick="placeBids()"
+            >
+              Buy
+            </button>
           </div>
         </div>
-      </div>
-    </div>
+  
+    </div> -->
+
+
+
+
+
+
+
     <script
       src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"
       type="application/javascript"
     ></script>
     <script type="text/javascript" src="Auction.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+      crossorigin="anonymous"
+    />
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+      crossorigin="anonymous"
+    ></script>
   </body>
 </html>
