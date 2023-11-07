@@ -1,6 +1,12 @@
+
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer;
 
+// Declare a global variable to store JSON data
+let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
+/**
+ * 
+ * 
 // ABIs and contract addresses
 const dutchAuctionAbi = [
   "constructor(uint256 openingTime, uint256 closingTime, uint256 initialPrice, uint256 finalPrice, address wallet, address token, uint256 tokenMaxAmount)",
@@ -72,13 +78,41 @@ const tokenAbi = [
 ];
 
 const tokenAddress = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0";
-const dutchAuctionAddress = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9";
+const dutchAuctionAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+
+ */
+
+async function loadJSON() {
+  try {
+
+    // Use the Fetch API to load the JSON data
+    const daResponse = await fetch('../da.json');
+    const daJsonData = await daResponse.json();
+    dutchAuctionAddress = daJsonData.contract.address;
+    dutchAuctionAbi = daJsonData.contract.abi;
+    
+    // Use the Fetch API to load the JSON data
+    const tokenResponse = await fetch('../token.json');
+    const tokenJsonData = await tokenResponse.json();
+    tokenAddress = tokenJsonData.contract.address;
+    tokenAbi = tokenJsonData.contract.abi;
+  } catch (error) {
+    console.error('Error loading JSON:', error);
+  }
+}
+
+// Call the loadJSON function to start the process
+
 
 let dutchAuctionContract = null;
 let tokenContract = null;
 
 async function getAccess() {
   if (tokenContract) return;
+  await loadJSON();
+  //console.log(dutchAuctionAddress);
+  //console.log(dutchAuctionAbi);
+
   await provider.send("eth_requestAccounts", []);
   signer = provider.getSigner();
   dutchAuctionContract = new ethers.Contract(
