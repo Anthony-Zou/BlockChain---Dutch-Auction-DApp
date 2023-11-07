@@ -132,7 +132,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         _fundsWithdrawn = false;
         _tokenCleanedUp = false;
 
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(DEFAULT_ADMIN_ROLE, owner_);
     }
 
     /**

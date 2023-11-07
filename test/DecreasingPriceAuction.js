@@ -210,7 +210,7 @@ contract("DecreasingPriceAuction", function (accounts) {
         await this.token.transfer(this.auction.address, tokenSupply);
       });
 
-      describe("Getting correct prices", function () {
+      describe("Getting correct prices - Basic", function () {
         it("ReturnPriceWithTimeAndBidAdjustment - Should return correct time-decreased price when demand expected price is lower.", async function () {
           // 10 minutes after auction start
           // TODO: Fill the test case
@@ -234,7 +234,7 @@ contract("DecreasingPriceAuction", function (accounts) {
         });
       });
       
-      describe("Getting correct prices", function () {
+      describe("Getting correct prices - Advanced", function () {
         it("ReturnPriceWithTimeAndBidAdjustment - Should return correct demand expected price when time-decreased price is lower.", async function () {
           // 10 minutes after auction start
           // TODO: Fill the test case
@@ -272,9 +272,7 @@ contract("DecreasingPriceAuction", function (accounts) {
 
           expect(await this.auction.price()).to.be.bignumber.equal(newCurrentPrice);
         });
-      });
-
-      describe("Getting correct prices", function () {
+        
         it("ReturnPriceWithTimeAndBidAdjustment - Should return correct time-decreased price equal to demand expected price.", async function () {
           // 10 minutes after auction start
           await time.increaseTo(

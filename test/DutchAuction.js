@@ -36,7 +36,11 @@ contract("DutchAuction", function (accounts) {
   });
   const expectedGasFee = new BN("10").pow(new BN("15")); // 0.001 wei
 
-  context("1. DutchAuction Setup Validation Tests", async function () {
+  context("1. DutchAuction Constructor Validation Tests", async function () {
+    beforeEach(async function () {
+      this.token = await SimpleToken.new(tokenSupply);
+    });
+
     it("NonNullToken - Requires a non-null token to initiate auction", async function () {
       await expectRevert(
         DutchAuction.new(
@@ -50,9 +54,6 @@ contract("DutchAuction", function (accounts) {
         ),
         "Auction: token is the zero address"
       );
-    });
-    beforeEach(async function () {
-      this.token = await SimpleToken.new(tokenSupply);
     });
 
     it("NonZeroPrice - Reverts if the initial price is 0", async function () {
@@ -120,6 +121,7 @@ contract("DutchAuction", function (accounts) {
         "DecreasingPriceAuction: price discount rate is 0"
       );
     });
+
     it("NonNullOwner - Requires a non-null owner for the auction.", async function () {
       await expectRevert(
         DutchAuction.new(
@@ -212,6 +214,19 @@ contract("DutchAuction", function (accounts) {
       );
       await this.token.transfer(this.auction.address, tokenSupply);
     });
+
+    describe("StatusGetter - Should return the correct auction status", function () {
+      it("afterOpen() - Should return the correct value when in different status", async function () {
+        expect(await this.auction.afterOpen()).to.equal(false);
+        await time.increaseTo(this.openingTime);
+        expect(await this.auction.afterOpen()).to.equal(true);
+        await time.increaseTo(this.closingTime);
+        expect(await this.auction.afterOpen()).to.equal(true);
+        await time.increaseTo(this.afterClosingTime);
+        expect(await this.auction.afterOpen()).to.equal(true);
+      });
+    });
+
     it("PriceGetter - Should return the price of the auction.", async function () {
       expect(await this.auction.price()).to.be.bignumber.equal(initialPrice); // Change this to the expected price
     });
@@ -239,7 +254,211 @@ contract("DutchAuction", function (accounts) {
     });
   });
 
-  context("3. Accepting Payments and Bids Tests", async function () {
+  context(
+    "3. Get the correct price when time and demand increase",
+    async function () {
+      beforeEach(async function () {
+        this.token = await SimpleToken.new(tokenSupply);
+        this.auction = await DutchAuction.new(
+          this.openingTime,
+          this.closingTime,
+          2400,
+          1200,
+          owner,
+          this.token.address,
+          10 //tokenSupply
+        );
+        await this.token.transfer(this.auction.address, tokenSupply);
+      });
+
+      describe("Basic price getters test", function () {
+        it("RedirectCallsToPricesFunction - Should redirect calls to the prices() function.", async function () {
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            initialPrice
+          );
+        });
+
+        it("RecordInitialAndFinalPrice - Should record the initial and final price correctly.", async function () {
+          // Check if the initial price is set correctly
+          const actualInitialPrice = await this.auction.initialPrice();
+          expect(actualInitialPrice).to.be.bignumber.equal(initialPrice);
+          // Check if the final price is set correctly
+          const actualFinalPrice = await this.auction.finalPrice();
+          expect(actualFinalPrice).to.be.bignumber.equal(finalPrice);
+        });
+
+        it("ReturnInitialPriceBeforeStart - Should return initial price before start.", async function () {
+          // current price should be initial price before start
+          expect(await this.auction.isOpen()).to.equal(false);
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            initialPrice
+          );
+        });
+
+        it("ReturnInitialAtStart - Should return initial at the start.", async function () {
+          // price should be initial price at the beginning
+          await time.increaseTo(this.openingTime);
+          expect(await this.auction.isOpen()).to.equal(true);
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            initialPrice
+          );
+        });
+
+        it("ReturnTimeDecreasedPrice - Should return correct time-decreased price.", async function () {
+          // 10 minutes after auction start
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(10))
+          );
+          const currentTime = await time.latest();
+          const elapsedTime = currentTime.sub(this.openingTime);
+          // Use math.floor because this is the expected code logic
+          const rate = finalPrice
+            .sub(initialPrice)
+            .div(this.closingTime.sub(this.openingTime));
+          const currentPrice = initialPrice.add(elapsedTime.mul(rate));
+
+          const actualPrice = await this.auction.price();
+          expect(actualPrice).to.be.bignumber.equal(currentPrice);
+        });
+
+        it("ReturnLatestPriceAtTimeOfClose - Should return the latest price at the time of close.", async function () {
+          // At the exact moment of closing time, price should be final price
+          await time.increaseTo(this.closingTime);
+          expect(await this.auction.hasClosed()).to.equal(false);
+
+          const currentTime = await time.latest();
+          const elapsedTime = currentTime.sub(this.openingTime);
+          // Use math.floor because this is the expected code logic
+          const rate = finalPrice
+            .sub(initialPrice)
+            .div(this.closingTime.sub(this.openingTime));
+          const currentPrice = initialPrice.add(elapsedTime.mul(rate));
+
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            currentPrice
+          );
+        });
+
+        it("ReturnFinalPriceAfterClosed	- Should return final price after closed.", async function () {
+          // After auction ends, price should be final price
+          await time.increaseTo(this.afterClosingTime);
+          expect(await this.auction.hasClosed()).to.equal(true);
+          expect(await this.auction.price()).to.be.bignumber.equal(finalPrice);
+        });
+      });
+
+      describe("Getting correct prices - Advanced", function () {
+        it("ReturnPriceWithTimeAndBidAdjustment - Should return correct demand expected price when time-decreased price is lower.", async function () {
+          // 10 minutes after auction start
+          // TODO: Fill the test case
+
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(10))
+          );
+          await this.auction.placeBids({
+            value: ether("1"),
+            from: purchaser,
+          });
+
+          const currentTime = await time.latest();
+          const elapsedTime = currentTime.sub(this.openingTime);
+          // Analogy math.floor because this is the expected code logic
+          const rate = finalPrice
+            .sub(initialPrice)
+            .div(this.closingTime.sub(this.openingTime));
+          const currentPrice = initialPrice.add(elapsedTime.mul(rate));
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            currentPrice
+          );
+
+          // Increase the time, the price returned shouldn't decrease anymore
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(15))
+          );
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            currentPrice
+          );
+          await time.increaseTo(this.closingTime);
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            currentPrice
+          );
+          await time.increaseTo(this.afterClosingTime);
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            currentPrice
+          );
+        });
+
+        it("ReturnPriceWithTimeAndBidAdjustment - Should return correct time-decreased price equal to demand expected price.", async function () {
+          // 5 minutes after auction start
+          await time.increaseTo(this.openingTime.add(time.duration.minutes(5)));
+
+          // tokenSupply = 10, price = 2400 -> 1200
+          // place a smaller bid, that will take over supply at price = 1440(time=16)
+          await this.auction.placeBids({
+            value: 14400,
+            from: purchaser,
+          });
+
+          // Calculate a rate that results in demandPrice equal to timedPrice
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            new BN(2099)
+          );
+
+          // place another bid of 3600 (current wei=18000, expect to freeze price after 10minutes)
+          // 6 minutes after auction start
+          await time.increaseTo(this.openingTime.add(time.duration.minutes(6)));
+          // place a smaller bid, that will take over supply at price = 1800(time=10)
+          await this.auction.placeBids({
+            value: 3600,
+            from: purchaser,
+          });
+          // Calculate a rate that results in demandPrice equal to timedPrice
+          expect(await this.auction.price()).to.closeTo(
+            new BN(2040),
+            new BN(2)
+          );
+
+          await time.increaseTo(this.openingTime.add(time.duration.minutes(8)));
+          // Calculate a rate that results in demandPrice equal to timedPrice
+          expect(await this.auction.price()).to.closeTo(
+            new BN(1920),
+            new BN(2)
+          );
+
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(10))
+          );
+          // Calculate a rate that results in demandPrice equal to timedPrice
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            new BN(1800)
+          );
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(15))
+          );
+          // Calculate a rate that results in demandPrice equal to timedPrice
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            new BN(1800)
+          );
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(20))
+          );
+          // Calculate a rate that results in demandPrice equal to timedPrice
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            new BN(1800)
+          );
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(25))
+          );
+          // Calculate a rate that results in demandPrice equal to timedPrice
+          expect(await this.auction.price()).to.be.bignumber.equal(
+            new BN(1800)
+          );
+        });
+      });
+    }
+  );
+
+  context("4. Accepting Payments and Bids Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
       this.auction = await DutchAuction.new(
@@ -255,6 +474,7 @@ contract("DutchAuction", function (accounts) {
       // fast forward to opening time
       await time.increaseTo(this.openingTime);
     });
+
     it("AcceptBarePayments - Should accept valid payments.", async function () {
       await this.auction.send(value, { from: purchaser });
     });
@@ -285,7 +505,7 @@ contract("DutchAuction", function (accounts) {
     // });
   });
 
-  context("4. High-Level Bidding Functionality Tests", async function () {
+  context("5. High-Level Bidding Functionality Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
       this.auction = await DutchAuction.new(
@@ -338,7 +558,7 @@ contract("DutchAuction", function (accounts) {
       expect(await balanceTracker.delta()).to.be.equal(0);
     });
   });
-  context("5. Finalization Functionality Tests", async function () {
+  context("6. Finalization Functionality Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);
       this.auction = await DutchAuction.new(
@@ -357,6 +577,10 @@ contract("DutchAuction", function (accounts) {
     it("FinalizedState - Should correctly return finalized() as true.", async function () {
       await this.auction.finalize({ from: owner });
       expect(await this.auction.finalized()).to.equal(true);
+    });
+
+    it("RejectFinalizationFromNonOwner - Should not accept finalization request from non-owner.", async function () {
+      await expectRevert(this.auction.finalize(), "Auction: not owner");
     });
 
     it("RejectReFinalization - Should not accept re-finalization.", async function () {
@@ -442,7 +666,7 @@ contract("DutchAuction", function (accounts) {
     });
   });
   context(
-    "6. Auction with Insufficient Token Balance Tests",
+    "7. Auction with Insufficient Token Balance Tests",
     async function () {
       beforeEach(async function () {
         this.token = await SimpleToken.new(tokenSupply);
@@ -499,8 +723,9 @@ contract("DutchAuction", function (accounts) {
         const currentPrice = await this.auction.price();
         const maxBid = currentPrice.mul(insufficientTokenSupply);
         console.log("currentPrice", currentPrice);
-        expect(await this.auction.contribution(purchaser)).to.be.bignumber.equal(maxBid
-        );
+        expect(
+          await this.auction.contribution(purchaser)
+        ).to.be.bignumber.equal(maxBid);
         console.log("1");
         // Check contribution
 
@@ -543,4 +768,216 @@ contract("DutchAuction", function (accounts) {
       });
     }
   );
+  context("8. Refund Functionality Tests", async function () {
+    beforeEach(async function () {
+      this.token = await SimpleToken.new(tokenSupply);
+      this.auction = await DutchAuction.new(
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        finalPrice,
+        owner,
+        this.token.address,
+        tokenSupply
+      );
+      await this.token.transfer(this.auction.address, tokenSupply);
+      // fast forward to after opening time
+      await time.increaseTo(this.openingTime.add(time.duration.minutes(1)));
+    });
+
+    it("RefundAfterClosingTime - Should allow investors to claim refunds is auction is not successful", async function () {
+      const balanceTracker = await balance.tracker(investor);
+      await this.auction.sendTransaction({ value, from: investor });
+      expect((-await balanceTracker.delta()).toString()).to.closeTo(value, expectedGasFee);
+      await this.auction.placeBids({ value, from: investor });
+      expect((-await balanceTracker.delta()).toString()).to.closeTo(value, expectedGasFee);
+      await time.increaseTo(this.afterClosingTime);
+      await this.auction.finalize({ from: owner });
+      await this.auction.claimRefund({ from: investor });
+      // Check if the investor's balance has been refunded
+      expect(await balanceTracker.delta()).to.closeTo(
+        value.mul(new BN(2)),
+        expectedGasFee
+      );
+    });
+
+    it("RefundNotAvailableBeforeClosingTime - Should not allow investors to claim refunds before closing time", async function () {
+      await this.auction.placeBids({ value, from: investor });
+      await expectRevert(
+        this.auction.claimRefund({ from: investor }),
+        "Auction: refund not allowed"
+      );
+    });
+
+    it("RefundOnlyForBidders - Should not allow non-bidders to claim refunds", async function () {
+      await this.auction.placeBids({ value, from: investor });
+      await time.increaseTo(this.afterClosingTime);
+      await this.auction.finalize({ from: owner });
+      await expectRevert(
+        this.auction.claimRefund({ from: owner }),
+        "RefundableAuction: no refunds available"
+      );
+    });
+  });
+
+  context("9. Burn Token Functionality Tests", async function () {
+    beforeEach(async function () {
+      this.token = await SimpleToken.new(tokenSupply);
+      this.auction = await DutchAuction.new(
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        finalPrice,
+        owner,
+        this.token.address,
+        tokenSupply
+      );
+      await this.token.transfer(this.auction.address, tokenSupply);
+      // fast forward to after opening time
+      await time.increaseTo(this.openingTime);
+    });
+
+    it("RejectTokenBurnWhenNotFinalized - Should not allow the owner to burn excess tokens when not finalized", async function () {
+      const initialTokenBalance = await this.token.balanceOf(
+        this.auction.address
+      );
+      await expectRevert(this.auction.burnToken(), "Auction: not finalized");
+    });
+
+    it("RejectTokenBurnFromNonOwner - Should not allow non-owner to burn tokens", async function () {
+      const initialTokenBalance = await this.token.balanceOf(
+        this.auction.address
+      );
+      await this.auction.finalize({ from: owner });
+      await expectRevert(
+        this.auction.burnToken({ from: investor }),
+        "Auction: not owner"
+      );
+      const finalTokenBalance = await this.token.balanceOf(
+        this.auction.address
+      );
+      expect(finalTokenBalance).to.be.bignumber.equal(initialTokenBalance);
+    });
+
+    it("OwnerCanBurnToken - Should allow the owner to burn excess tokens", async function () {
+      const initialTokenBalance = await this.token.balanceOf(
+        this.auction.address
+      );
+      await this.auction.finalize({ from: owner });
+      await this.auction.burnToken({ from: owner });
+      const finalTokenBalance = await this.token.balanceOf(
+        this.auction.address
+      );
+      expect(finalTokenBalance).to.be.bignumber.equal(new BN(0));
+      expect(initialTokenBalance).to.be.bignumber.above(finalTokenBalance);
+    });
+
+    it("RejectBurningTokenMultipleTimes - Should not allow owner to burn tokens multiple times", async function () {
+      await this.auction.finalize({ from: owner });
+      await this.auction.burnToken({ from: owner });
+      await expectRevert(
+        this.auction.burnToken({ from: owner }),
+        "Auction: Token already withdrawn or burnt by owner."
+      );
+      expect(await this.token.balanceOf(this.auction.address)).to.equal(0);
+      expect(await this.token.balanceOf(owner)).to.equal(0);
+    });
+  });
+
+  /**
+   * 
+  context("9. Role Management Tests", async function () {
+    it("GrantRole - Should allow the owner to grant a role to an account", async function () {
+      const role = await this.auction.DEFAULT_ADMIN_ROLE();
+      const accountToGrant = investor;
+      await this.auction.grantRole(role, accountToGrant, { from: owner });
+      const hasRole = await this.auction.hasRole(role, accountToGrant);
+      expect(hasRole).to.be.true;
+    });
+
+    it("RevokeRole - Should allow the owner to revoke a role from an account", async function () {
+      const role = await this.auction.DEFAULT_ADMIN_ROLE();
+      const accountToRevoke = investor;
+      await this.auction.grantRole(role, accountToRevoke, { from: owner });
+      let hasRole = await this.auction.hasRole(role, accountToRevoke);
+      expect(hasRole).to.be.true;
+
+      await this.auction.revokeRole(role, accountToRevoke, { from: owner });
+      hasRole = await this.auction.hasRole(role, accountToRevoke);
+      expect(hasRole).to.be.false;
+    });
+  });
+
+   */
+  context("10. Withdraw Token Functionality Tests", async function () {
+    beforeEach(async function () {
+      this.token = await SimpleToken.new(tokenSupply);
+      this.auction = await DutchAuction.new(
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        finalPrice,
+        owner,
+        this.token.address,
+        tokenSupply
+      );
+      await this.token.transfer(this.auction.address, tokenSupply);
+      // fast forward to after opening time
+      await time.increaseTo(this.openingTime.add(time.duration.minutes(1)));
+    });
+
+    it("WithdrawTokenByOwner - Should allow the owner to withdraw remaining tokens", async function () {
+      // expect contract to have all the balance
+      expect(
+        await this.token.balanceOf(this.auction.address)
+      ).to.be.bignumber.equal(tokenSupply);
+      expect(await this.token.balanceOf(owner)).to.equal(0);
+      await this.auction.finalize({ from: owner });
+      expect(await this.auction.finalized()).to.equal(true);
+      await this.auction.withdrawToken({ from: owner });
+      expect(await this.token.balanceOf(this.auction.address)).to.equal(0);
+      expect(await this.token.balanceOf(owner)).to.be.bignumber.equal(
+        tokenSupply
+      );
+    });
+
+    it("WithdrawTokenByNonOwner - Should not allow non-owners to withdraw tokens", async function () {
+      await this.auction.finalize({ from: owner });
+      await expectRevert(
+        this.auction.withdrawToken({ from: investor }),
+        "Auction: not owner"
+      );
+    });
+  });
+
+  context("11. MinimalGoal Tests", async function () {
+    beforeEach(async function () {
+      this.token = await SimpleToken.new(tokenSupply);
+      this.auction = await DutchAuction.new(
+        this.openingTime,
+        this.closingTime,
+        initialPrice,
+        finalPrice,
+        owner,
+        this.token.address,
+        10
+      );
+      await this.token.transfer(this.auction.address, tokenSupply);
+      // fast forward to after opening time
+      await time.increaseTo(this.openingTime.add(time.duration.minutes(1)));
+    });
+
+    it("MinimalGoalMet - Should return true if the minimal goal is met", async function () {
+      await this.auction.placeBids({ value, from: investor });
+      await time.increaseTo(this.closingTime.add(time.duration.minutes(1)));
+      await this.auction.finalize({ from: owner });
+      expect(await this.auction.minimalGoalMet()).to.equal(true);
+    });
+
+    it("MinimalGoalNotMet - Should return false if the minimal goal is not met", async function () {
+      await time.increaseTo(this.closingTime.add(time.duration.minutes(1)));
+      await this.auction.finalize({ from: owner });
+      expect(await this.auction.minimalGoalMet()).to.be.false;
+    });
+  });
 });
