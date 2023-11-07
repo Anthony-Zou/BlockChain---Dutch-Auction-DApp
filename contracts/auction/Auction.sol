@@ -278,11 +278,13 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         _tokenCleanedUp = true;
     }
 
-    function withdrawToken() public virtual onlyWhileFinalized onlyOwner {
+    function withdrawToken() public virtual onlyWhileFinalized onlyOwner nonReentrant {
         require(
             !_tokenCleanedUp,
             "Auction: Token already withdrawn or burnt by owner."
         );
+        // Update the status first to prevent re-entrance attack
+        _tokenCleanedUp = true;
         // Burn the remaining tokens only allowed after finalization
         uint256 remainingTokens = tokenMaxAmount() -
             _getTokenAmount(weiRaised());
@@ -291,12 +293,12 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             _deliverTokens(_owner, remainingTokens);
             emit TokensEmissioned(_owner, 0, remainingTokens);
         }
-        _tokenCleanedUp = true;
     }
 
-    function withdrawFunds() external onlyWhileFinalized onlyOwner {
+    function withdrawFunds() external onlyWhileFinalized onlyOwner nonReentrant{
         require(!_fundsWithdrawn, "Auction: Funds already withdrawn");
         //console.log("In withdrawFunds(), passed all validation");
+        // Update the status first to prevent re-entrance attack
         _fundsWithdrawn = true;
         _owner.transfer(weiRaised());
         /**
@@ -322,6 +324,10 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         address beneficiary,
         uint256 weiAmount
     ) internal view virtual onlyWhileNotFinalized {
+        require(
+            beneficiary != address(0),
+            "Auction: beneficiary is the zero address"
+        );
         //console.log("in _preValidateBids, beneficiary: ",beneficiary);
         require(weiAmount > 0, "Auction: weiAmount is 0");
         //console.log("_preValidateBids check passed");
@@ -349,7 +355,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _processPurchase(
         address beneficiary,
         uint256 weiAmount
-    ) internal virtual {
+    ) internal virtual nonReentrant {
         // calculate token amount to be created
         uint256 tokenAmount = _getTokenAmount(weiAmount);
 
@@ -371,7 +377,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _deliverTokens(
         address beneficiary,
         uint256 tokenAmount
-    ) internal virtual {
+    ) internal virtual nonReentrant{
         _token.safeTransfer(beneficiary, tokenAmount);
     }
 
@@ -435,13 +441,17 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * should call super._finalization() to ensure the chain of finalization is
      * executed entirely.
      */
-    function _finalization() internal virtual {
+    function _finalization() internal virtual nonReentrant {
         // solhint-disable-previous-line no-empty-blocks
         // The simplest logic:
         //cosole.log("In Auction, _finalization, length of queue: ", _queue.length);
         for (uint i = 0; i < _queue.length; i++) {
             // get the corresponding weiAmount from the map
             uint256 weiAmount = contribution(_queue[i]);
+
+            // update contributions to prevent re-entrance attack on the tokens
+            _contributions[_queue[i]] = 0;
+
             //console.log("In _finalization loop, weiAmount: ", weiAmount);
             _processPurchase(_queue[i], weiAmount);
         }

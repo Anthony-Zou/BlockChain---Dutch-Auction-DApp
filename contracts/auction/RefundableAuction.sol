@@ -77,13 +77,14 @@ abstract contract RefundableAuction is Auction {
     /**
      * @dev Investors can claim refunds here if the token is soldout.
      */
-    function claimRefund() public onlyWhileRefundable {
+    function claimRefund() public onlyWhileRefundable nonReentrant{
         require(
             _refunds[_msgSender()] > 0,
             "RefundableAuction: no refunds available"
         );
         uint256 refundAmount = _refunds[_msgSender()];
-        _refunds[_msgSender()] = 0; // Reset the refund balance to prevent double withdrawal
+        // Reset the refund balance before external call to prevent re-entrance attack
+        _refunds[_msgSender()] = 0; 
         payable(_msgSender()).transfer(refundAmount);
     }
 
