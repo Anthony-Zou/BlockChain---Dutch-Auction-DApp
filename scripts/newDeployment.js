@@ -7,7 +7,7 @@ async function main() {
   await token.deployed();
 
   const DutchAuction = await hre.ethers.getContractFactory("DutchAuction");
-  const openingTime = (await ethers.provider.getBlock("latest")).timestamp + 1;
+  const openingTime = (await ethers.provider.getBlock("latest")).timestamp + 10;
   const auctionDuration = 1200;
   const initialPrice = 80000;
   const finalPrice = 10000;
@@ -40,9 +40,9 @@ async function main() {
     const newTimestampInSeconds =
       (await ethers.provider.getBlock("latest")).timestamp + blockIntervalSeconds;
     await ethers.provider.send("evm_mine", [newTimestampInSeconds]);
-    console.log(
-      `Time forwarded by ${blockIntervalSeconds} seconds and new block mined. Current block timestamp: ${newTimestampInSeconds}`
-    );
+    // console.log(
+    //   `Time forwarded by ${blockIntervalSeconds} seconds and new block mined. Current block timestamp: ${newTimestampInSeconds}`
+    // );
     // Wait for the block interval in real time if needed
   }
 }

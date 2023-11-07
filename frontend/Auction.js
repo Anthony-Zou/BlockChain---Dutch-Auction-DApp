@@ -1,114 +1,34 @@
-
 const provider = new ethers.providers.Web3Provider(window.ethereum);
-let signer;
+let signer, dutchAuctionContract, tokenContract;
 
 // Declare a global variable to store JSON data
 let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
-/**
- * 
- * 
-// ABIs and contract addresses
-const dutchAuctionAbi = [
-  "constructor(uint256 openingTime, uint256 closingTime, uint256 initialPrice, uint256 finalPrice, address wallet, address token, uint256 tokenMaxAmount)",
-  "event AuctionFinalized()",
-  "event BidsPlaced(address indexed purchaser, uint256 value)",
-  "event ClaimableRefund(address indexed beneficiary, uint256 value)",
-  "event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)",
-  "event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)",
-  "event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)",
-  "event TimedAuctionExtended(uint256 prevClosingTime, uint256 newClosingTime)",
-  "event TokensBurned(uint256 amount)",
-  "event TokensEmissioned(address indexed beneficiary, uint256 value, uint256 amount)",
-  "function DEFAULT_ADMIN_ROLE() view returns (bytes32)",
-  "function afterOpen() view returns (bool)",
-  "function allowRefund() view returns (bool)",
-  "function burnToken()",
-  "function claimRefund()",
-  "function closingTime() view returns (uint256)",
-  "function contribution(address beneficiary) view returns (uint256)",
-  "function finalPrice() view returns (uint256)",
-  "function finalize()",
-  "function finalized() view returns (bool)",
-  "function getRoleAdmin(bytes32 role) view returns (bytes32)",
-  "function grantRole(bytes32 role, address account)",
-  "function hasClosed() view returns (bool)",
-  "function hasRole(bytes32 role, address account) view returns (bool)",
-  "function initialPrice() view returns (uint256)",
-  "function isOpen() view returns (bool)",
-  "function minimalGoal() view returns (uint256)",
-  "function minimalGoalMet() view returns (bool)",
-  "function openingTime() view returns (uint256)",
-  "function owner() view returns (address)",
-  "function placeBids() payable",
-  "function price() view returns (uint256)",
-  "function remainingSupply() view returns (uint256)",
-  "function renounceRole(bytes32 role, address account)",
-  "function revokeRole(bytes32 role, address account)",
-  "function supportsInterface(bytes4 interfaceId) view returns (bool)",
-  "function token() view returns (address)",
-  "function tokenMaxAmount() view returns (uint256)",
-  "function weiRaised() view returns (uint256)",
-  "function withdrawFunds()",
-  "function getCurrentTime() view returns (uint256)",
-  "function withdrawToken()",
-];
 
-const tokenAbi = [
-  "constructor(uint256 initialSupply)",
-  "event Approval(address indexed owner, address indexed spender, uint256 value)",
-  "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
-  "event Transfer(address indexed from, address indexed to, uint256 value)",
-  "function allowance(address owner, address spender) view returns (uint256)",
-  "function approve(address spender, uint256 amount) returns (bool)",
-  "function balanceOf(address account) view returns (uint256)",
-  "function burn(uint256 amount)",
-  "function burnFrom(address account, uint256 amount)",
-  "function decimals() view returns (uint8)",
-  "function decreaseAllowance(address spender, uint256 subtractedValue) returns (bool)",
-  "function increaseAllowance(address spender, uint256 addedValue) returns (bool)",
-  "function mint(address to, uint256 amount)",
-  "function name() view returns (string)",
-  "function owner() view returns (address)",
-  "function renounceOwnership()",
-  "function symbol() view returns (string)",
-  "function totalSupply() view returns (uint256)",
-  "function transfer(address to, uint256 amount) returns (bool)",
-  "function transferFrom(address from, address to, uint256 amount) returns (bool)",
-  "function transferOwnership(address newOwner)",
-];
-
-const tokenAddress = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0";
-const dutchAuctionAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-
- */
+// Cache openingTime, closingTime, and tokenMaxAmount
+let openingTime, closingTime, duration, tokenMaxAmount;
+let isAuctionActive = true; // Track if the auction is active
 
 async function loadJSON() {
   try {
-
     // Use the Fetch API to load the JSON data
-    const daResponse = await fetch('../da.json');
+    const daResponse = await fetch("../da.json");
     const daJsonData = await daResponse.json();
     dutchAuctionAddress = daJsonData.contract.address;
     dutchAuctionAbi = daJsonData.contract.abi;
-    
+
     // Use the Fetch API to load the JSON data
-    const tokenResponse = await fetch('../token.json');
+    const tokenResponse = await fetch("../token.json");
     const tokenJsonData = await tokenResponse.json();
     tokenAddress = tokenJsonData.contract.address;
     tokenAbi = tokenJsonData.contract.abi;
   } catch (error) {
-    console.error('Error loading JSON:', error);
+    console.error("Error loading JSON:", error);
   }
 }
 
-// Call the loadJSON function to start the process
-
-
-let dutchAuctionContract = null;
-let tokenContract = null;
-
 async function getAccess() {
   if (tokenContract) return;
+  // Call the loadJSON function to get address and abi
   await loadJSON();
   //console.log(dutchAuctionAddress);
   //console.log(dutchAuctionAbi);
@@ -129,8 +49,8 @@ async function getTokenPrice() {
   await getAccess();
   const price = await dutchAuctionContract.price();
 
-  console.log(await dutchAuctionContract.getCurrentTime());
-  console.log(await dutchAuctionContract.openingTime());
+  //console.log(await dutchAuctionContract.getCurrentTime());
+  //console.log(await dutchAuctionContract.openingTime());
   console.log(price);
   document.getElementById("price").innerHTML = price;
 }
@@ -155,28 +75,45 @@ async function placeBids() {
 }
 async function UpdateStatus() {
   await getAccess();
-  const price = await dutchAuctionContract.price();
-  const tokenMaxAmount = await dutchAuctionContract.remainingSupply();
-  // Convert Unix timestamp to milliseconds and create a Date object
+  // Cache openingTime and closingTime
+  if (!openingTime) {
+    openingTime = await dutchAuctionContract.openingTime();
+  }
+  if (!closingTime) {
+    closingTime = await dutchAuctionContract.closingTime();
+  }
+  if (!duration) {
+    duration = differenceInMinutes(closingTime, openingTime);
+  }
+  if (!tokenMaxAmount) {
+    tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
+  }
+  const currentTime = await dutchAuctionContract.getCurrentTime();
+  if (currentTime < closingTime) {
+    isAuctionActive = true;
+    const price = await dutchAuctionContract.price();
+    const tokenMaxAmount = await dutchAuctionContract.remainingSupply();
+    // Convert Unix timestamp to milliseconds and create a Date object
 
-  var getCurrentTime = convertTime(await dutchAuctionContract.getCurrentTime());
-  var openingTime = convertTime(await dutchAuctionContract.openingTime());
-  var closingTime = convertTime(await dutchAuctionContract.closingTime());
-  // console.log("getCurrentTime: " + getCurrentTime[0]);
-  // console.log("openingTime: " + openingTime[0]);
-  // console.log("closingTime: " + closingTime[0]);
+    //var getCurrentTime = convertTime(await dutchAuctionContract.getCurrentTime());
+    //var openingTime = convertTime(await dutchAuctionContract.openingTime());
+    //var closingTime = convertTime(await dutchAuctionContract.closingTime());
+    // console.log("getCurrentTime: " + getCurrentTime[0]);
+    // console.log("openingTime: " + openingTime[0]);
+    // console.log("closingTime: " + closingTime[0]);
 
-  var TimePassed = differenceInMinutes(
-    await dutchAuctionContract.getCurrentTime(),
-    await dutchAuctionContract.openingTime()
-  );
-  document.getElementById("CurrentTokenAmtInput").value = tokenMaxAmount;
-  document.getElementById("priceInput").value = price;
-  document.getElementById("timeInput").value =
-    Math.ceil(TimePassed) + " minute";
-  var timeProgressed = Math.ceil((TimePassed / 20) * 100) + "%";
-  var progressbar = document.getElementById("progressbar");
-  progressbar.style.width = timeProgressed;
+    var TimePassed = differenceInMinutes(currentTime, openingTime);
+    document.getElementById("CurrentTokenAmtInput").value = tokenMaxAmount;
+    document.getElementById("priceInput").value = price;
+    document.getElementById("timeInput").value =
+      Math.ceil(TimePassed) + " minute";
+    var timeProgressed = Math.ceil((TimePassed / duration) * 100) + "%";
+    var progressbar = document.getElementById("progressbar");
+    progressbar.style.width = timeProgressed;
+  } else {
+    // Auction is not active
+    isAuctionActive = false;
+  }
 
   // console.log("afterOpen " + (await dutchAuctionContract.afterOpen()));
   // console.log("allowRefund " + (await dutchAuctionContract.allowRefund()));
@@ -315,4 +252,9 @@ async function withdrawToken() {
     .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
 }
 
-// function contribution(address beneficiary) view returns (uint256)",
+// Start updating status only if the auction is active
+setInterval(() => {
+  if (isAuctionActive) {
+    UpdateStatus();
+  }
+}, 5000); // 10000 milliseconds = 10 seconds
