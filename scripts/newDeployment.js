@@ -39,7 +39,7 @@ async function main() {
       `Time forwarded by 1 minute and new block mined. Current block timestamp: ${newTimestampInSeconds}`
     );
     // Wait for 1 minute in real time if needed
-    // await new Promise(resolve => setTimeout(resolve, 60 * 1000));
+    await new Promise((resolve) => setTimeout(resolve, 60 * 1000));
   }
 }
 

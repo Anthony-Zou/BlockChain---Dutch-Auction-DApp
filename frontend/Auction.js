@@ -71,8 +71,8 @@ const tokenAbi = [
   "function transferOwnership(address newOwner)",
 ];
 
-const tokenAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
-const dutchAuctionAddress = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512";
+const tokenAddress = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0";
+const dutchAuctionAddress = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9";
 
 let dutchAuctionContract = null;
 let tokenContract = null;
@@ -132,52 +132,53 @@ async function UpdateStatus() {
   );
 
   console.log(
-    "getCurrentTime" + convertTime(await dutchAuctionContract.getCurrentTime())
+    "getCurrentTime: " +
+      convertTime(await dutchAuctionContract.getCurrentTime())
   );
   console.log(
-    "openingTime" + convertTime(await dutchAuctionContract.openingTime())
+    "openingTime: " + convertTime(await dutchAuctionContract.openingTime())
   );
   console.log(
-    "closingTime" + convertTime(await dutchAuctionContract.closingTime())
+    "closingTime: " + convertTime(await dutchAuctionContract.closingTime())
   );
 
-  console.log("afterOpen " + (await dutchAuctionContract.afterOpen()));
-  console.log("allowRefund " + (await dutchAuctionContract.allowRefund()));
-  console.log("closingTime " + (await dutchAuctionContract.closingTime()));
-  console.log("finalized " + (await dutchAuctionContract.finalized()));
-  console.log("hasClosed " + (await dutchAuctionContract.hasClosed()));
-  console.log("initialPrice " + (await dutchAuctionContract.initialPrice()));
-  console.log("isOpen " + (await dutchAuctionContract.isOpen()));
-  console.log("minimalGoal " + (await dutchAuctionContract.minimalGoal()));
-  console.log(
-    "minimalGoalMet " + (await dutchAuctionContract.minimalGoalMet())
-  );
-  console.log("openingTime " + (await dutchAuctionContract.openingTime()));
-  console.log("owner " + (await dutchAuctionContract.owner()));
-  console.log("price " + (await dutchAuctionContract.price()));
-  console.log(
-    "remainingSupply " + (await dutchAuctionContract.remainingSupply())
-  );
-  console.log(
-    "remainingSupply " + (await dutchAuctionContract.remainingSupply())
-  );
-  console.log("token " + (await dutchAuctionContract.token()));
-  console.log(
-    "tokenMaxAmount " + (await dutchAuctionContract.tokenMaxAmount())
-  );
-  console.log("weiRaised " + (await dutchAuctionContract.weiRaised()));
-  console.log(
-    "getCurrentTime " + (await dutchAuctionContract.getCurrentTime())
-  );
+  // console.log("afterOpen " + (await dutchAuctionContract.afterOpen()));
+  // console.log("allowRefund " + (await dutchAuctionContract.allowRefund()));
+  // console.log("closingTime " + (await dutchAuctionContract.closingTime()));
+  // console.log("finalized " + (await dutchAuctionContract.finalized()));
+  // console.log("hasClosed " + (await dutchAuctionContract.hasClosed()));
+  // console.log("initialPrice " + (await dutchAuctionContract.initialPrice()));
+  // console.log("isOpen " + (await dutchAuctionContract.isOpen()));
+  // console.log("minimalGoal " + (await dutchAuctionContract.minimalGoal()));
+  // console.log(
+  //   "minimalGoalMet " + (await dutchAuctionContract.minimalGoalMet())
+  // );
+  // console.log("openingTime " + (await dutchAuctionContract.openingTime()));
+  // console.log("owner " + (await dutchAuctionContract.owner()));
+  // console.log("price " + (await dutchAuctionContract.price()));
+  // console.log(
+  //   "remainingSupply " + (await dutchAuctionContract.remainingSupply())
+  // );
+  // console.log(
+  //   "remainingSupply " + (await dutchAuctionContract.remainingSupply())
+  // );
+  // console.log("token " + (await dutchAuctionContract.token()));
+  // console.log(
+  //   "tokenMaxAmount " + (await dutchAuctionContract.tokenMaxAmount())
+  // );
+  // console.log("weiRaised " + (await dutchAuctionContract.weiRaised()));
+  // console.log(
+  //   "getCurrentTime " + (await dutchAuctionContract.getCurrentTime())
+  // );
   // console.log(
   //   "getcontribution " +
   //     (await dutchAuctionContract.contribution(
   //       "await dutchAuctionContract.owner()"
   //     ))
   // );
-  getMetaMaskAccount().then((account) => {
-    console.log("Current MetaMask account:", account);
-  });
+  // getMetaMaskAccount().then((account) => {
+  //   console.log("Current MetaMask account:", account);
+  // });
 }
 async function getMetaMaskAccount() {
   // Check if MetaMask is installed
@@ -204,7 +205,17 @@ function convertTime(hex) {
   const hexTimestamp = hex; // Replace with the value from your contract call
   const decimalTimestamp = parseInt(hexTimestamp * 1000); // Convert hexadecimal to decimal
   const date = new Date(decimalTimestamp);
-  return date.toISOString();
+  // Convert to UTC+8
+  const offset = 0; // Timezone offset for UTC+8
+  const localDate = new Date(date.getTime() + offset * 3600 * 1000);
+
+  // Format the time as "HH:mm:ss"
+  const hours = localDate.getHours().toString().padStart(2, "0");
+  const minutes = localDate.getMinutes().toString().padStart(2, "0");
+  const seconds = localDate.getSeconds().toString().padStart(2, "0");
+
+  const time = `${hours}:${minutes}:${seconds}`;
+  return time;
 }
 
 async function burnToken() {
