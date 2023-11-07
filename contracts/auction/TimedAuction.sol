@@ -10,13 +10,6 @@ abstract contract TimedAuction is Auction {
     uint256 private _closingTime;
 
     /**
-     * Event for Auction extending
-     * @param newClosingTime new closing time
-     * @param prevClosingTime old closing time
-     */
-    event TimedAuctionExtended(uint256 prevClosingTime, uint256 newClosingTime);
-
-    /**
      * @dev Reverts if not in Auction time range.
      */
     modifier onlyWhileOpen {
@@ -27,8 +20,8 @@ abstract contract TimedAuction is Auction {
     /**
      * @dev Reverts if not in Auction time range.
      */
-    modifier onlyAfterOpen {
-        require(afterOpen(), "TimedAuction: hasn't open");
+    modifier onlyAfterClose {
+        require(hasClosed(), "TimedAuction: hasn't close");
         _;
     }
 
@@ -102,27 +95,13 @@ abstract contract TimedAuction is Auction {
     }
 
     /**
-     * @dev Extend parent behavior requiring finalization to be after auction starts.
+     * @dev Extend parent behavior requiring finalization to be after auction closes.
      */
     function _preValidateFinalization() 
     internal 
     virtual 
     override
-    onlyAfterOpen {
+    onlyAfterClose {
        //cosole.log("In TimedAuction, _preValidateFinalization()");
-    }
-
-
-    /**
-     * @dev Extend Auction.
-     * @param newClosingTime Auction closing time
-     */
-    function _extendTime(uint256 newClosingTime) internal {
-        require(!hasClosed(), "TimedAuction: already closed");
-        // solhint-disable-next-line max-line-length
-        require(newClosingTime > _closingTime, "TimedAuction: new closing time is before current closing time");
-
-        emit TimedAuctionExtended(_closingTime, newClosingTime);
-        _closingTime = newClosingTime;
     }
 }

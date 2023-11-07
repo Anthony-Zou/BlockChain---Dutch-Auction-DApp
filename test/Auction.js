@@ -264,7 +264,7 @@ contract("Auction", function (accounts) {
       const balanceTracker = await balance.tracker(owner);
       await expectRevert(
         this.auction.withdrawFunds({ from: owner }),
-        "Auction: Funds already withdrawn"
+        "Auction: Don't allow owner withdrawl"
       );
       expect(await balanceTracker.delta()).to.closeTo(
         new BN(0),

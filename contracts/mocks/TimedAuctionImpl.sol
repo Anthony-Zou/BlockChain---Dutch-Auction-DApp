@@ -12,8 +12,4 @@ contract TimedAuctionImpl is TimedAuction {
     {
         // solhint-disable-previous-line no-empty-blocks
     }
-
-    function extendTime(uint256 closingTime) public {
-        _extendTime(closingTime);
-    }
 }
