@@ -1,7 +1,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./auction/RefundableAuctionImpl.sol";
+import "./mocks/RefundableAuctionImpl.sol";
 
 contract AttackContract {
     RefundableAuctionImpl public auction;
@@ -17,22 +17,23 @@ contract AttackContract {
         owner = payable(msg.sender);
     }
 
-    //reentry attack start
-    function attack(uint256 _attackValue) external payable {
-        require(isTest, "AttackContract is only for test");
-        require(msg.value == _attackValue, "");
+    // Start the re-entry attack
+function attack(uint256 _attackValue) external payable {
+    require(isTest, "AttackContract is only for test");
+    require(msg.value == _attackValue, "Attack value must match the sent value");
 
-        if (targetFunction == 0) {
-            auction.placeBids{value: _attackValue}();
-            auction.withdrawToken();
-        } else if (targetFunction == 1) {
-            auction.placeBids{value: _attackValue}();
-            auction.withdrawFunds();
-        } else if (targetFunction == 2) {
-            auction.placeBids{value: _attackValue}();
-            auction.claimRefund();
-        }
+    if (targetFunction == 0) {
+        auction.placeBids{value: _attackValue}();
+    } else if (targetFunction == 1) {
+        auction.placeBids{value: _attackValue}();
+        // Assuming withdrawFunds() is a function that requires some previous condition
+        // like placing a bid, being an owner, etc.
+        auction.withdrawFunds();
+    } else if (targetFunction == 2) {
+        auction.placeBids{value: _attackValue}();
+        auction.claimRefund();
     }
+}
 
     // Fallback
     fallback() external payable {
