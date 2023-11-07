@@ -722,24 +722,24 @@ contract("DutchAuction", function (accounts) {
         });
         const currentPrice = await this.auction.price();
         const maxBid = currentPrice.mul(insufficientTokenSupply);
-        console.log("currentPrice", currentPrice);
+        //console.log("currentPrice", currentPrice);
         expect(
           await this.auction.contribution(purchaser)
         ).to.be.bignumber.equal(maxBid);
-        console.log("1");
+        //console.log("1");
         // Check contribution
 
         // Check weiRaised
         expect(await this.auction.weiRaised()).to.be.bignumber.equal(maxBid);
-        console.log("2");
+        //console.log("2");
 
         // Check remaining supply
         expect(await this.auction.remainingSupply()).to.equal(0);
-        console.log("3");
+        //console.log("3");
 
         // Check fund forwarding
         const actualRefund = await balanceTracker.delta();
-        console.log("actualRefund", actualRefund);
+        //console.log("actualRefund", actualRefund);
         expect((-actualRefund).toString()).to.be.bignumber.closeTo(
           maxBid,
           expectedGasFee
@@ -788,9 +788,15 @@ contract("DutchAuction", function (accounts) {
     it("RefundAfterClosingTime - Should allow investors to claim refunds is auction is not successful", async function () {
       const balanceTracker = await balance.tracker(investor);
       await this.auction.sendTransaction({ value, from: investor });
-      expect((-await balanceTracker.delta()).toString()).to.closeTo(value, expectedGasFee);
+      expect((-(await balanceTracker.delta())).toString()).to.closeTo(
+        value,
+        expectedGasFee
+      );
       await this.auction.placeBids({ value, from: investor });
-      expect((-await balanceTracker.delta()).toString()).to.closeTo(value, expectedGasFee);
+      expect((-(await balanceTracker.delta())).toString()).to.closeTo(
+        value,
+        expectedGasFee
+      );
       await time.increaseTo(this.afterClosingTime);
       await this.auction.finalize({ from: owner });
       await this.auction.claimRefund({ from: investor });
@@ -926,6 +932,13 @@ contract("DutchAuction", function (accounts) {
       await time.increaseTo(this.openingTime.add(time.duration.minutes(1)));
     });
 
+    it("RejectWithdrawTokenBeforeFinalization - Should not allow owner to withdraw tokens before finalization", async function () {
+      await expectRevert(
+        this.auction.withdrawToken({ from: owner }),
+        "Auction: not finalized"
+      );
+    });
+
     it("WithdrawTokenByOwner - Should allow the owner to withdraw remaining tokens", async function () {
       // expect contract to have all the balance
       expect(
@@ -941,11 +954,37 @@ contract("DutchAuction", function (accounts) {
       );
     });
 
-    it("WithdrawTokenByNonOwner - Should not allow non-owners to withdraw tokens", async function () {
+    it("RejectWithdrawTokenByNonOwner - Should not allow non-owners to withdraw tokens", async function () {
       await this.auction.finalize({ from: owner });
       await expectRevert(
         this.auction.withdrawToken({ from: investor }),
         "Auction: not owner"
+      );
+    });
+    it("RejectWithdrawingTokenMultipleTimes - Should not allow owner to withdraw tokens multiple times", async function () {
+      const initialTokenBalanceAuction = await this.token.balanceOf(
+        this.auction.address
+      );
+      const initialTokenBalanceOwner = await this.token.balanceOf(owner);
+      await this.auction.finalize({ from: owner });
+      await this.auction.withdrawToken({ from: owner });
+
+      await expectRevert(
+        this.auction.withdrawToken({ from: owner }),
+        "Auction: Token already withdrawn or burnt by owner."
+      );
+
+      const finalTokenBalanceAuction = await this.token.balanceOf(
+        this.auction.address
+      );
+      const finalTokenBalanceOwner = await this.token.balanceOf(owner);
+
+      expect(finalTokenBalanceAuction).to.be.bignumber.equal(new BN(0));
+      expect(initialTokenBalanceAuction).to.be.bignumber.above(
+        finalTokenBalanceAuction
+      );
+      expect(finalTokenBalanceOwner).to.be.bignumber.above(
+        initialTokenBalanceOwner
       );
     });
   });
