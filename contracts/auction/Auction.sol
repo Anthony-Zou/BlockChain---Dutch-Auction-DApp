@@ -287,14 +287,16 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             !_tokenCleanedUp,
             "Auction: Token already withdrawn or burnt by owner."
         );
+        // Put status update first to prevent re-entry attack
+        _tokenCleanedUp = true;
         uint256 remainingTokens = tokenMaxAmount() -
             tokenDistributed();
 
         if (remainingTokens > 0) {
+            _tokenDistributed = _tokenDistributed.add(remainingTokens);
             _token.burn(remainingTokens); // Burn tokens directly
             emit TokensBurned(remainingTokens);
         }
-        _tokenCleanedUp = true;
     }
 
     /**

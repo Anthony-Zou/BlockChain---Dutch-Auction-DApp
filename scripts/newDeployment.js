@@ -24,20 +24,21 @@ async function main() {
     token.address,
     tokenMaxAmount
   );
+  await token.transfer(da.address, tokenMaxAmount);
 
   await da.deployed();
   await writeDeploymentInfo(token, "token.json");
   await writeDeploymentInfo(da, "da.json");
 
   // Mine blocks at intervals after deployment
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < 240; i++) {
     // Forward time by 1 minute
-    await new Promise((resolve) => setTimeout(resolve, 60 * 1000));
+    await new Promise((resolve) => setTimeout(resolve, 5 * 1000));
     const newTimestampInSeconds =
-      (await ethers.provider.getBlock("latest")).timestamp + 60;
+      (await ethers.provider.getBlock("latest")).timestamp + 5;
     await ethers.provider.send("evm_mine", [newTimestampInSeconds]);
     console.log(
-      `Time forwarded by 1 minute and new block mined. Current block timestamp: ${newTimestampInSeconds}`
+      `Time forwarded by 5 seconds and new block mined. Current block timestamp: ${newTimestampInSeconds}`
     );
     // Wait for 1 minute in real time if needed
   }
