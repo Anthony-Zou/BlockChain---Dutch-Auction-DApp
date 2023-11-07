@@ -15,7 +15,7 @@ import "hardhat/console.sol";
  * allowing investors to purchase tokens with ether. This contract implements
  * such functionality in its most fundamental form and can be extended to provide additional
  * functionality and/or custom behavior.
- * The external interface represents the basic interface for purchasing tokens, and conforms
+ * The external interface(placeBids & finalize) represents the basic interface for purchasing tokens, and conforms
  * the base architecture for Auctions. It is *not* intended to be modified / overridden.
  * The internal interface conforms the extensible and modifiable surface of Auctions. Override
  * the methods to add functionality. Consider using 'super' where appropriate to concatenate
@@ -29,9 +29,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     using SafeMath for uint256;
     using SafeERC20 for IERC20Burnable;
 
-    // The token being sold, if the token has a up limit, the contract will crash with
-    // 'ERC20: transfer amount exceeds balance' if the limit is exceeded.
-    // To avoid that, use Auction instead.
+    // The token being sold
     IERC20Burnable private _token;
 
     // Address of the owner
@@ -42,6 +40,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
 
     // A map storing the address and weiAmount
     mapping(address => uint256) private _contributions;
+
+    // A queue to handle buyer on first-come-first-serve basis
     address[] private _queue;
 
     // Amount of wei raised
@@ -51,7 +51,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     bool private _finalized;
 
     // Whether the auction funds is withdrawn by the owner
-    bool private _fundsWithdrawn;
+    bool private _allowOwnerWithdrawl;
 
     // Whether the token is withdrawn or burnt by the owner
     bool private _tokenCleanedUp;
@@ -59,6 +59,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     // Max amount of token to be sold in the auction
     uint256 private _tokenMaxAmount;
 
+    // Token distributed after finalization
+    // (should be 0 before finalization)
     uint256 private _tokenDistributed;
 
     /**
@@ -81,12 +83,12 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     );
 
     /**
-     * Event for auction finalized
+     * Event for announcing auction finalization
      */
     event AuctionFinalized();
 
     /**
-     * Event for burning remaining tokens
+     * Event for annoucing owner burnt remaining tokens
      */
     event TokensBurned(uint256 amount);
 
@@ -131,7 +133,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         _tokenMaxAmount = tokenMaxAmount_;
 
         _finalized = false;
-        _fundsWithdrawn = false;
+        _allowOwnerWithdrawl = false;
         _tokenCleanedUp = false;
 
         _setupRole(DEFAULT_ADMIN_ROLE, owner_);
@@ -168,7 +170,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @return the number of token units a buyer gets per wei.
+     * @return the price per token.
      */
     function price() public view virtual returns (uint256) {
         //console.log("price called", _price);
@@ -176,7 +178,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @return the amount of wei raised.
+     * @return the amount of wei raised in the auction so far.
      */
     function weiRaised() public view returns (uint256) {
         return _weiRaised;
@@ -212,8 +214,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Checks the amount of tokens left in the allowance(after real token distribution).
-     * @return Amount of tokens left in the tokenMaxAmount
+     * @dev Checks the amount of tokens distributed after real token distribution.
+     * @return Amount of tokens distributed to bidder
      */
     function tokenDistributed() public view returns (uint256) {
         return _tokenDistributed;
@@ -228,7 +230,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         return _contributions[beneficiary];
     }
 
-    // low_level functions (drivers)
+    // low_level functions (external facing drivers)
 
     /**
      * @dev low level token purchase ***DO NOT OVERRIDE***
@@ -281,6 +283,10 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         emit AuctionFinalized();
     }
 
+    /**
+     * @dev Must be called after Auction ends, by owner only.
+     * burn the remaining token in the contract after auction.
+     */
     function burnToken() public virtual onlyWhileFinalized onlyOwner {
         // Burn the remaining tokens only allowed after finalization
         require(
@@ -297,6 +303,12 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         _tokenCleanedUp = true;
     }
 
+    /**
+     * @dev Must be called after Auction ends, by owner only.
+     * withdraw the remaining token in the contract after auction.
+     * This function has a non-reentrancy guard, so it shouldn't be called by
+     * another `nonReentrant` function.
+     */
     function withdrawToken()
         public
         virtual
@@ -320,23 +332,32 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         }
     }
 
+    /**
+     * @dev Must be called after Auction ends, by owner only.
+     * withdraw the raisedWei in the contract after auction.
+     * This function has a non-reentrancy guard, so it shouldn't be called by
+     * another `nonReentrant` function.
+     */
     function withdrawFunds()
         external
         onlyWhileFinalized
         onlyOwner
         nonReentrant
     {
-        require(!_fundsWithdrawn, "Auction: Funds already withdrawn");
+        _prevalidateWithdrawFunds();
         //console.log("In withdrawFunds(), passed all validation");
         // Update the status first to prevent re-entrance attack
-        _fundsWithdrawn = true;
+        _allowOwnerWithdrawl = false;
         _owner.transfer(weiRaised());
-        /**
-        (bool sent, ) = payable(msg.sender).call{value: address(this).balance}(
-            ""
-        );
-        require(sent, "fail to withdraw Funds");
-         */
+    }
+
+    function _prevalidateWithdrawFunds()
+        internal
+        virtual
+        onlyWhileFinalized
+        onlyOwner
+    {
+        require(_allowOwnerWithdrawl, "Auction: Don't allow owner withdrawl");
     }
 
     // customizeable funtions (overrides)
@@ -493,5 +514,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     /**
      * @dev Can be overridden to add post finalization validation logic.
      */
-    function _postValidateFinalization() internal virtual {}
+    function _postValidateFinalization() internal virtual {
+        _allowOwnerWithdrawl = true;
+    }
 }

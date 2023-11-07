@@ -17,11 +17,10 @@ abstract contract RefundableAuction is Auction {
     mapping(address => uint256) private _refunds;
     bool _allowRefund = false;
     uint256 _minimalGoal;
-
     event ClaimableRefund(address indexed beneficiary, uint256 value);
 
     /**
-     * @dev Reverts if not in Auction time range.
+     * @dev Reverts if not in a refundable stage
      */
     modifier onlyWhileRefundable() {
         require(_allowRefund, "RefundableAuction: refund not allowed");
@@ -77,7 +76,7 @@ abstract contract RefundableAuction is Auction {
     /**
      * @dev Investors can claim refunds here if the token is soldout.
      */
-    function claimRefund() public onlyWhileRefundable nonReentrant{
+    function claimRefund() public onlyWhileRefundable nonReentrant {
         require(
             _refunds[_msgSender()] > 0,
             "RefundableAuction: no refunds available"
@@ -126,7 +125,9 @@ abstract contract RefundableAuction is Auction {
      * @dev Escrow finalization task, called when finalize() is called.
      */
     function _postValidateFinalization() internal virtual override {
-       // console.log("In RefundableAuction, _postValidateFinalization()");
+        if(minimalGoalMet())
+            super._postValidateFinalization();
+        // console.log("In RefundableAuction, _postValidateFinalization()");
         _allowRefund = true;
     }
 }

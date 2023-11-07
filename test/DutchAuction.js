@@ -788,6 +788,24 @@ contract("DutchAuction", function (accounts) {
         expectedGasFee
       );
     });
+    it("WithdrawalRestriction - Shouldn't allow owner to withdrawl from a failed auction", async function () {
+      const balanceTracker = await balance.tracker(owner);
+      await this.auction.placeBids({ value, from: purchaser });
+      expect(await balanceTracker.delta()).to.be.bignumber.equal(new BN(0));
+      await time.increaseTo(this.afterClosingTime);
+      await this.auction.finalize({from:owner});
+      expect(await this.auction.minimalGoalMet()).to.be.false;
+      await expectRevert(
+        this.auction.withdrawFunds({ from: owner }),
+        "Auction: Don't allow owner withdrawl"
+      );
+      //console.log("after withdrawl, balance", await balance.current(owner));
+      //console.log("reverted", await balanceTracker.delta());
+      expect(await balanceTracker.delta()).to.closeTo(
+        new BN(0),
+        expectedGasFee
+      );
+    });
     it("LogTokenEmissionAndFinalization - Should log AuctionFinalized events.", async function () {
       await this.auction.placeBids({ value: value, from: investor });
       await time.increaseTo(this.afterClosingTime);
@@ -805,36 +823,6 @@ contract("DutchAuction", function (accounts) {
       await this.auction.finalize({ from: owner });
       expect(await this.token.balanceOf(investor)).to.equal(0);
       expect(await this.token.balanceOf(purchaser)).to.equal(0);
-    });
-
-    it("FundsWithdrawalToOwner - Should allow funds withdrawal to owner after finalization.", async function () {
-      const balanceTracker = await balance.tracker(owner);
-      await this.auction.placeBids({ value, from: purchaser });
-      await this.auction.sendTransaction({ value: value, from: investor });
-      await time.increaseTo(this.afterClosingTime);
-      await this.auction.finalize({ from: owner });
-      await this.auction.withdrawFunds({ from: owner });
-      expect(await balanceTracker.delta()).to.closeTo(
-        value.mul(new BN(2)),
-        expectedGasFee
-      );
-    });
-
-    it("RejectDoubleWithdrawal - Shouldn't allow double withdrawal to owner after finalization.", async function () {
-      await this.auction.placeBids({ value, from: purchaser });
-      await this.auction.sendTransaction({ value: value, from: investor });
-      await time.increaseTo(this.afterClosingTime);
-      await this.auction.finalize({ from: owner });
-      await this.auction.withdrawFunds({ from: owner });
-      const balanceTracker = await balance.tracker(owner);
-      await expectRevert(
-        this.auction.withdrawFunds({ from: owner }),
-        "Auction: Funds already withdrawn"
-      );
-      expect(await balanceTracker.delta()).to.closeTo(
-        new BN(0),
-        expectedGasFee
-      );
     });
 
     it("WithdrawalByOwnerOnly - Should only allow funds to be withdrawn by owner after finalization.", async function () {
@@ -855,8 +843,8 @@ contract("DutchAuction", function (accounts) {
       expect(tokensDistributedBefore).to.be.bignumber.equal(new BN(0));
     });
 
-    it("TokenDistributedAfterUnsuccessfulAuction - Should return the correct number of tokens distributed after a successful auction", async function () {
-      // Set up a scenario where the auction is successful (minimal goal met and finalized)
+    it("TokenDistributedAfterUnsuccessfulAuction - Should return the correct number of tokens distributed after a unsuccessful auction", async function () {
+      // Set up a scenario where the auction is unsuccessful (minimal goal not met but finalized)
       await time.increaseTo(this.afterClosingTime);
       await this.auction.finalize({ from: owner });
       expect(await this.auction.tokenDistributed()).to.be.equal(0);
@@ -985,6 +973,38 @@ contract("DutchAuction", function (accounts) {
         await this.auction.finalize({ from: owner });
         expect(await this.auction.tokenDistributed()).to.be.equal(insufficientTokenSupply);
       });
+
+
+    it("FundsWithdrawalToOwner - Should allow funds withdrawal to owner after finalization.", async function () {
+      const balanceTracker = await balance.tracker(owner);
+      await this.auction.placeBids({ value, from: purchaser });
+      await this.auction.sendTransaction({ value: value, from: investor });
+      await time.increaseTo(this.afterClosingTime);
+      await this.auction.finalize({ from: owner });
+      await this.auction.withdrawFunds({ from: owner });
+      expect(await balanceTracker.delta()).to.closeTo(
+        await this.auction.weiRaised(),
+        expectedGasFee
+      );
+    });
+
+    it("RejectDoubleWithdrawal - Shouldn't allow double withdrawal to owner after finalization.", async function () {
+      await this.auction.placeBids({ value, from: purchaser });
+      await this.auction.sendTransaction({ value: value, from: investor });
+      await time.increaseTo(this.afterClosingTime);
+      await this.auction.finalize({ from: owner });
+      await this.auction.withdrawFunds({ from: owner });
+      const balanceTracker = await balance.tracker(owner);
+      await expectRevert(
+        this.auction.withdrawFunds({ from: owner }),
+        "Auction: Don't allow owner withdrawl"
+      );
+      expect(await balanceTracker.delta()).to.closeTo(
+        new BN(0),
+        expectedGasFee
+      );
+    });
+
     }
   );
   context("8. Refund Functionality Tests", async function () {
