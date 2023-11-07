@@ -288,7 +288,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             "Auction: Token already withdrawn or burnt by owner."
         );
         uint256 remainingTokens = tokenMaxAmount() -
-            _getTokenAmount(weiRaised());
+            tokenDistributed();
 
         if (remainingTokens > 0) {
             _token.burn(remainingTokens); // Burn tokens directly

@@ -20,6 +20,9 @@ To deploy the contract to your localhost network do the following:
 
 npx hardhat node
 
+// Getting test case coverage
+npx hardhat coverage
+
 npx hardhat run --network localhost ./scripts/newDeployment.js
 
 Using the Frontend
