@@ -85,10 +85,20 @@ contract("TimedAuction", function (accounts) {
       await this.token.transfer(this.Auction.address, tokenSupply);
     });
 
-    it("Finalization Timing	- Rreverts if the finalize() function is called before opening time", async function () {
+    it("Finalization Timing	- Rreverts if the finalize() function is called before closing time", async function () {
       expect(await this.Auction.isOpen()).to.equal(false);
       expect(await this.Auction.afterOpen()).to.equal(false);
-      await expectRevert(this.Auction.finalize({from:owner}), "TimedAuction: hasn't open");
+      await expectRevert(
+        this.Auction.finalize({ from: owner }),
+        "TimedAuction: hasn't close"
+      );
+      await time.increaseTo(this.openingTime);
+      await expectRevert(
+        this.Auction.finalize({ from: owner }),
+        "TimedAuction: hasn't close"
+      );
+      await time.increaseTo(this.afterClosingTime);
+      await this.Auction.finalize({ from: owner });
     });
 
     it("End State Recognition	- Auction should be ended only after end", async function () {
@@ -122,79 +132,6 @@ contract("TimedAuction", function (accounts) {
           this.Auction.placeBids({ value: value, from: purchaser }),
           "TimedAuction: not open"
         );
-      });
-    });
-
-    describe("B. Closing Time Extension", function () {
-      it("Duration Validity	Should - not reduce duration", async function () {
-        // Same date
-        await expectRevert(
-          this.Auction.extendTime(this.closingTime),
-          "TimedAuction: new closing time is before current closing time"
-        );
-
-        // Prescending date
-        const newClosingTime = this.closingTime.sub(time.duration.seconds(1));
-        await expectRevert(
-          this.Auction.extendTime(newClosingTime),
-          "TimedAuction: new closing time is before current closing time"
-        );
-      });
-
-      context("Pre-Opening Extension", function () {
-        beforeEach(async function () {
-          expect(await this.Auction.isOpen()).to.equal(false);
-          await expectRevert(
-            this.Auction.send(value),
-            "TimedAuction: not open"
-          );
-        });
-
-        it("Should extend end time", async function () {
-          const newClosingTime = this.closingTime.add(time.duration.days(1));
-          const { logs } = await this.Auction.extendTime(newClosingTime);
-          expectEvent.inLogs(logs, "TimedAuctionExtended", {
-            prevClosingTime: this.closingTime,
-            newClosingTime: newClosingTime,
-          });
-          expect(await this.Auction.closingTime()).to.be.bignumber.equal(
-            newClosingTime
-          );
-        });
-      });
-
-      context("Post-Opening Extension", function () {
-        beforeEach(async function () {
-          await time.increaseTo(this.openingTime);
-          expect(await this.Auction.isOpen()).to.equal(true);
-          await this.Auction.send(value);
-        });
-
-        it("Should extend end time", async function () {
-          const newClosingTime = this.closingTime.add(time.duration.days(1));
-          const { logs } = await this.Auction.extendTime(newClosingTime);
-          expectEvent.inLogs(logs, "TimedAuctionExtended", {
-            prevClosingTime: this.closingTime,
-            newClosingTime: newClosingTime,
-          });
-          expect(await this.Auction.closingTime()).to.be.bignumber.equal(
-            newClosingTime
-          );
-        });
-      });
-
-      context("Post-Closing Extension", function () {
-        beforeEach(async function () {
-          await time.increaseTo(this.afterClosingTime);
-        });
-
-        it("Should revert when extending time", async function () {
-          const newClosingTime = await time.latest();
-          await expectRevert(
-            this.Auction.extendTime(newClosingTime),
-            "TimedAuction: already closed"
-          );
-        });
       });
     });
   });

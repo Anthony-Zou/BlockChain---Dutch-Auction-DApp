@@ -20,6 +20,9 @@ To deploy the contract to your localhost network do the following:
 
 npx hardhat node
 
+// Getting test case coverage
+npx hardhat coverage
+
 npx hardhat run --network localhost ./scripts/newDeployment.js
 
 Using the Frontend
@@ -90,3 +93,65 @@ args: [Result]
 }
 ]
 }
+
+Function pending tests:
+
+    "abi": [
+      "event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)",
+      "event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)",
+      "event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)",
+      "function DEFAULT_ADMIN_ROLE() view returns (bytes32)",
+      "function getRoleAdmin(bytes32 role) view returns (bytes32)",
+      "function grantRole(bytes32 role, address account)",
+      "function hasRole(bytes32 role, address account) view returns (bool)",
+      "function renounceRole(bytes32 role, address account)",
+      "function revokeRole(bytes32 role, address account)",
+      "function supportsInterface(bytes4 interfaceId) view returns (bool)",
+    ]
+
+
+    Added test case (preliminary tested):
+    [
+      events:
+      "event AuctionFinalized()",
+      "event BidsPlaced(address indexed purchaser, uint256 value)",
+      "event ClaimableRefund(address indexed beneficiary, uint256 value)",
+      "event TokensBurned(uint256 amount)",
+      "event TokensEmissioned(address indexed beneficiary, uint256 value, uint256 amount)",
+
+      only owner call:
+      "constructor(uint256 openingTime, uint256 closingTime, uint256 initialPrice, uint256 finalPrice, address wallet, address token, uint256 tokenMaxAmount)",****
+      "function finalize()",
+      // only after finalization
+      "function burnToken()",
+      "function withdrawFunds()",
+      "function withdrawToken()"
+
+
+      user call(but allow owner also):
+      "function placeBids() payable",
+
+      getter:
+      "function afterOpen() view returns (bool)",
+      "function allowRefund() view returns (bool)",
+      "function claimRefund()",
+      "function closingTime() view returns (uint256)",
+      "function contribution(address beneficiary) view returns (uint256)",
+      "function isOpen() view returns (bool)",
+      "function finalPrice() view returns (uint256)",
+      "function finalized() view returns (bool)",
+      "function getCurrentTime() view returns (uint256)",
+      "function hasClosed() view returns (bool)",
+      "function initialPrice() view returns (uint256)",
+      "function minimalGoal() view returns (uint256)",
+      "function minimalGoalMet() view returns (bool)",
+      "function openingTime() view returns (uint256)",
+      "function owner() view returns (address)",
+      "function price() view returns (uint256)",
+      "function remainingSupply() view returns (uint256)","function token() view returns (address)",
+      "function tokenDistributed() view returns (uint256)",
+      "function weiRaised() view returns (uint256)",
+      "function tokenMaxAmount() view returns (uint256)",
+      
+      
+    ]
