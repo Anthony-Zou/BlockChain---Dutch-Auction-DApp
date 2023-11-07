@@ -71,8 +71,8 @@ const tokenAbi = [
   "function transferOwnership(address newOwner)",
 ];
 
-const tokenAddress = "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0";
-const dutchAuctionAddress = "0xcf7ed3acca5a467e9e704c703e8d87f634fb0fc9";
+const tokenAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
+const dutchAuctionAddress = "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512";
 
 let dutchAuctionContract = null;
 let tokenContract = null;
@@ -125,22 +125,24 @@ async function UpdateStatus() {
   const tokenMaxAmount = await dutchAuctionContract.remainingSupply();
   // Convert Unix timestamp to milliseconds and create a Date object
 
+  var getCurrentTime = convertTime(await dutchAuctionContract.getCurrentTime());
+  var openingTime = convertTime(await dutchAuctionContract.openingTime());
+  var closingTime = convertTime(await dutchAuctionContract.closingTime());
+  console.log("getCurrentTime: " + getCurrentTime[0]);
+  console.log("openingTime: " + openingTime[0]);
+  console.log("closingTime: " + closingTime[0]);
+
+  var TimePassed = differenceInMinutes(
+    await dutchAuctionContract.getCurrentTime(),
+    await dutchAuctionContract.openingTime()
+  );
   document.getElementById("CurrentTokenAmtInput").value = tokenMaxAmount;
   document.getElementById("priceInput").value = price;
-  document.getElementById("timeInput").value = convertTime(
-    await dutchAuctionContract.getCurrentTime()
-  );
-
-  console.log(
-    "getCurrentTime: " +
-      convertTime(await dutchAuctionContract.getCurrentTime())
-  );
-  console.log(
-    "openingTime: " + convertTime(await dutchAuctionContract.openingTime())
-  );
-  console.log(
-    "closingTime: " + convertTime(await dutchAuctionContract.closingTime())
-  );
+  document.getElementById("timeInput").value =
+    Math.ceil(TimePassed) + " minute";
+  var timeProgressed = Math.ceil((TimePassed / 20) * 100) + "%";
+  var progressbar = document.getElementById("progressbar");
+  progressbar.style.width = timeProgressed;
 
   // console.log("afterOpen " + (await dutchAuctionContract.afterOpen()));
   // console.log("allowRefund " + (await dutchAuctionContract.allowRefund()));
@@ -200,6 +202,28 @@ async function getMetaMaskAccount() {
     );
   }
 }
+function differenceInMinutes(hex1, hex2) {
+  // Ensure both inputs are strings to be parsed as hex
+  const decimalTimestamp1 = parseInt(hex1) * 1000; // Convert hexadecimal to decimal and to milliseconds
+  const decimalTimestamp2 = parseInt(hex2) * 1000; // Convert hexadecimal to decimal and to milliseconds
+
+  // Create date objects
+  const date1 = new Date(decimalTimestamp1);
+  const date2 = new Date(decimalTimestamp2);
+
+  // Ensure the dates are valid
+  if (isNaN(date1.getTime()) || isNaN(date2.getTime())) {
+    throw new Error("One of the dates is invalid.");
+  }
+
+  // Calculate the difference in milliseconds
+  const differenceInMilliseconds = Math.abs(date1.getTime() - date2.getTime());
+
+  // Convert milliseconds to minutes
+  const differenceInMinutes = differenceInMilliseconds / (1000 * 60);
+
+  return differenceInMinutes;
+}
 
 function convertTime(hex) {
   const hexTimestamp = hex; // Replace with the value from your contract call
@@ -215,7 +239,7 @@ function convertTime(hex) {
   const seconds = localDate.getSeconds().toString().padStart(2, "0");
 
   const time = `${hours}:${minutes}:${seconds}`;
-  return time;
+  return [time, localDate];
 }
 
 async function burnToken() {

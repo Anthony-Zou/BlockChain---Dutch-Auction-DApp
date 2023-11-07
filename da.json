@@ -1,7 +1,7 @@
 {
   "network": "localhost",
   "contract": {
-    "address": "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9",
+    "address": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
     "signerAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
     "abi": [
       "constructor(uint256 openingTime, uint256 closingTime, uint256 initialPrice, uint256 finalPrice, address wallet, address token, uint256 tokenMaxAmount)",
@@ -11,7 +11,6 @@
       "event RoleAdminChanged(bytes32 indexed role, bytes32 indexed previousAdminRole, bytes32 indexed newAdminRole)",
       "event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)",
       "event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)",
-      "event TimedAuctionExtended(uint256 prevClosingTime, uint256 newClosingTime)",
       "event TokensBurned(uint256 amount)",
       "event TokensEmissioned(address indexed beneficiary, uint256 value, uint256 amount)",
       "function DEFAULT_ADMIN_ROLE() view returns (bytes32)",
@@ -42,6 +41,7 @@
       "function revokeRole(bytes32 role, address account)",
       "function supportsInterface(bytes4 interfaceId) view returns (bool)",
       "function token() view returns (address)",
+      "function tokenDistributed() view returns (uint256)",
       "function tokenMaxAmount() view returns (uint256)",
       "function weiRaised() view returns (uint256)",
       "function withdrawFunds()",
