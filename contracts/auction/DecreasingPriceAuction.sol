@@ -6,9 +6,9 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 
 /**
  * @title DecreasingPriceAuction
- * @dev Extension of Auction contract that increases the price of tokens linearly in time.
+ * @dev Extension of TimedAuction contract that decreases the price of tokens linearly in time.
  * Note that what should be provided to the constructor is the initial and final _prices_.
- * Thus, the initial price must be smaller than the final price.
+ * Thus, the initial price must be larger than the final price.
  */
 abstract contract DecreasingPriceAuction is TimedAuction {
     using SafeMath for uint256;
@@ -80,6 +80,9 @@ abstract contract DecreasingPriceAuction is TimedAuction {
         return Math.max(_getTimedPrice(), _getDemandPrice());
     }
 
+    /**
+     * @dev Returns the time-linearly decreased price
+     */
     function _getTimedPrice() internal view returns (uint256) {
         if (!afterOpen()) {
             return _initialPrice;
@@ -87,26 +90,15 @@ abstract contract DecreasingPriceAuction is TimedAuction {
         if (hasClosed()) {
             return _finalPrice;
         }
-        /**
-       console.log(
-            "block.timestamp.sub(openingTime())",
-            block.timestamp.sub(openingTime())
-        );
-       console.log("_discountRate", _discountRate);
-       console.log(
-            "before return, the return expression",
-            _initialPrice.sub(
-                (block.timestamp.sub(openingTime())).mul(_discountRate)
-            )
-        );
-         */
-
         return
             _initialPrice.sub(
                 (block.timestamp.sub(openingTime())).mul(_discountRate)
             );
     }
 
+    /**
+     * @dev Returns the demand price determined by user bids.
+     */
     function _getDemandPrice() internal view returns (uint256) {
         //console.log("weiRaised().div(tokenMaxAmount())", weiRaised().div(tokenMaxAmount()));
         return weiRaised().div(tokenMaxAmount());
