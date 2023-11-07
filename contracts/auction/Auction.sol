@@ -59,6 +59,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     // Max amount of token to be sold in the auction
     uint256 private _tokenMaxAmount;
 
+    uint256 private _tokenDistributed;
+
     /**
      * Event for token purchase logging
      * @param purchaser who paid for the tokens
@@ -195,15 +197,26 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Checks the amount of tokens left in the allowance.
-     * @return Amount of tokens left in the allowance
+     * @dev Checks the amount of tokens left in the allowance(when token is yet to be distributed).
+     * @return Dynamically calculated amount of tokens left in the allowance
      */
     function remainingSupply() public view returns (uint256) {
+        if(finalized()){
+            return tokenMaxAmount().sub(tokenDistributed());
+        }
         uint256 currentDemand = _getTokenAmount(weiRaised());
         return
             currentDemand > _tokenMaxAmount
                 ? 0
                 : _tokenMaxAmount.sub(currentDemand);
+    }
+
+    /**
+     * @dev Checks the amount of tokens left in the allowance(after real token distribution).
+     * @return Amount of tokens left in the tokenMaxAmount
+     */
+    function tokenDistributed() public view returns (uint256) {
+        return _tokenDistributed;
     }
 
     /**
@@ -395,6 +408,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         address beneficiary,
         uint256 tokenAmount
     ) internal virtual {
+        // record amount of token distributed
+        _tokenDistributed = _tokenDistributed.add(tokenAmount);
         _token.safeTransfer(beneficiary, tokenAmount);
     }
 

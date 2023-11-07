@@ -271,7 +271,42 @@ contract("DutchAuction", function (accounts) {
         await this.token.transfer(this.auction.address, tokenSupply);
       });
 
-      describe("Basic price getters test", function () {
+      describe("Basic status getters test", function () {
+        it("OpeningTime - Should return the opening time", async function () {
+          expect(await this.auction.openingTime()).to.be.bignumber.equal(
+            this.openingTime
+          );
+        });
+        it("ClosingTime - Should return the closing time", async function () {
+          expect(await this.auction.closingTime()).to.be.bignumber.equal(
+            this.closingTime
+          );
+        });
+        it("HasClosed - Should return whether the auction has closed", async function () {
+          expect(await this.auction.hasClosed()).to.be.false;
+
+          // Fast forward to after closing time
+          await time.increaseTo(this.closingTime.add(time.duration.minutes(1)));
+          await this.auction.finalize({ from: owner });
+
+          expect(await this.auction.hasClosed()).to.be.true;
+        });
+
+        it("IsOpen - Should return whether the auction is open", async function () {
+          expect(await this.auction.isOpen()).to.be.false;
+
+          // Fast forward to after opening time
+          await time.increaseTo(this.openingTime.add(time.duration.minutes(1)));
+          expect(await this.auction.isOpen()).to.be.true;
+
+          // Fast forward to after closing time
+          await time.increaseTo(this.closingTime.add(time.duration.minutes(1)));
+          await this.auction.finalize({ from: owner });
+          expect(await this.auction.isOpen()).to.be.false;
+        });
+      });
+
+      describe("Getting correct prices - Basic", function () {
         it("RedirectCallsToPricesFunction - Should redirect calls to the prices() function.", async function () {
           expect(await this.auction.price()).to.be.bignumber.equal(
             initialPrice
@@ -455,6 +490,119 @@ contract("DutchAuction", function (accounts) {
           );
         });
       });
+
+      describe("Getting correct remaining supply - Basic", function () {
+        it("ReturnTokenMaxAmountBeforeStart - Should return tokenMaxAmount before start.", async function () {
+          // current price should be initial price before start
+          expect(await this.auction.isOpen()).to.equal(false);
+          expect(await this.auction.remainingSupply()).to.equal(10);
+        });
+
+        it("Should be the same as the initial supply if the goal is not met", async function () {
+          // Fast forward to after opening time
+          await time.increaseTo(this.openingTime);
+          await this.auction.placeBids({ value: 10, from: investor });
+
+          // Fast forward to after the closing time without meeting the goal
+          await time.increaseTo(this.closingTime);
+          expect(await this.auction.minimalGoalMet()).to.be.false;
+
+          // Finalize without meeting the goal
+          await this.auction.finalize({ from: owner });
+          expect(await this.auction.remainingSupply()).to.equal(10);
+        });
+      });
+
+      describe("Getting correct remaining supply - Advanced", function () {
+        it("Should be zero after the auction ends if the goal is met", async function () {
+          // Fast forward to after opening time
+          await time.increaseTo(this.openingTime.add(time.duration.minutes(1)));
+          // Place bids to meet the goal
+          await this.auction.placeBids({ value, from: investor });
+
+          // Fast forward to after the closing time and finalize
+          await time.increaseTo(this.closingTime.add(time.duration.minutes(1)));
+          await this.auction.finalize({ from: owner });
+
+          const remainingSupplyAfterCompletion =
+            await this.auction.remainingSupply();
+          expect(remainingSupplyAfterCompletion).to.be.bignumber.equal(
+            new BN(0)
+          );
+        });
+
+        it("Should decrease over time as the auction progresses", async function () {
+          // Check initial remaining supply
+          const initialRemainingSupply = await this.auction.remainingSupply();
+          expect(initialRemainingSupply).to.equal(10);
+
+          // Fast forward to 10 minutes after the auction starts
+          await time.increaseTo(
+            this.openingTime.add(time.duration.minutes(10))
+          );
+          const remainingSupplyAfterTime = await this.auction.remainingSupply();
+
+          // If no bids placed, the remaining supply should be equal to initial supply
+          expect(remainingSupplyAfterTime).to.equal(initialRemainingSupply);
+        });
+
+        it("Should decrease as bids are placed during the auction", async function () {
+          // Check initial remaining supply
+          const initialRemainingSupply = await this.auction.remainingSupply();
+          expect(initialRemainingSupply).to.equal(10);
+
+          // fast forward to after opening time
+          await time.increaseTo(this.openingTime.add(time.duration.minutes(1)));
+
+          // Place bids that would consume part of the supply
+          await this.auction.placeBids({
+            value: ether("1"),
+            from: purchaser,
+          });
+
+          expect(await this.auction.remainingSupply()).to.equal(0);
+        });
+      });
+
+      context(
+        "MinimalGoal - Should return the right state of whether a goal is met",
+        async function () {
+          beforeEach(async function () {
+            this.token = await SimpleToken.new(tokenSupply);
+            this.auction = await DutchAuction.new(
+              this.openingTime,
+              this.closingTime,
+              initialPrice,
+              finalPrice,
+              owner,
+              this.token.address,
+              10
+            );
+            await this.token.transfer(this.auction.address, tokenSupply);
+            // fast forward to after opening time
+            await time.increaseTo(
+              this.openingTime.add(time.duration.minutes(1))
+            );
+          });
+
+          it("MinimalGoalMet - Should return true if the minimal goal is met", async function () {
+            await this.auction.placeBids({ value, from: investor });
+            await time.increaseTo(
+              this.closingTime.add(time.duration.minutes(1))
+            );
+            await this.auction.finalize({ from: owner });
+            expect(await this.auction.minimalGoalMet()).to.equal(true);
+          });
+
+          it("MinimalGoalNotMet - Should return false if the minimal goal is not met", async function () {
+            await time.increaseTo(
+              this.closingTime.add(time.duration.minutes(1))
+            );
+            await this.auction.finalize({ from: owner });
+            expect(await this.auction.minimalGoalMet()).to.be.false;
+          });
+        }
+      );
     }
   );
 
@@ -986,37 +1134,6 @@ contract("DutchAuction", function (accounts) {
       expect(finalTokenBalanceOwner).to.be.bignumber.above(
         initialTokenBalanceOwner
       );
-    });
-  });
-
-  context("11. MinimalGoal Tests", async function () {
-    beforeEach(async function () {
-      this.token = await SimpleToken.new(tokenSupply);
-      this.auction = await DutchAuction.new(
-        this.openingTime,
-        this.closingTime,
-        initialPrice,
-        finalPrice,
-        owner,
-        this.token.address,
-        10
-      );
-      await this.token.transfer(this.auction.address, tokenSupply);
-      // fast forward to after opening time
-      await time.increaseTo(this.openingTime.add(time.duration.minutes(1)));
-    });
-
-    it("MinimalGoalMet - Should return true if the minimal goal is met", async function () {
-      await this.auction.placeBids({ value, from: investor });
-      await time.increaseTo(this.closingTime.add(time.duration.minutes(1)));
-      await this.auction.finalize({ from: owner });
-      expect(await this.auction.minimalGoalMet()).to.equal(true);
-    });
-
-    it("MinimalGoalNotMet - Should return false if the minimal goal is not met", async function () {
-      await time.increaseTo(this.closingTime.add(time.duration.minutes(1)));
-      await this.auction.finalize({ from: owner });
-      expect(await this.auction.minimalGoalMet()).to.be.false;
     });
   });
 });
