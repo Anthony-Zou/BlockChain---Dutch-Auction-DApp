@@ -32,6 +32,7 @@ async function main() {
   // Mine blocks at intervals after deployment
   for (let i = 0; i < 20; i++) {
     // Forward time by 1 minute
+    await new Promise((resolve) => setTimeout(resolve, 60 * 1000));
     const newTimestampInSeconds =
       (await ethers.provider.getBlock("latest")).timestamp + 60;
     await ethers.provider.send("evm_mine", [newTimestampInSeconds]);
@@ -39,7 +40,6 @@ async function main() {
       `Time forwarded by 1 minute and new block mined. Current block timestamp: ${newTimestampInSeconds}`
     );
     // Wait for 1 minute in real time if needed
-    await new Promise((resolve) => setTimeout(resolve, 60 * 1000));
   }
 }
 
