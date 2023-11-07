@@ -18,19 +18,14 @@ contract AttackContract {
     }
 
     // Start the re-entry attack
-function attack(uint256 _attackValue) external payable {
+function attack() external payable {
     require(isTest, "AttackContract is only for test");
-    require(msg.value == _attackValue, "Attack value must match the sent value");
 
     if (targetFunction == 0) {
-        auction.placeBids{value: _attackValue}();
+        auction.withdrawToken();
     } else if (targetFunction == 1) {
-        auction.placeBids{value: _attackValue}();
-        // Assuming withdrawFunds() is a function that requires some previous condition
-        // like placing a bid, being an owner, etc.
         auction.withdrawFunds();
     } else if (targetFunction == 2) {
-        auction.placeBids{value: _attackValue}();
         auction.claimRefund();
     }
 }
