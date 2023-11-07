@@ -8,6 +8,7 @@ let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
 let openingTime, closingTime, duration, tokenMaxAmount;
 let isAuctionActive = true; // Track if the auction is active
 
+
 async function loadJSON() {
   try {
     // Use the Fetch API to load the JSON data
