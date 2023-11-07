@@ -253,7 +253,13 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @dev Must be called after Auction ends, to do some extra finalization
      * work. Calls the contract's finalization function.
      */
-    function finalize() public virtual onlyWhileNotFinalized nonReentrant onlyOwner {
+    function finalize()
+        public
+        virtual
+        onlyWhileNotFinalized
+        nonReentrant
+        onlyOwner
+    {
         _preValidateFinalization();
         _finalized = true;
 
@@ -278,7 +284,13 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         _tokenCleanedUp = true;
     }
 
-    function withdrawToken() public virtual onlyWhileFinalized onlyOwner nonReentrant {
+    function withdrawToken()
+        public
+        virtual
+        onlyWhileFinalized
+        onlyOwner
+        nonReentrant
+    {
         require(
             !_tokenCleanedUp,
             "Auction: Token already withdrawn or burnt by owner."
@@ -295,7 +307,12 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         }
     }
 
-    function withdrawFunds() external onlyWhileFinalized onlyOwner nonReentrant{
+    function withdrawFunds()
+        external
+        onlyWhileFinalized
+        onlyOwner
+        nonReentrant
+    {
         require(!_fundsWithdrawn, "Auction: Funds already withdrawn");
         //console.log("In withdrawFunds(), passed all validation");
         // Update the status first to prevent re-entrance attack
@@ -355,7 +372,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _processPurchase(
         address beneficiary,
         uint256 weiAmount
-    ) internal virtual nonReentrant {
+    ) internal virtual {
         // calculate token amount to be created
         uint256 tokenAmount = _getTokenAmount(weiAmount);
 
@@ -377,7 +394,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _deliverTokens(
         address beneficiary,
         uint256 tokenAmount
-    ) internal virtual nonReentrant{
+    ) internal virtual {
         _token.safeTransfer(beneficiary, tokenAmount);
     }
 
@@ -441,7 +458,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * should call super._finalization() to ensure the chain of finalization is
      * executed entirely.
      */
-    function _finalization() internal virtual nonReentrant {
+    function _finalization() internal virtual {
         // solhint-disable-previous-line no-empty-blocks
         // The simplest logic:
         //cosole.log("In Auction, _finalization, length of queue: ", _queue.length);
