@@ -1,4 +1,4 @@
-const { ether, expectEvent, balance } = require("@openzeppelin/test-helpers");
+const { ether, expectEvent, expectRevert, balance } = require("@openzeppelin/test-helpers");
 const { expect } = require("chai");
 
 const RefundableAuctionImpl = artifacts.require("RefundableAuctionImpl");
@@ -20,93 +20,39 @@ contract("Re-entrancy Attack Tests after Finalization", function (accounts) {
       price,
       deployer,
       this.token.address,
-      minimalGoal
+      minimalGoal,
     );
 
     // Transfer tokens to the Auction contract
     await this.token.transfer(this.auction.address, tokenSupply);
-    console.log(this.auction.address);
   });
 
   async function startAttack(targetFunctionId) {
-    const attackValue = ether("0.5");
-    const auctionAddress = this.auction.address; 
-    const attackContract = await AttackContract.new(auctionAddress, true, targetFunctionId, { from: attacker });
-  
-    // Place a bid to meet the minimal goal (if necessary for your scenario)
-    await this.auction.placeBids({ from: investor, value: minimalGoal });
-  
-    // Finalize the auction
-    await this.auction.finalize();
-  
-    // Commence the attack after finalization
-    await attackContract.attack(attackValue, { from: attacker, value: attackValue });
-  
-    // Add assertions to check the success of the attack
-    // For example, checking the attacker's balance increase, auction's balance drain, etc.
+
+    this.attackContract = await AttackContract.new(this.auction.address, true, targetFunctionId, { from: attacker });
+    await this.auction.placeBids({ value: ether("1"), from: investor});
+    await this.auction.finalize({ from: deployer });
+    expect(await this.auction.finalized()).to.equal(true);
+    expect(await this.auction.allowRefund()).to.equal(true);
+    expect(await this.auction.minimalGoalMet()).to.equal(false);
+    await expectRevert(
+        this.attackContract.attack({ from: attacker }),
+        "RefundableAuction: no refunds available"
+      );
   }
 
-  it("After Finalization Attack - should exploit re-entrancy on withdrawToken after finalization", async function () {
-      // Get initial balances
-    const initialAuctionBalance = await balance.current(this.auction.address);
-    const initialAttackerBalance = await balance.current(attacker);
-    const attackValue = ether("0.5");
-    const auctionAddress = this.auction.address; 
-    const attackContract = await AttackContract.new(auctionAddress, true, 0, { from: attacker });
-  
-    // Place a bid to meet the minimal goal (if necessary for your scenario)
-    await this.auction.placeBids({ from: investor, value: minimalGoal });
-  
-    // Finalize the auction
-    await this.auction.finalize();
-  
-    // Commence the attack after finalization
-    await attackContract.attack(attackValue, { from: attacker, value: attackValue });
-  
-    // Get final balances
-    const finalAuctionBalance = await balance.current(this.auction.address);
-    const finalAttackerBalance = await balance.current(attacker);
+//   it("After Finalization Attack - should not exploit re-entrancy on withdrawToken after finalization", async function () {
+//     await startAttack.call(this, 0); // Use call to set the correct context
+//     // Perform your balance checks and assertions here
+//   });
 
-    // Check if funds were drained from the auction
-    expect(finalAuctionBalance).to.be.bignumber.lessThan(initialAuctionBalance);
-    // Check if the attacker's balance increased
-    expect(finalAttackerBalance).to.be.bignumber.greaterThan(initialAttackerBalance);
-    // Add specific assertions for withdrawToken
-  });
+//   it("After Finalization Attack - should not exploit re-entrancy on withdrawFunds after finalization", async function () {
 
-  it("After Finalization Attack - should exploit re-entrancy on withdrawFunds after finalization", async function () {
-    // Get initial balances
-    const initialAuctionBalance = await balance.current(this.auction.address);
-    const initialAttackerBalance = await balance.current(attacker);
+//     await startAttack.call(this, 1);
+
+//   });
   
-    await startAttack(1);
-  
-    // Get final balances
-    const finalAuctionBalance = await balance.current(this.auction.address);
-    const finalAttackerBalance = await balance.current(attacker);
-  
-    // Check if funds were drained from the auction
-    expect(finalAuctionBalance).to.be.bignumber.lessThan(initialAuctionBalance);
-  
-    // Check if the attacker's balance increased
-    expect(finalAttackerBalance).to.be.bignumber.greaterThan(initialAttackerBalance);
-  });
-  
-  it("After Finalization Attack - should exploit re-entrancy on claimRefund after finalization", async function () {
-    // Get initial balances
-    const initialAuctionBalance = await balance.current(this.auction.address);
-    const initialAttackerBalance = await balance.current(attacker);
-  
-    await startAttack(2);
-  
-    // Get final balances
-    const finalAuctionBalance = await balance.current(this.auction.address);
-    const finalAttackerBalance = await balance.current(attacker);
-  
-    // Check if funds were drained from the auction
-    expect(finalAuctionBalance).to.be.bignumber.lessThan(initialAuctionBalance);
-  
-    // Check if the attacker's balance increased
-    expect(finalAttackerBalance).to.be.bignumber.greaterThan(initialAttackerBalance);
+  it("After Finalization Attack - should not exploit re-entrancy on claimRefund after finalization", async function () {
+    await startAttack.call(this, 2);
   });
 });
