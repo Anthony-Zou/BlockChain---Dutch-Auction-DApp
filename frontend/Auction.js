@@ -128,9 +128,9 @@ async function UpdateStatus() {
   var getCurrentTime = convertTime(await dutchAuctionContract.getCurrentTime());
   var openingTime = convertTime(await dutchAuctionContract.openingTime());
   var closingTime = convertTime(await dutchAuctionContract.closingTime());
-  console.log("getCurrentTime: " + getCurrentTime[0]);
-  console.log("openingTime: " + openingTime[0]);
-  console.log("closingTime: " + closingTime[0]);
+  // console.log("getCurrentTime: " + getCurrentTime[0]);
+  // console.log("openingTime: " + openingTime[0]);
+  // console.log("closingTime: " + closingTime[0]);
 
   var TimePassed = differenceInMinutes(
     await dutchAuctionContract.getCurrentTime(),
