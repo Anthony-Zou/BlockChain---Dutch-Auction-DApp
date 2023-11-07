@@ -109,21 +109,33 @@ Function pending tests:
 
     Added test case (preliminary tested):
     [
-        "constructor(uint256 openingTime, uint256 closingTime, uint256 initialPrice, uint256 finalPrice, address wallet, address token, uint256 tokenMaxAmount)",****
-        "event AuctionFinalized()",
-        "event BidsPlaced(address indexed purchaser, uint256 value)",
+      events:
+      "event AuctionFinalized()",
+      "event BidsPlaced(address indexed purchaser, uint256 value)",
       "event ClaimableRefund(address indexed beneficiary, uint256 value)",
       "event TokensBurned(uint256 amount)",
       "event TokensEmissioned(address indexed beneficiary, uint256 value, uint256 amount)",
+
+      only owner call:
+      "constructor(uint256 openingTime, uint256 closingTime, uint256 initialPrice, uint256 finalPrice, address wallet, address token, uint256 tokenMaxAmount)",****
+      "function finalize()",
+      // only after finalization
+      "function burnToken()",
+      "function withdrawFunds()",
+      "function withdrawToken()"
+
+
+      user call(but allow owner also):
+      "function placeBids() payable",
+
+      getter:
       "function afterOpen() view returns (bool)",
       "function allowRefund() view returns (bool)",
-      "function burnToken()",
       "function claimRefund()",
       "function closingTime() view returns (uint256)",
       "function contribution(address beneficiary) view returns (uint256)",
       "function isOpen() view returns (bool)",
       "function finalPrice() view returns (uint256)",
-      "function finalize()",
       "function finalized() view returns (bool)",
       "function getCurrentTime() view returns (uint256)",
       "function hasClosed() view returns (bool)",
@@ -132,14 +144,11 @@ Function pending tests:
       "function minimalGoalMet() view returns (bool)",
       "function openingTime() view returns (uint256)",
       "function owner() view returns (address)",
-      "function placeBids() payable",
       "function price() view returns (uint256)",
       "function remainingSupply() view returns (uint256)","function token() view returns (address)",
       "function tokenDistributed() view returns (uint256)",
       "function weiRaised() view returns (uint256)",
       "function tokenMaxAmount() view returns (uint256)",
-      "function withdrawFunds()",
-      "function withdrawToken()"
       
       
     ]
