@@ -1,14 +1,14 @@
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer, signerAddress, dutchAuctionContract, tokenContract;
 const THRESHOLD_DIGIT = 6;
-const CONVERT_TO_ETH_THRESHOLD = Math.pow(10, 18-THRESHOLD_DIGIT);
+const CONVERT_TO_ETH_THRESHOLD = Math.pow(10, 18 - THRESHOLD_DIGIT);
 const REMAINING_DIGIT = Math.pow(10, -THRESHOLD_DIGIT);
 
 // Declare a global variable to store JSON data
 let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
 
 // Cache openingTime, closingTime, and tokenMaxAmount
-let openingTime, closingTime, duration, tokenMaxAmount, owner;
+let openingTime, closingTime, duration, tokenMaxAmount, owner, coinDistribution;
 // 0 - Before Opening; 1 - On going; 2 - Ended; 3 - Finalized
 let auctionStage = 0;
 let currentPrice, remainingSupply;
@@ -72,6 +72,7 @@ async function initialLoading() {
   if (!owner) {
     owner = await dutchAuctionContract.owner();
   }
+
   hideLoading();
 }
 
@@ -109,6 +110,65 @@ async function placeBids() {
       )
     );
 }
+function createSegment(value, color, coinValue) {
+  const div = document.createElement("div");
+  div.className = `progress-bar ${color} progress-bar-striped progress-bar-animated`;
+  div.setAttribute("role", "progressbar");
+  div.style.width = `${value}%`;
+  div.setAttribute("aria-valuenow", value.toString());
+  div.setAttribute("aria-valuemin", "0");
+  div.setAttribute("aria-valuemax", "100");
+  // div.textContent = `${value}%`; // Optional: add text content to the bar
+  div.textContent = `${Math.floor(coinValue / currentPrice)}`; // Optional: add text content to the bar
+  return div;
+}
+
+// Function to generate segments for each number in the array
+function generateSegments(numbers) {
+  const progressBarContainer = document.getElementById("progressBarContainer");
+  const colors = [
+    "bg-primary",
+    "bg-secondary",
+    "bg-success",
+    "bg-danger",
+    "bg-warning",
+    "bg-info",
+    "bg-dark",
+  ];
+
+  // Calculate the total sum of the numbers
+  const totalSum = numbers.reduce((acc, number) => acc + parseInt(number), 0);
+
+  // Clear the progress bar container
+  progressBarContainer.innerHTML = "";
+
+  // Variable to store the index of the last color used
+  let lastColorIndex = -1;
+
+  // Iterate over the numbers and create segments
+  numbers.forEach((number) => {
+    const percentage = (parseInt(number) / totalSum) * 100;
+
+    // Get a random color index different from the last one
+    let randomColorIndex;
+    do {
+      randomColorIndex = Math.floor(Math.random() * colors.length);
+    } while (randomColorIndex === lastColorIndex);
+
+    // Update the last color index
+    lastColorIndex = randomColorIndex;
+
+    const segmentElement = createSegment(
+      percentage.toFixed(2),
+      colors[randomColorIndex],
+      parseInt(number)
+    );
+    progressBarContainer.appendChild(segmentElement);
+  });
+}
+
+// Your array of numbers
+var numbers = [20, 30, 40, 10];
 
 function updateProgressElements(
   price,
@@ -116,7 +176,10 @@ function updateProgressElements(
   remainingSupply,
   updateBar
 ) {
-  var [minutesPassed, secondsPassed] = differenceInMinutes(currentTime, openingTime);
+  var [minutesPassed, secondsPassed] = differenceInMinutes(
+    currentTime,
+    openingTime
+  );
   // Update 3 input boxs
   document.getElementById("currentTokenAmtInput").value = remainingSupply;
   var [val, unit] = getPriceAndUnit(price);
@@ -128,7 +191,15 @@ function updateProgressElements(
     var timeProgressed = Math.ceil((minutesPassed / duration) * 100) + "%";
     var progressbar = document.getElementById("progressbar");
     progressbar.style.width = timeProgressed;
-    progressbar.innerHTML = `${minutesPassed}m${String(secondsPassed).padStart(2, '0')}s/${duration}m (${timeProgressed})`;
+    progressbar.innerHTML = `${minutesPassed}m${String(secondsPassed).padStart(
+      2,
+      "0"
+    )}s/${duration}m (${timeProgressed})`;
+
+    // Call the generateSegments function with the numbers array
+    if (coinDistribution) {
+      generateSegments(coinDistribution);
+    }
   }
 }
 
@@ -137,7 +208,9 @@ function getPriceAndUnit(price) {
     return [price, "wei"];
   }
   return [
-    (price.div(CONVERT_TO_ETH_THRESHOLD.toString()) * REMAINING_DIGIT).toFixed(THRESHOLD_DIGIT),
+    (price.div(CONVERT_TO_ETH_THRESHOLD.toString()) * REMAINING_DIGIT).toFixed(
+      THRESHOLD_DIGIT
+    ),
     "ether",
   ];
 }
@@ -172,7 +245,8 @@ async function updateStatus() {
   const finalized = await dutchAuctionContract.finalized();
   remainingSupply = await dutchAuctionContract.remainingSupply();
   signerAddress = await signer.getAddress();
-
+  coinDistribution = await dutchAuctionContract.getNonZeroContributions();
+  console.log(coinDistribution);
   if (finalized) {
     auctionStage = 3;
     showAlert(
@@ -269,8 +343,12 @@ function differenceInMinutes(hex1, hex2) {
   const differenceInMilliseconds = Math.abs(date1.getTime() - date2.getTime());
 
   // Convert milliseconds to minutes
-  const differenceInMinutes = Math.floor(differenceInMilliseconds / (1000 * 60));
-  const differenceInSeconds = Math.floor((differenceInMilliseconds / 1000) % 60);
+  const differenceInMinutes = Math.floor(
+    differenceInMilliseconds / (1000 * 60)
+  );
+  const differenceInSeconds = Math.floor(
+    (differenceInMilliseconds / 1000) % 60
+  );
 
   return [differenceInMinutes, differenceInSeconds];
 }
