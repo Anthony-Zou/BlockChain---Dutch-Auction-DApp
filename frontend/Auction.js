@@ -69,9 +69,9 @@ async function placeBids() {
     .placeBids({
       value: numEthToSpend,
     })
-    .then(() => alert("Bid Placed"))
+    .then(() => showAlert("Bid Placed", "success"))
     .catch((error) =>
-      alert(`Failed to purchase Place Bid: ${error["data"]["message"]}`)
+    showAlert(`Failed to purchase Place Bid: ${error["data"]["message"]}`, "danger")
     );
 }
 async function UpdateStatus() {
@@ -221,39 +221,60 @@ async function burnToken() {
   await getAccess();
   await dutchAuctionContract
     .burnToken()
-    .then(() => alert("Token Burned"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
+    .then(() => showAlert("Token Burned", "success"))
+    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
 }
 async function claimRefund() {
   await getAccess();
   await dutchAuctionContract
     .claimRefund()
-    .then(() => alert("Fund Claimed"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
+    .then(() => showAlert("Fund Claimed", "success"))
+    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
 }
 
 async function finalize() {
   await getAccess();
   await dutchAuctionContract
     .finalize()
-    .then(() => alert("Finalized"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
+    .then(() => showAlert("Finalized", "success"))
+    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
 }
 
 async function withdrawFunds() {
   await getAccess();
   await dutchAuctionContract
     .withdrawFunds()
-    .then(() => alert("Fund Withdrawn"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
+    .then(() => showAlert("Fund Withdrawn", "success"))
+    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`));
 }
 
 async function withdrawToken() {
   await getAccess();
   await dutchAuctionContract
     .withdrawToken()
-    .then(() => alert("Token Withdrawn"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
+    .then(() => showAlert("Token Withdrawn", "success"))
+    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
+}
+
+// Function to display a Bootstrap alert with a specified message and type
+function showAlert(message, type) {
+  const alertElement = document.getElementById("alertMessage");
+  
+  // Set the alert message and type
+  document.getElementById("alertContent").innerHTML = message;
+  alertElement.classList.remove("alert-success", "alert-danger", "alert-warning");
+  alertElement.classList.add("alert-" + type);
+  
+  // Show the alert
+  alertElement.style.display = "block";
+}
+
+// Function to hide the Bootstrap alert
+function hideAlert() {
+  const alertElement = document.getElementById("alertMessage");
+  
+  // Hide the alert
+  alertElement.style.display = "none";
 }
 
 // Start updating status only if the auction is active

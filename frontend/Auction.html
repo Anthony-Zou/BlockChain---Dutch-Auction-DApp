@@ -30,157 +30,203 @@
     </style>
   </head>
   <body>
+    <!-- Add a Bootstrap alert div (hidden by default) -->
+    <div
+      class="alert alert-success alert-dismissible fade show"
+      id="alertMessage"
+      style="display: none"
+    >
+      <div id="alertContent"></div>
+      <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="alert"
+        aria-label="Close"
+      ></button>
+    </div>
+
     <div class="container">
       <h2>Dutch Auction</h2>
-    <div class="row g-5">
-
-      <p class="lead">
-        Welcome to the forefront of decentralized auctions: our Blockchain
-        Dutch Auction WebApp seamlessly combines transparency, fairness, and
-        innovation to revolutionize the way you experience asset trading.
-      </p>
-
-    </div>
       <div class="row g-5">
-      <div class="col-md-5 col-lg-4 order-md-last">
-        <h4 class="d-flex justify-content-between align-items-center mb-3">
-          <span class="text-primary">Bid List</span>
-          <span class="badge bg-primary rounded-pill">3</span>
-        </h4>
-        <ul class="list-group mb-3">
-          <li class="list-group-item d-flex justify-content-between lh-sm">
-            <div>
-              <h6 class="my-0">Address 1</h6>
-              <small class="text-body-secondary">X Coin  </small>
-            </div>
-            <span class="text-body-secondary">$xxx</span>
-          </li>
-          <li class="list-group-item d-flex justify-content-between lh-sm">
-            <div>
-              <h6 class="my-0">Address 2</h6>
-              <small class="text-body-secondary">X Coin  </small>
-            </div>
-            <span class="text-body-secondary">$xxx</span>
-          </li>
-          <li class="list-group-item d-flex justify-content-between lh-sm">
-            <div>
-              <h6 class="my-0">Address 3</h6>
-              <small class="text-body-secondary">X Coin  </small>
-            </div>
-            <span class="text-body-secondary">$xxx</span>
+        <p class="lead">
+          Welcome to the forefront of decentralized auctions: our Blockchain
+          Dutch Auction WebApp seamlessly combines transparency, fairness, and
+          innovation to revolutionize the way you experience asset trading.
+        </p>
+      </div>
+      <div class="row g-5">
+        <div class="col-md-5 col-lg-4 order-md-last">
+          <h4 class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-primary">Bid List</span>
+            <span class="badge bg-primary rounded-pill">3</span>
+          </h4>
+          <ul class="list-group mb-3">
+            <li class="list-group-item d-flex justify-content-between lh-sm">
+              <div>
+                <h6 class="my-0">Address 1</h6>
+                <small class="text-body-secondary">X Coin </small>
+              </div>
+              <span class="text-body-secondary">$xxx</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between lh-sm">
+              <div>
+                <h6 class="my-0">Address 2</h6>
+                <small class="text-body-secondary">X Coin </small>
+              </div>
+              <span class="text-body-secondary">$xxx</span>
+            </li>
+            <li class="list-group-item d-flex justify-content-between lh-sm">
+              <div>
+                <h6 class="my-0">Address 3</h6>
+                <small class="text-body-secondary">X Coin </small>
+              </div>
+              <span class="text-body-secondary">$xxx</span>
+            </li>
+          </ul>
 
-        </ul>
-
-        <div class="card p-2">
-          <div class="input-group">
-            <input
-              type="text"
-              class="form-control"
-              placeholder="Promo code"
-              id="bid"
-            />
-            <button  class="btn btn-secondary" onclick="placeBids()">PlaceBids</button>
+          <div class="card p-2">
+            <div class="input-group">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Promo code"
+                id="bid"
+              />
+              <button class="btn btn-secondary" onclick="placeBids()">
+                PlaceBids
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="col-md-7 col-lg-8">
-        <div class="row g-3">
-          <div class="col-sm-6">
-            <label for="openingTime" class="form-label">Opening Time</label>
-            <input
-              type="text"
-              class="form-control"
-              id="openingTime"
-              placeholder=""
-              disabled
-            />
-          </div>
-          <div class="col-sm-6">
-            <label for="closingTime" class="form-label">Closing Time</label>
-            <input
-              type="text"
-              class="form-control"
-              id="closingTime"
-              placeholder=""
-              disabled
-            />
-          </div>
-          <div class="col-sm-4">
-            <label for="firstName" class="form-label">Current Token Price</label>
-            <input
-              type="text"   
-              class="form-control"         
-              id="priceInput"
-              placeholder=""
-              disabled
-            />
-          </div>
-          <div class="col-sm-4">
-            <label for="firstName" class="form-label">Remaining Tokens</label>
-            <input
-              type="text"
-              class="form-control"
-              id="CurrentTokenAmtInput"
- 
-              disabled
-            />
-          </div>
-          <div class="col-sm-4">
-            <label for="lastName" class="form-label">Auction Opened For</label>
-            <input
-              type="text"
-              class="form-control"
-              id="timeInput"
-  
-              disabled
-            />
-          </div>
-          <!-- <button class="btn btn-primary" onclick="UpdateStatus()">
+        <div class="col-md-7 col-lg-8">
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <label for="openingTime" class="form-label">Opening Time</label>
+              <input
+                type="text"
+                class="form-control"
+                id="openingTime"
+                placeholder=""
+                disabled
+              />
+            </div>
+            <div class="col-sm-6">
+              <label for="closingTime" class="form-label">Closing Time</label>
+              <input
+                type="text"
+                class="form-control"
+                id="closingTime"
+                placeholder=""
+                disabled
+              />
+            </div>
+            <div class="col-sm-4">
+              <label for="firstName" class="form-label"
+                >Current Token Price</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                id="priceInput"
+                placeholder=""
+                disabled
+              />
+            </div>
+            <div class="col-sm-4">
+              <label for="firstName" class="form-label">Remaining Tokens</label>
+              <input
+                type="text"
+                class="form-control"
+                id="CurrentTokenAmtInput"
+                disabled
+              />
+            </div>
+            <div class="col-sm-4">
+              <label for="lastName" class="form-label"
+                >Auction Opened For</label
+              >
+              <input type="text" class="form-control" id="timeInput" disabled />
+            </div>
+            <!-- <button class="btn btn-primary" onclick="UpdateStatus()">
             Update status
           </button> -->
-          <div class="col-12">
-            <div class="progress">
-              <div
-                class="progress-bar progress-bar-striped progress-bar-animated"
-                role="progressbar"
-                aria-valuenow="0"
-                aria-valuemin="0"
-                aria-valuemax="100"
-                style="width: 0%"
-                id="progressbar"
-              ></div>
-            </div>
-          <hr class="my-4 " />
-          <div class=""><table>
-    
-          <tr>
-            <td><button type="button" class="btn btn-outline-secondary" onclick="withdrawToken()">Withdraw Token</button></td>
-       
-        
-            <td><button type="button" class="btn btn-outline-success" onclick="withdrawFunds()">Withdraw Funds</button></td>
-          
-          </tr>
-          <tr></tr>
-          <tr>
-            <td><button type="button" class="btn btn-outline-danger" onclick="burnToken()">BurnToken</button></td>
-         
-          
-            <td><button type="button" class="btn btn-outline-warning" onclick="claimRefund()">ClaimRefund</button></td>
-       
-          
-            <td><button type="button" class="btn btn-outline-info" onclick="finalize()">Finalize</button></td>
-       
-          </tr>
+            <div class="col-12">
+              <div class="progress">
+                <div
+                  class="progress-bar progress-bar-striped progress-bar-animated"
+                  role="progressbar"
+                  aria-valuenow="0"
+                  aria-valuemin="0"
+                  aria-valuemax="100"
+                  style="width: 0%"
+                  id="progressbar"
+                ></div>
+              </div>
+              <hr class="my-4" />
+              <div class="">
+                <table>
+                  <tr>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-outline-secondary"
+                        onclick="withdrawToken()"
+                      >
+                        Withdraw Token
+                      </button>
+                    </td>
 
-          </table>
-          
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-outline-success"
+                        onclick="withdrawFunds()"
+                      >
+                        Withdraw Funds
+                      </button>
+                    </td>
+                  </tr>
+                  <tr></tr>
+                  <tr>
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger"
+                        onclick="burnToken()"
+                      >
+                        BurnToken
+                      </button>
+                    </td>
+
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-outline-warning"
+                        onclick="claimRefund()"
+                      >
+                        ClaimRefund
+                      </button>
+                    </td>
+
+                    <td>
+                      <button
+                        type="button"
+                        class="btn btn-outline-info"
+                        onclick="finalize()"
+                      >
+                        Finalize
+                      </button>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </div>
           </div>
+        </div>
       </div>
-      
-        </div>
-        </div>
-<!-- 
+    </div>
+    <!-- 
       <div class="row">
         <div class="item">
           <h3>Token Price (wei): <span id="price"></span></h3>
@@ -226,7 +272,7 @@
       src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"
       type="application/javascript"
     ></script> -->
-    
+
     <script
       src="./ethers-5.2.umd.min.js"
       type="application/javascript"
