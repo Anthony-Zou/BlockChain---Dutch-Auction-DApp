@@ -1,44 +1,41 @@
 const hre = require("hardhat");
 const fs = require("fs/promises");
+// Load deployment configuration from the config file
+const config = require("./deploymentConfig.json");
 
 async function main() {
   const Token = await hre.ethers.getContractFactory("Token");
-  const token = await Token.deploy("1000000");
+  const token = await Token.deploy(config.tokenMaxAmount);
   await token.deployed();
 
   const DutchAuction = await hre.ethers.getContractFactory("DutchAuction");
-  const openingTime = (await ethers.provider.getBlock("latest")).timestamp + 10;
-  const auctionDuration = 1200;
-  const initialPrice = 80000;
-  const finalPrice = 10000;
-  const tokenMaxAmount = 10000;
+  const openingTime = (await ethers.provider.getBlock("latest")).timestamp + config.openingAfter;
   const [deployer] = await hre.ethers.getSigners(); // This will get the deployer's address
   const wallet = deployer.address;
 
   const da = await DutchAuction.deploy(
     openingTime,
-    openingTime + auctionDuration,
-    initialPrice,
-    finalPrice,
+    openingTime + config.auctionDuration,
+    config.initialPrice,
+    config.finalPrice,
     wallet,
     token.address,
-    tokenMaxAmount
+    config.tokenMaxAmount
   );
-  await token.transfer(da.address, tokenMaxAmount);
+  await token.transfer(da.address, config.tokenMaxAmount);
 
   await da.deployed();
   await writeDeploymentInfo(token, "token.json");
   await writeDeploymentInfo(da, "da.json");
 
   // Mine blocks at intervals after deployment
-  const blockIntervalSeconds = 5;
-  const totalBlockCount = auctionDuration / blockIntervalSeconds;
+  const totalBlockCount =config.auctionDuration / config.priceRefreshInterval;
 
   for (let i = 0; i < totalBlockCount; i++) {
     // Forward time by the block interval
-    await new Promise((resolve) => setTimeout(resolve, blockIntervalSeconds * 1000));
+    await new Promise((resolve) => setTimeout(resolve, config.priceRefreshInterval * 1000));
     const newTimestampInSeconds =
-      (await ethers.provider.getBlock("latest")).timestamp + blockIntervalSeconds;
+      (await ethers.provider.getBlock("latest")).timestamp + config.priceRefreshInterval;
     await ethers.provider.send("evm_mine", [newTimestampInSeconds]);
     // console.log(
     //   `Time forwarded by ${blockIntervalSeconds} seconds and new block mined. Current block timestamp: ${newTimestampInSeconds}`

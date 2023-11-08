@@ -1,13 +1,14 @@
 const provider = new ethers.providers.Web3Provider(window.ethereum);
-let signer, dutchAuctionContract, tokenContract;
+let signer, signerAddress, dutchAuctionContract, tokenContract;
 
 // Declare a global variable to store JSON data
 let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
 
 // Cache openingTime, closingTime, and tokenMaxAmount
-let openingTime, closingTime, duration, tokenMaxAmount;
+let openingTime, closingTime, duration, tokenMaxAmount, owner;
+// 0 - Before Opening; 1 - On going; 2 - Ended; 3 - Finalized
+let auctionStage = 0;
 let isAuctionActive = true; // Track if the auction is active
-
 
 async function loadJSON() {
   try {
@@ -46,6 +47,31 @@ async function getAccess() {
   console.log(dutchAuctionContract);
 }
 
+async function initialLoading() {
+  if (openingTime && closingTime && duration && tokenMaxAmount && owner) return;
+
+  // Cache openingTime and closingTime
+  showLoading();
+  if (!openingTime) {
+    openingTime = await dutchAuctionContract.openingTime();
+    document.getElementById("openingTime").value = convertTime(openingTime)[1]; // Set opening price
+  }
+  if (!closingTime) {
+    closingTime = await dutchAuctionContract.closingTime();
+    document.getElementById("closingTime").value = convertTime(closingTime)[1]; // Set closing price
+  }
+  if (!duration) {
+    duration = differenceInMinutes(closingTime, openingTime);
+  }
+  if (!tokenMaxAmount) {
+    tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
+  }
+  if (!owner) {
+    owner = await dutchAuctionContract.owner();
+  }
+  hideLoading();
+}
+
 async function getTokenPrice() {
   await getAccess();
   const price = await dutchAuctionContract.price();
@@ -69,52 +95,92 @@ async function placeBids() {
     .placeBids({
       value: numEthToSpend,
     })
-    .then(() => alert("Bid Placed"))
+    .then(() => showAlert("Bid Placed", "success"))
     .catch((error) =>
-      alert(`Failed to purchase Place Bid: ${error["data"]["message"]}`)
+      showAlert(
+        `Failed to purchase Place Bid: ${error["data"]["message"]}`,
+        "danger"
+      )
     );
 }
-async function UpdateStatus() {
-  await getAccess();
-  // Cache openingTime and closingTime
-  if (!openingTime) {
-    openingTime = await dutchAuctionContract.openingTime();
-  }
-  if (!closingTime) {
-    closingTime = await dutchAuctionContract.closingTime();
-  }
-  if (!duration) {
-    duration = differenceInMinutes(closingTime, openingTime);
-  }
-  if (!tokenMaxAmount) {
-    tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
-  }
-  const currentTime = await dutchAuctionContract.getCurrentTime();
-  if (currentTime < closingTime) {
-    isAuctionActive = true;
-    const price = await dutchAuctionContract.price();
-    const tokenMaxAmount = await dutchAuctionContract.remainingSupply();
-    // Convert Unix timestamp to milliseconds and create a Date object
 
-    //var getCurrentTime = convertTime(await dutchAuctionContract.getCurrentTime());
-    //var openingTime = convertTime(await dutchAuctionContract.openingTime());
-    //var closingTime = convertTime(await dutchAuctionContract.closingTime());
-    // console.log("getCurrentTime: " + getCurrentTime[0]);
-    // console.log("openingTime: " + openingTime[0]);
-    // console.log("closingTime: " + closingTime[0]);
+function updateProgressElements(price, currentTime, tokenMaxAmount, updateBar) {
+  var timePassed = differenceInMinutes(currentTime, openingTime);
+  // Update 3 input boxs
+  document.getElementById("currentTokenAmtInput").value = tokenMaxAmount;
+  document.getElementById("priceInput").value = price;
+  document.getElementById("timeInput").value =
+  Math.ceil(timePassed) + " minute";
 
-    var TimePassed = differenceInMinutes(currentTime, openingTime);
-    document.getElementById("CurrentTokenAmtInput").value = tokenMaxAmount;
-    document.getElementById("priceInput").value = price;
-    document.getElementById("timeInput").value =
-      Math.ceil(TimePassed) + " minute";
-    var timeProgressed = Math.ceil((TimePassed / duration) * 100) + "%";
+  // Update progress bar only when auction ongoing
+  if(updateBar){
+    var timeProgressed = Math.ceil((timePassed / duration) * 100) + "%";
     var progressbar = document.getElementById("progressbar");
     progressbar.style.width = timeProgressed;
-  } else {
-    // Auction is not active
-    isAuctionActive = false;
   }
+}
+
+function updateContributionElements(contribution, price, identity) {
+
+  var coinHeld = Math.floor(contribution / price);
+  if(identity === owner){
+    document.getElementById("contribution").innerHTML = `Contribution: ${contribution}`;
+    document.getElementById("coinHeld").innerHTML = `Approx Coin Held: ${coinHeld}`;
+  }else{
+    document.getElementById("contribution").innerHTML = `Total Wei Raised: ${contribution}`;
+    document.getElementById("coinHeld").innerHTML = `Approx Coin Sold: ${coinHeld}`;
+
+  }
+  //document.getElementById("SingerAddr").value = signerAddress;
+}
+
+async function updateStatus() {
+  await getAccess();
+  await initialLoading();
+  // Update with currentTime
+  const currentTime = await dutchAuctionContract.getCurrentTime();
+  const finalized = await dutchAuctionContract.finalized();
+  signerAddress = await signer.getAddress();
+  if (currentTime > closingTime) {
+    if (finalized) {
+      auctionStage = 2;
+      showAlert(
+        `Auction Closed at ${
+          convertTime(closingTime)[1]
+        }, waiting for owner finalization.`,
+        "warning"
+      );
+    } else {
+      auctionStage = 3;
+      showAlert(
+        `Auction Closed at ${convertTime(closingTime)[1]}, auction finalized.`,
+        "danger"
+      );
+    }
+  } else if (currentTime < openingTime) {
+    auctionStage = 0;
+    showAlert(`Auction Will Open at ${convertTime(openingTime)[1]}`, "danger");
+  } else {
+    auctionStage = 1;
+    showAlert("Auction In Progress", "success");
+  }
+
+  // Get price update
+
+  if (auctionStage >= 1) {
+    var price = await dutchAuctionContract.price();
+    var remainingSupply = await dutchAuctionContract.remainingSupply();
+    updateProgressElements(price, currentTime, remainingSupply, (auctionStage===1));
+    var contribution;
+    if (signerAddress === owner) {
+      contribution = await dutchAuctionContract.contribution(signerAddress);
+    } else {
+      contribution = await dutchAuctionContract.weiAmount();
+    }
+    updateContributionElements(contribution, price);
+  }
+  toggleStageVisibility();
+  toggleOwnerBidderVisibility();
 
   // console.log("afterOpen " + (await dutchAuctionContract.afterOpen()));
   // console.log("allowRefund " + (await dutchAuctionContract.allowRefund()));
@@ -154,6 +220,7 @@ async function UpdateStatus() {
   //   console.log("Current MetaMask account:", account);
   // });
 }
+
 async function getMetaMaskAccount() {
   // Check if MetaMask is installed
   if (window.ethereum) {
@@ -218,44 +285,128 @@ async function burnToken() {
   await getAccess();
   await dutchAuctionContract
     .burnToken()
-    .then(() => alert("Token Burned"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
+    .then(() => showAlert("Token Burned", "success"))
+    .catch((error) =>
+      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
+    );
 }
 async function claimRefund() {
   await getAccess();
   await dutchAuctionContract
     .claimRefund()
-    .then(() => alert("Fund Claimed"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
+    .then(() => showAlert("Fund Claimed", "success"))
+    .catch((error) =>
+      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
+    );
 }
 
 async function finalize() {
   await getAccess();
   await dutchAuctionContract
     .finalize()
-    .then(() => alert("Finalized"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
+    .then(() => showAlert("Finalized", "success"))
+    .catch((error) =>
+      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
+    );
 }
 
 async function withdrawFunds() {
   await getAccess();
   await dutchAuctionContract
     .withdrawFunds()
-    .then(() => alert("Fund Withdrawn"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
+    .then(() => showAlert("Fund Withdrawn", "success"))
+    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`));
 }
 
 async function withdrawToken() {
   await getAccess();
   await dutchAuctionContract
     .withdrawToken()
-    .then(() => alert("Token Withdrawn"))
-    .catch((error) => alert(`Failed : ${error["data"]["message"]}`));
+    .then(() => showAlert("Token Withdrawn", "success"))
+    .catch((error) =>
+      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
+    );
+}
+// Display Helper functions:
+function showLoading() {
+  document.getElementById("loading-overlay").style.display = "block";
+  document.getElementById("hide-when-loading").style.display = "none";
 }
 
-// Start updating status only if the auction is active
+function hideLoading() {
+  document.getElementById("loading-overlay").style.display = "none";
+  document.getElementById("hide-when-loading").style.display = "flex";
+}
+
+// Function to display a Bootstrap alert with a specified message and type
+function showAlert(message, type) {
+  const alertElement = document.getElementById("alertMessage");
+
+  // Set the alert message and type
+  document.getElementById("alertContent").innerHTML = message;
+  alertElement.classList.remove(
+    "alert-success",
+    "alert-danger",
+    "alert-warning"
+  );
+  alertElement.classList.add("alert-" + type);
+
+  // Show the alert
+  alertElement.style.display = "block";
+}
+
+// Function to hide the Bootstrap alert
+function hideAlert() {
+  const alertElement = document.getElementById("alertMessage");
+
+  // Hide the alert
+  alertElement.style.display = "none";
+}
+
+// Function to toggle the visibility of buttons based on conditions
+function toggleOwnerBidderVisibility() {
+  const ownerElements = document.querySelectorAll(".owner-only");
+  const bidderElements = document.querySelector(".bidder-only");
+
+  if (signerAddress === owner) {
+    // Conditions are met, show the buttons in the first row
+    ownerElements.forEach((button) => {
+      button.style.display = "block"; // Change to your preferred display style (e.g., "inline-block")
+    });
+    bidderElements.style.display = "none";
+  } else {
+    // Conditions are not met, show the button in the second table
+    ownerElements.forEach((button) => {
+      button.style.display = "none";
+    });
+    bidderElements.style.display = "block"; // Change to your preferred display style
+  }
+}
+
+// Function to toggle the visibility of buttons based on conditions
+function toggleStageVisibility() {
+  const stageElements = [
+    document.querySelectorAll(".stage-0"),
+    document.querySelectorAll(".stage-1"),
+    document.querySelectorAll(".stage-2"),
+    document.querySelectorAll(".stage-3"),
+  ];
+  // Set everything to none first
+  for (let i = 0; i < 4; i++) {
+    stageElements[i].forEach((button) => {
+      button.style.display = "none";
+    });
+  }
+  // Only show the class with current stage
+  stageElements[auctionStage].forEach((button) => {
+    button.style.display = "flex";
+  });
+}
+
+initialLoading();
+// Start updating status only if the auction is not finalized
 setInterval(() => {
-  if (isAuctionActive) {
-    UpdateStatus();
+  if (auctionStage < 3) {
+    updateStatus();
   }
 }, 5000); // 10000 milliseconds = 10 seconds
