@@ -1,976 +1,57 @@
-<html lang="en" data-bs-theme="light">
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
   <head>
-    <script src="/docs/5.3/assets/js/color-modes.js"></script>
-
-    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <script src="./external/color-modes.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content="" />
-    <meta
-      name="author"
-      content="Mark Otto, Jacob Thornton, and Bootstrap contributors"
-    />
+    <meta name="author" content="Mark Otto, Jacob Thornton, and Bootstrap contributors" />
     <meta name="generator" content="Hugo 0.118.2" />
-    <title>Checkout example · Bootstrap v5.3</title>
+    <title>Dutch Auction</title>
 
-    <style type="text/css">
-      :root,
-      :host {
-        --fa-font-solid: normal 900 1em/1 "Font Awesome 6 Solid";
-        --fa-font-regular: normal 400 1em/1 "Font Awesome 6 Regular";
-        --fa-font-light: normal 300 1em/1 "Font Awesome 6 Light";
-        --fa-font-thin: normal 100 1em/1 "Font Awesome 6 Thin";
-        --fa-font-duotone: normal 900 1em/1 "Font Awesome 6 Duotone";
-        --fa-font-sharp-solid: normal 900 1em/1 "Font Awesome 6 Sharp";
-        --fa-font-sharp-regular: normal 400 1em/1 "Font Awesome 6 Sharp";
-        --fa-font-sharp-light: normal 300 1em/1 "Font Awesome 6 Sharp";
-        --fa-font-brands: normal 400 1em/1 "Font Awesome 6 Brands";
-      }
-
-      svg:not(:root).svg-inline--fa,
-      svg:not(:host).svg-inline--fa {
-        overflow: visible;
-        box-sizing: content-box;
-      }
-
-      .svg-inline--fa {
-        display: var(--fa-display, inline-block);
-        height: 1em;
-        overflow: visible;
-        vertical-align: -0.125em;
-      }
-      .svg-inline--fa.fa-2xs {
-        vertical-align: 0.1em;
-      }
-      .svg-inline--fa.fa-xs {
-        vertical-align: 0em;
-      }
-      .svg-inline--fa.fa-sm {
-        vertical-align: -0.0714285705em;
-      }
-      .svg-inline--fa.fa-lg {
-        vertical-align: -0.2em;
-      }
-      .svg-inline--fa.fa-xl {
-        vertical-align: -0.25em;
-      }
-      .svg-inline--fa.fa-2xl {
-        vertical-align: -0.3125em;
-      }
-      .svg-inline--fa.fa-pull-left {
-        margin-right: var(--fa-pull-margin, 0.3em);
-        width: auto;
-      }
-      .svg-inline--fa.fa-pull-right {
-        margin-left: var(--fa-pull-margin, 0.3em);
-        width: auto;
-      }
-      .svg-inline--fa.fa-li {
-        width: var(--fa-li-width, 2em);
-        top: 0.25em;
-      }
-      .svg-inline--fa.fa-fw {
-        width: var(--fa-fw-width, 1.25em);
-      }
-
-      .fa-layers svg.svg-inline--fa {
-        bottom: 0;
-        left: 0;
-        margin: auto;
-        position: absolute;
-        right: 0;
-        top: 0;
-      }
-
-      .fa-layers-counter,
-      .fa-layers-text {
-        display: inline-block;
-        position: absolute;
-        text-align: center;
-      }
-
-      .fa-layers {
-        display: inline-block;
-        height: 1em;
-        position: relative;
-        text-align: center;
-        vertical-align: -0.125em;
-        width: 1em;
-      }
-      .fa-layers svg.svg-inline--fa {
-        -webkit-transform-origin: center center;
-        transform-origin: center center;
-      }
-
-      .fa-layers-text {
-        left: 50%;
-        top: 50%;
-        -webkit-transform: translate(-50%, -50%);
-        transform: translate(-50%, -50%);
-        -webkit-transform-origin: center center;
-        transform-origin: center center;
-      }
-
-      .fa-layers-counter {
-        background-color: var(--fa-counter-background-color, #ff253a);
-        border-radius: var(--fa-counter-border-radius, 1em);
-        box-sizing: border-box;
-        color: var(--fa-inverse, #fff);
-        line-height: var(--fa-counter-line-height, 1);
-        max-width: var(--fa-counter-max-width, 5em);
-        min-width: var(--fa-counter-min-width, 1.5em);
-        overflow: hidden;
-        padding: var(--fa-counter-padding, 0.25em 0.5em);
-        right: var(--fa-right, 0);
-        text-overflow: ellipsis;
-        top: var(--fa-top, 0);
-        -webkit-transform: scale(var(--fa-counter-scale, 0.25));
-        transform: scale(var(--fa-counter-scale, 0.25));
-        -webkit-transform-origin: top right;
-        transform-origin: top right;
-      }
-
-      .fa-layers-bottom-right {
-        bottom: var(--fa-bottom, 0);
-        right: var(--fa-right, 0);
-        top: auto;
-        -webkit-transform: scale(var(--fa-layers-scale, 0.25));
-        transform: scale(var(--fa-layers-scale, 0.25));
-        -webkit-transform-origin: bottom right;
-        transform-origin: bottom right;
-      }
-
-      .fa-layers-bottom-left {
-        bottom: var(--fa-bottom, 0);
-        left: var(--fa-left, 0);
-        right: auto;
-        top: auto;
-        -webkit-transform: scale(var(--fa-layers-scale, 0.25));
-        transform: scale(var(--fa-layers-scale, 0.25));
-        -webkit-transform-origin: bottom left;
-        transform-origin: bottom left;
-      }
-
-      .fa-layers-top-right {
-        top: var(--fa-top, 0);
-        right: var(--fa-right, 0);
-        -webkit-transform: scale(var(--fa-layers-scale, 0.25));
-        transform: scale(var(--fa-layers-scale, 0.25));
-        -webkit-transform-origin: top right;
-        transform-origin: top right;
-      }
-
-      .fa-layers-top-left {
-        left: var(--fa-left, 0);
-        right: auto;
-        top: var(--fa-top, 0);
-        -webkit-transform: scale(var(--fa-layers-scale, 0.25));
-        transform: scale(var(--fa-layers-scale, 0.25));
-        -webkit-transform-origin: top left;
-        transform-origin: top left;
-      }
-
-      .fa-1x {
-        font-size: 1em;
-      }
-
-      .fa-2x {
-        font-size: 2em;
-      }
-
-      .fa-3x {
-        font-size: 3em;
-      }
-
-      .fa-4x {
-        font-size: 4em;
-      }
-
-      .fa-5x {
-        font-size: 5em;
-      }
-
-      .fa-6x {
-        font-size: 6em;
-      }
-
-      .fa-7x {
-        font-size: 7em;
-      }
-
-      .fa-8x {
-        font-size: 8em;
-      }
-
-      .fa-9x {
-        font-size: 9em;
-      }
-
-      .fa-10x {
-        font-size: 10em;
-      }
-
-      .fa-2xs {
-        font-size: 0.625em;
-        line-height: 0.1em;
-        vertical-align: 0.225em;
-      }
-
-      .fa-xs {
-        font-size: 0.75em;
-        line-height: 0.0833333337em;
-        vertical-align: 0.125em;
-      }
-
-      .fa-sm {
-        font-size: 0.875em;
-        line-height: 0.0714285718em;
-        vertical-align: 0.0535714295em;
-      }
-
-      .fa-lg {
-        font-size: 1.25em;
-        line-height: 0.05em;
-        vertical-align: -0.075em;
-      }
-
-      .fa-xl {
-        font-size: 1.5em;
-        line-height: 0.0416666682em;
-        vertical-align: -0.125em;
-      }
-
-      .fa-2xl {
-        font-size: 2em;
-        line-height: 0.03125em;
-        vertical-align: -0.1875em;
-      }
-
-      .fa-fw {
-        text-align: center;
-        width: 1.25em;
-      }
-
-      .fa-ul {
-        list-style-type: none;
-        margin-left: var(--fa-li-margin, 2.5em);
-        padding-left: 0;
-      }
-      .fa-ul > li {
-        position: relative;
-      }
-
-      .fa-li {
-        left: calc(var(--fa-li-width, 2em) * -1);
-        position: absolute;
-        text-align: center;
-        width: var(--fa-li-width, 2em);
-        line-height: inherit;
-      }
-
-      .fa-border {
-        border-color: var(--fa-border-color, #eee);
-        border-radius: var(--fa-border-radius, 0.1em);
-        border-style: var(--fa-border-style, solid);
-        border-width: var(--fa-border-width, 0.08em);
-        padding: var(--fa-border-padding, 0.2em 0.25em 0.15em);
-      }
-
-      .fa-pull-left {
-        float: left;
-        margin-right: var(--fa-pull-margin, 0.3em);
-      }
-
-      .fa-pull-right {
-        float: right;
-        margin-left: var(--fa-pull-margin, 0.3em);
-      }
-
-      .fa-beat {
-        -webkit-animation-name: fa-beat;
-        animation-name: fa-beat;
-        -webkit-animation-delay: var(--fa-animation-delay, 0s);
-        animation-delay: var(--fa-animation-delay, 0s);
-        -webkit-animation-direction: var(--fa-animation-direction, normal);
-        animation-direction: var(--fa-animation-direction, normal);
-        -webkit-animation-duration: var(--fa-animation-duration, 1s);
-        animation-duration: var(--fa-animation-duration, 1s);
-        -webkit-animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        -webkit-animation-timing-function: var(
-          --fa-animation-timing,
-          ease-in-out
-        );
-        animation-timing-function: var(--fa-animation-timing, ease-in-out);
-      }
-
-      .fa-bounce {
-        -webkit-animation-name: fa-bounce;
-        animation-name: fa-bounce;
-        -webkit-animation-delay: var(--fa-animation-delay, 0s);
-        animation-delay: var(--fa-animation-delay, 0s);
-        -webkit-animation-direction: var(--fa-animation-direction, normal);
-        animation-direction: var(--fa-animation-direction, normal);
-        -webkit-animation-duration: var(--fa-animation-duration, 1s);
-        animation-duration: var(--fa-animation-duration, 1s);
-        -webkit-animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        -webkit-animation-timing-function: var(
-          --fa-animation-timing,
-          cubic-bezier(0.28, 0.84, 0.42, 1)
-        );
-        animation-timing-function: var(
-          --fa-animation-timing,
-          cubic-bezier(0.28, 0.84, 0.42, 1)
-        );
-      }
-
-      .fa-fade {
-        -webkit-animation-name: fa-fade;
-        animation-name: fa-fade;
-        -webkit-animation-delay: var(--fa-animation-delay, 0s);
-        animation-delay: var(--fa-animation-delay, 0s);
-        -webkit-animation-direction: var(--fa-animation-direction, normal);
-        animation-direction: var(--fa-animation-direction, normal);
-        -webkit-animation-duration: var(--fa-animation-duration, 1s);
-        animation-duration: var(--fa-animation-duration, 1s);
-        -webkit-animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        -webkit-animation-timing-function: var(
-          --fa-animation-timing,
-          cubic-bezier(0.4, 0, 0.6, 1)
-        );
-        animation-timing-function: var(
-          --fa-animation-timing,
-          cubic-bezier(0.4, 0, 0.6, 1)
-        );
-      }
-
-      .fa-beat-fade {
-        -webkit-animation-name: fa-beat-fade;
-        animation-name: fa-beat-fade;
-        -webkit-animation-delay: var(--fa-animation-delay, 0s);
-        animation-delay: var(--fa-animation-delay, 0s);
-        -webkit-animation-direction: var(--fa-animation-direction, normal);
-        animation-direction: var(--fa-animation-direction, normal);
-        -webkit-animation-duration: var(--fa-animation-duration, 1s);
-        animation-duration: var(--fa-animation-duration, 1s);
-        -webkit-animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        -webkit-animation-timing-function: var(
-          --fa-animation-timing,
-          cubic-bezier(0.4, 0, 0.6, 1)
-        );
-        animation-timing-function: var(
-          --fa-animation-timing,
-          cubic-bezier(0.4, 0, 0.6, 1)
-        );
-      }
-
-      .fa-flip {
-        -webkit-animation-name: fa-flip;
-        animation-name: fa-flip;
-        -webkit-animation-delay: var(--fa-animation-delay, 0s);
-        animation-delay: var(--fa-animation-delay, 0s);
-        -webkit-animation-direction: var(--fa-animation-direction, normal);
-        animation-direction: var(--fa-animation-direction, normal);
-        -webkit-animation-duration: var(--fa-animation-duration, 1s);
-        animation-duration: var(--fa-animation-duration, 1s);
-        -webkit-animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        -webkit-animation-timing-function: var(
-          --fa-animation-timing,
-          ease-in-out
-        );
-        animation-timing-function: var(--fa-animation-timing, ease-in-out);
-      }
-
-      .fa-shake {
-        -webkit-animation-name: fa-shake;
-        animation-name: fa-shake;
-        -webkit-animation-delay: var(--fa-animation-delay, 0s);
-        animation-delay: var(--fa-animation-delay, 0s);
-        -webkit-animation-direction: var(--fa-animation-direction, normal);
-        animation-direction: var(--fa-animation-direction, normal);
-        -webkit-animation-duration: var(--fa-animation-duration, 1s);
-        animation-duration: var(--fa-animation-duration, 1s);
-        -webkit-animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        -webkit-animation-timing-function: var(--fa-animation-timing, linear);
-        animation-timing-function: var(--fa-animation-timing, linear);
-      }
-
-      .fa-spin {
-        -webkit-animation-name: fa-spin;
-        animation-name: fa-spin;
-        -webkit-animation-delay: var(--fa-animation-delay, 0s);
-        animation-delay: var(--fa-animation-delay, 0s);
-        -webkit-animation-direction: var(--fa-animation-direction, normal);
-        animation-direction: var(--fa-animation-direction, normal);
-        -webkit-animation-duration: var(--fa-animation-duration, 2s);
-        animation-duration: var(--fa-animation-duration, 2s);
-        -webkit-animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        -webkit-animation-timing-function: var(--fa-animation-timing, linear);
-        animation-timing-function: var(--fa-animation-timing, linear);
-      }
-
-      .fa-spin-reverse {
-        --fa-animation-direction: reverse;
-      }
-
-      .fa-pulse,
-      .fa-spin-pulse {
-        -webkit-animation-name: fa-spin;
-        animation-name: fa-spin;
-        -webkit-animation-direction: var(--fa-animation-direction, normal);
-        animation-direction: var(--fa-animation-direction, normal);
-        -webkit-animation-duration: var(--fa-animation-duration, 1s);
-        animation-duration: var(--fa-animation-duration, 1s);
-        -webkit-animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        animation-iteration-count: var(
-          --fa-animation-iteration-count,
-          infinite
-        );
-        -webkit-animation-timing-function: var(--fa-animation-timing, steps(8));
-        animation-timing-function: var(--fa-animation-timing, steps(8));
-      }
-
-      @media (prefers-reduced-motion: reduce) {
-        .fa-beat,
-        .fa-bounce,
-        .fa-fade,
-        .fa-beat-fade,
-        .fa-flip,
-        .fa-pulse,
-        .fa-shake,
-        .fa-spin,
-        .fa-spin-pulse {
-          -webkit-animation-delay: -1ms;
-          animation-delay: -1ms;
-          -webkit-animation-duration: 1ms;
-          animation-duration: 1ms;
-          -webkit-animation-iteration-count: 1;
-          animation-iteration-count: 1;
-          -webkit-transition-delay: 0s;
-          transition-delay: 0s;
-          -webkit-transition-duration: 0s;
-          transition-duration: 0s;
-        }
-      }
-      @-webkit-keyframes fa-beat {
-        0%,
-        90% {
-          -webkit-transform: scale(1);
-          transform: scale(1);
-        }
-        45% {
-          -webkit-transform: scale(var(--fa-beat-scale, 1.25));
-          transform: scale(var(--fa-beat-scale, 1.25));
-        }
-      }
-      @keyframes fa-beat {
-        0%,
-        90% {
-          -webkit-transform: scale(1);
-          transform: scale(1);
-        }
-        45% {
-          -webkit-transform: scale(var(--fa-beat-scale, 1.25));
-          transform: scale(var(--fa-beat-scale, 1.25));
-        }
-      }
-      @-webkit-keyframes fa-bounce {
-        0% {
-          -webkit-transform: scale(1, 1) translateY(0);
-          transform: scale(1, 1) translateY(0);
-        }
-        10% {
-          -webkit-transform: scale(
-              var(--fa-bounce-start-scale-x, 1.1),
-              var(--fa-bounce-start-scale-y, 0.9)
-            )
-            translateY(0);
-          transform: scale(
-              var(--fa-bounce-start-scale-x, 1.1),
-              var(--fa-bounce-start-scale-y, 0.9)
-            )
-            translateY(0);
-        }
-        30% {
-          -webkit-transform: scale(
-              var(--fa-bounce-jump-scale-x, 0.9),
-              var(--fa-bounce-jump-scale-y, 1.1)
-            )
-            translateY(var(--fa-bounce-height, -0.5em));
-          transform: scale(
-              var(--fa-bounce-jump-scale-x, 0.9),
-              var(--fa-bounce-jump-scale-y, 1.1)
-            )
-            translateY(var(--fa-bounce-height, -0.5em));
-        }
-        50% {
-          -webkit-transform: scale(
-              var(--fa-bounce-land-scale-x, 1.05),
-              var(--fa-bounce-land-scale-y, 0.95)
-            )
-            translateY(0);
-          transform: scale(
-              var(--fa-bounce-land-scale-x, 1.05),
-              var(--fa-bounce-land-scale-y, 0.95)
-            )
-            translateY(0);
-        }
-        57% {
-          -webkit-transform: scale(1, 1)
-            translateY(var(--fa-bounce-rebound, -0.125em));
-          transform: scale(1, 1) translateY(var(--fa-bounce-rebound, -0.125em));
-        }
-        64% {
-          -webkit-transform: scale(1, 1) translateY(0);
-          transform: scale(1, 1) translateY(0);
-        }
-        100% {
-          -webkit-transform: scale(1, 1) translateY(0);
-          transform: scale(1, 1) translateY(0);
-        }
-      }
-      @keyframes fa-bounce {
-        0% {
-          -webkit-transform: scale(1, 1) translateY(0);
-          transform: scale(1, 1) translateY(0);
-        }
-        10% {
-          -webkit-transform: scale(
-              var(--fa-bounce-start-scale-x, 1.1),
-              var(--fa-bounce-start-scale-y, 0.9)
-            )
-            translateY(0);
-          transform: scale(
-              var(--fa-bounce-start-scale-x, 1.1),
-              var(--fa-bounce-start-scale-y, 0.9)
-            )
-            translateY(0);
-        }
-        30% {
-          -webkit-transform: scale(
-              var(--fa-bounce-jump-scale-x, 0.9),
-              var(--fa-bounce-jump-scale-y, 1.1)
-            )
-            translateY(var(--fa-bounce-height, -0.5em));
-          transform: scale(
-              var(--fa-bounce-jump-scale-x, 0.9),
-              var(--fa-bounce-jump-scale-y, 1.1)
-            )
-            translateY(var(--fa-bounce-height, -0.5em));
-        }
-        50% {
-          -webkit-transform: scale(
-              var(--fa-bounce-land-scale-x, 1.05),
-              var(--fa-bounce-land-scale-y, 0.95)
-            )
-            translateY(0);
-          transform: scale(
-              var(--fa-bounce-land-scale-x, 1.05),
-              var(--fa-bounce-land-scale-y, 0.95)
-            )
-            translateY(0);
-        }
-        57% {
-          -webkit-transform: scale(1, 1)
-            translateY(var(--fa-bounce-rebound, -0.125em));
-          transform: scale(1, 1) translateY(var(--fa-bounce-rebound, -0.125em));
-        }
-        64% {
-          -webkit-transform: scale(1, 1) translateY(0);
-          transform: scale(1, 1) translateY(0);
-        }
-        100% {
-          -webkit-transform: scale(1, 1) translateY(0);
-          transform: scale(1, 1) translateY(0);
-        }
-      }
-      @-webkit-keyframes fa-fade {
-        50% {
-          opacity: var(--fa-fade-opacity, 0.4);
-        }
-      }
-      @keyframes fa-fade {
-        50% {
-          opacity: var(--fa-fade-opacity, 0.4);
-        }
-      }
-      @-webkit-keyframes fa-beat-fade {
-        0%,
-        100% {
-          opacity: var(--fa-beat-fade-opacity, 0.4);
-          -webkit-transform: scale(1);
-          transform: scale(1);
-        }
-        50% {
-          opacity: 1;
-          -webkit-transform: scale(var(--fa-beat-fade-scale, 1.125));
-          transform: scale(var(--fa-beat-fade-scale, 1.125));
-        }
-      }
-      @keyframes fa-beat-fade {
-        0%,
-        100% {
-          opacity: var(--fa-beat-fade-opacity, 0.4);
-          -webkit-transform: scale(1);
-          transform: scale(1);
-        }
-        50% {
-          opacity: 1;
-          -webkit-transform: scale(var(--fa-beat-fade-scale, 1.125));
-          transform: scale(var(--fa-beat-fade-scale, 1.125));
-        }
-      }
-      @-webkit-keyframes fa-flip {
-        50% {
-          -webkit-transform: rotate3d(
-            var(--fa-flip-x, 0),
-            var(--fa-flip-y, 1),
-            var(--fa-flip-z, 0),
-            var(--fa-flip-angle, -180deg)
-          );
-          transform: rotate3d(
-            var(--fa-flip-x, 0),
-            var(--fa-flip-y, 1),
-            var(--fa-flip-z, 0),
-            var(--fa-flip-angle, -180deg)
-          );
-        }
-      }
-      @keyframes fa-flip {
-        50% {
-          -webkit-transform: rotate3d(
-            var(--fa-flip-x, 0),
-            var(--fa-flip-y, 1),
-            var(--fa-flip-z, 0),
-            var(--fa-flip-angle, -180deg)
-          );
-          transform: rotate3d(
-            var(--fa-flip-x, 0),
-            var(--fa-flip-y, 1),
-            var(--fa-flip-z, 0),
-            var(--fa-flip-angle, -180deg)
-          );
-        }
-      }
-      @-webkit-keyframes fa-shake {
-        0% {
-          -webkit-transform: rotate(-15deg);
-          transform: rotate(-15deg);
-        }
-        4% {
-          -webkit-transform: rotate(15deg);
-          transform: rotate(15deg);
-        }
-        8%,
-        24% {
-          -webkit-transform: rotate(-18deg);
-          transform: rotate(-18deg);
-        }
-        12%,
-        28% {
-          -webkit-transform: rotate(18deg);
-          transform: rotate(18deg);
-        }
-        16% {
-          -webkit-transform: rotate(-22deg);
-          transform: rotate(-22deg);
-        }
-        20% {
-          -webkit-transform: rotate(22deg);
-          transform: rotate(22deg);
-        }
-        32% {
-          -webkit-transform: rotate(-12deg);
-          transform: rotate(-12deg);
-        }
-        36% {
-          -webkit-transform: rotate(12deg);
-          transform: rotate(12deg);
-        }
-        40%,
-        100% {
-          -webkit-transform: rotate(0deg);
-          transform: rotate(0deg);
-        }
-      }
-      @keyframes fa-shake {
-        0% {
-          -webkit-transform: rotate(-15deg);
-          transform: rotate(-15deg);
-        }
-        4% {
-          -webkit-transform: rotate(15deg);
-          transform: rotate(15deg);
-        }
-        8%,
-        24% {
-          -webkit-transform: rotate(-18deg);
-          transform: rotate(-18deg);
-        }
-        12%,
-        28% {
-          -webkit-transform: rotate(18deg);
-          transform: rotate(18deg);
-        }
-        16% {
-          -webkit-transform: rotate(-22deg);
-          transform: rotate(-22deg);
-        }
-        20% {
-          -webkit-transform: rotate(22deg);
-          transform: rotate(22deg);
-        }
-        32% {
-          -webkit-transform: rotate(-12deg);
-          transform: rotate(-12deg);
-        }
-        36% {
-          -webkit-transform: rotate(12deg);
-          transform: rotate(12deg);
-        }
-        40%,
-        100% {
-          -webkit-transform: rotate(0deg);
-          transform: rotate(0deg);
-        }
-      }
-      @-webkit-keyframes fa-spin {
-        0% {
-          -webkit-transform: rotate(0deg);
-          transform: rotate(0deg);
-        }
-        100% {
-          -webkit-transform: rotate(360deg);
-          transform: rotate(360deg);
-        }
-      }
-      @keyframes fa-spin {
-        0% {
-          -webkit-transform: rotate(0deg);
-          transform: rotate(0deg);
-        }
-        100% {
-          -webkit-transform: rotate(360deg);
-          transform: rotate(360deg);
-        }
-      }
-      .fa-rotate-90 {
-        -webkit-transform: rotate(90deg);
-        transform: rotate(90deg);
-      }
-
-      .fa-rotate-180 {
-        -webkit-transform: rotate(180deg);
-        transform: rotate(180deg);
-      }
-
-      .fa-rotate-270 {
-        -webkit-transform: rotate(270deg);
-        transform: rotate(270deg);
-      }
-
-      .fa-flip-horizontal {
-        -webkit-transform: scale(-1, 1);
-        transform: scale(-1, 1);
-      }
-
-      .fa-flip-vertical {
-        -webkit-transform: scale(1, -1);
-        transform: scale(1, -1);
-      }
-
-      .fa-flip-both,
-      .fa-flip-horizontal.fa-flip-vertical {
-        -webkit-transform: scale(-1, -1);
-        transform: scale(-1, -1);
-      }
-
-      .fa-rotate-by {
-        -webkit-transform: rotate(var(--fa-rotate-angle, none));
-        transform: rotate(var(--fa-rotate-angle, none));
-      }
-
-      .fa-stack {
-        display: inline-block;
-        vertical-align: middle;
-        height: 2em;
-        position: relative;
-        width: 2.5em;
-      }
-
-      .fa-stack-1x,
-      .fa-stack-2x {
-        bottom: 0;
-        left: 0;
-        margin: auto;
-        position: absolute;
-        right: 0;
-        top: 0;
-        z-index: var(--fa-stack-z-index, auto);
-      }
-
-      .svg-inline--fa.fa-stack-1x {
-        height: 1em;
-        width: 1.25em;
-      }
-      .svg-inline--fa.fa-stack-2x {
-        height: 2em;
-        width: 2.5em;
-      }
-
-      .fa-inverse {
-        color: var(--fa-inverse, #fff);
-      }
-
-      .sr-only,
-      .fa-sr-only {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border-width: 0;
-      }
-
-      .sr-only-focusable:not(:focus),
-      .fa-sr-only-focusable:not(:focus) {
-        position: absolute;
-        width: 1px;
-        height: 1px;
-        padding: 0;
-        margin: -1px;
-        overflow: hidden;
-        clip: rect(0, 0, 0, 0);
-        white-space: nowrap;
-        border-width: 0;
-      }
-
-      .svg-inline--fa .fa-primary {
-        fill: var(--fa-primary-color, currentColor);
-        opacity: var(--fa-primary-opacity, 1);
-      }
-
-      .svg-inline--fa .fa-secondary {
-        fill: var(--fa-secondary-color, currentColor);
-        opacity: var(--fa-secondary-opacity, 0.4);
-      }
-
-      .svg-inline--fa.fa-swap-opacity .fa-primary {
-        opacity: var(--fa-secondary-opacity, 0.4);
-      }
-
-      .svg-inline--fa.fa-swap-opacity .fa-secondary {
-        opacity: var(--fa-primary-opacity, 1);
-      }
-
-      .svg-inline--fa mask .fa-primary,
-      .svg-inline--fa mask .fa-secondary {
-        fill: black;
-      }
-
-      .fad.fa-inverse,
-      .fa-duotone.fa-inverse {
-        color: var(--fa-inverse, #fff);
-      }
-    </style>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@docsearch/css@3" />
     <link
-      rel="canonical"
-      href="https://getbootstrap.com/docs/5.3/examples/checkout/"
-    />
-
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@docsearch/css@3"
-    />
-
-    <link
-      href="/docs/5.3/dist/css/bootstrap.min.css"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
       integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
-      crossorigin="anonymous"
-    />
+      crossorigin="anonymous" />
 
-    <!-- Favicons -->
-    <link
-      rel="apple-touch-icon"
-      href="/docs/5.3/assets/img/favicons/apple-touch-icon.png"
-      sizes="180x180"
-    />
-    <link
-      rel="icon"
-      href="/docs/5.3/assets/img/favicons/favicon-32x32.png"
-      sizes="32x32"
-      type="image/png"
-    />
-    <link
-      rel="icon"
-      href="/docs/5.3/assets/img/favicons/favicon-16x16.png"
-      sizes="16x16"
-      type="image/png"
-    />
-    <link rel="manifest" href="/docs/5.3/assets/img/favicons/manifest.json" />
-    <link
-      rel="mask-icon"
-      href="/docs/5.3/assets/img/favicons/safari-pinned-tab.svg"
-      color="#712cf9"
-    />
-    <link rel="icon" href="/docs/5.3/assets/img/favicons/favicon.ico" />
-    <meta name="theme-color" content="#712cf9" />
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="./assets/favicon.ico" />
 
     <style>
+      #loading-overlay {
+        justify-content: center;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9999; /* Ensure the spinner is on top of other content */
+      }
+
+      #loading-spinner {
+        border: 8px solid #f3f3f3;
+        border-top: 8px solid #3498db;
+        border-radius: 50%;
+        position: fixed;
+        top: 48%;
+        left: 48%;
+        width: 50px;
+        height: 50px;
+        animation: spin 2s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
       .bd-placeholder-img {
         font-size: 1.125rem;
         text-anchor: middle;
@@ -991,8 +72,7 @@
         background-color: rgba(0, 0, 0, 0.1);
         border: solid rgba(0, 0, 0, 0.15);
         border-width: 1px 0;
-        box-shadow: inset 0 0.5em 1.5em rgba(0, 0, 0, 0.1),
-          inset 0 0.125em 0.5em rgba(0, 0, 0, 0.15);
+        box-shadow: inset 0 0.5em 1.5em rgba(0, 0, 0, 0.1), inset 0 0.125em 0.5em rgba(0, 0, 0, 0.15);
       }
 
       .b-example-vr {
@@ -1049,87 +129,44 @@
         display: block !important;
       }
     </style>
-
-    <!-- Custom styles for this template -->
-    <link href="index.css" rel="stylesheet" />
-    <style type="text/css">
-      @font-face {
-        font-weight: 400;
-        font-style: normal;
-        font-family: circular;
-
-        src: url("chrome-extension://liecbddmkiiihnedobmlmillhodjkdmb/fonts/CircularXXWeb-Book.woff2")
-          format("woff2");
-      }
-
-      @font-face {
-        font-weight: 700;
-        font-style: normal;
-        font-family: circular;
-
-        src: url("chrome-extension://liecbddmkiiihnedobmlmillhodjkdmb/fonts/CircularXXWeb-Bold.woff2")
-          format("woff2");
-      }
-    </style>
   </head>
-  <body
-    class="bg-body-tertiary vsc-initialized"
-    data-new-gr-c-s-check-loaded="14.1136.0"
-    data-gr-ext-installed=""
-  >
+  <body>
     <svg xmlns="http://www.w3.org/2000/svg" class="d-none">
       <symbol id="check2" viewBox="0 0 16 16">
         <path
-          d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"
-        ></path>
+          d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"></path>
       </symbol>
       <symbol id="circle-half" viewBox="0 0 16 16">
-        <path
-          d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"
-        ></path>
+        <path d="M8 15A7 7 0 1 0 8 1v14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"></path>
       </symbol>
       <symbol id="moon-stars-fill" viewBox="0 0 16 16">
         <path
-          d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"
-        ></path>
+          d="M6 .278a.768.768 0 0 1 .08.858 7.208 7.208 0 0 0-.878 3.46c0 4.021 3.278 7.277 7.318 7.277.527 0 1.04-.055 1.533-.16a.787.787 0 0 1 .81.316.733.733 0 0 1-.031.893A8.349 8.349 0 0 1 8.344 16C3.734 16 0 12.286 0 7.71 0 4.266 2.114 1.312 5.124.06A.752.752 0 0 1 6 .278z"></path>
         <path
-          d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"
-        ></path>
+          d="M10.794 3.148a.217.217 0 0 1 .412 0l.387 1.162c.173.518.579.924 1.097 1.097l1.162.387a.217.217 0 0 1 0 .412l-1.162.387a1.734 1.734 0 0 0-1.097 1.097l-.387 1.162a.217.217 0 0 1-.412 0l-.387-1.162A1.734 1.734 0 0 0 9.31 6.593l-1.162-.387a.217.217 0 0 1 0-.412l1.162-.387a1.734 1.734 0 0 0 1.097-1.097l.387-1.162zM13.863.099a.145.145 0 0 1 .274 0l.258.774c.115.346.386.617.732.732l.774.258a.145.145 0 0 1 0 .274l-.774.258a1.156 1.156 0 0 0-.732.732l-.258.774a.145.145 0 0 1-.274 0l-.258-.774a1.156 1.156 0 0 0-.732-.732l-.774-.258a.145.145 0 0 1 0-.274l.774-.258c.346-.115.617-.386.732-.732L13.863.1z"></path>
       </symbol>
       <symbol id="sun-fill" viewBox="0 0 16 16">
         <path
-          d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"
-        ></path>
+          d="M8 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0zm0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13zm8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5zM3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8zm10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0zm-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0zm9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707zM4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708z"></path>
       </symbol>
     </svg>
 
-    <div
-      class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle"
-    >
+    <div class="dropdown position-fixed bottom-0 end-0 mb-3 me-3 bd-mode-toggle">
       <button
         class="btn btn-bd-primary py-2 dropdown-toggle d-flex align-items-center"
         id="bd-theme"
         type="button"
         aria-expanded="false"
         data-bs-toggle="dropdown"
-        aria-label="Toggle theme (light)"
-      >
+        aria-label="Toggle theme (dark)">
         <svg class="bi my-1 theme-icon-active" width="1em" height="1em">
-          <use href="#sun-fill"></use>
+          <use href="#moon-stars-fill"></use>
         </svg>
         <span class="visually-hidden" id="bd-theme-text">Toggle theme</span>
       </button>
-      <ul
-        class="dropdown-menu dropdown-menu-end shadow"
-        aria-labelledby="bd-theme-text"
-      >
+      <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="bd-theme-text">
         <li>
-          <button
-            type="button"
-            class="dropdown-item d-flex align-items-center active"
-            data-bs-theme-value="light"
-            aria-pressed="true"
-          >
+          <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="light" aria-pressed="false">
             <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em">
               <use href="#sun-fill"></use>
             </svg>
@@ -1140,12 +177,7 @@
           </button>
         </li>
         <li>
-          <button
-            type="button"
-            class="dropdown-item d-flex align-items-center"
-            data-bs-theme-value="dark"
-            aria-pressed="false"
-          >
+          <button type="button" class="dropdown-item d-flex align-items-center active" data-bs-theme-value="dark" aria-pressed="true">
             <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em">
               <use href="#moon-stars-fill"></use>
             </svg>
@@ -1156,12 +188,7 @@
           </button>
         </li>
         <li>
-          <button
-            type="button"
-            class="dropdown-item d-flex align-items-center"
-            data-bs-theme-value="auto"
-            aria-pressed="false"
-          >
+          <button type="button" class="dropdown-item d-flex align-items-center" data-bs-theme-value="auto" aria-pressed="false">
             <svg class="bi me-2 opacity-50 theme-icon" width="1em" height="1em">
               <use href="#circle-half"></use>
             </svg>
@@ -1174,378 +201,316 @@
       </ul>
     </div>
 
-    <div class="container">
-      <main>
-        <div class="py-5 text-center">
-          <!-- <img
-            class="d-block mx-auto mb-4"
-            src="/docs/5.3/assets/brand/bootstrap-logo.svg"
-            alt=""
-            width="72"
-            height="57"
-          /> -->
-          <h2>Dutch Auction</h2>
-          <p class="lead">
-            Welcome to the forefront of decentralized auctions: our Blockchain
-            Dutch Auction WebApp seamlessly combines transparency, fairness, and
-            innovation to revolutionize the way you experience asset trading.
-          </p>
+    <header data-bs-theme="dark">
+      <div class="text-bg-dark collapse" id="navbarHeader" style="">
+        <div class="container">
+          <div class="row">
+            <div class="col-sm-8 col-md-7 py-4">
+              <h4>About</h4>
+              <p class="text-body-secondary">
+                This Ethereum-based smart contract transforms token launches and is modelled after Algorand's Dutch Auction. With ERC20 compatibility,
+                safe token distribution, and strong anti-reentry measures, it provides fair, market-driven prices with customizable parameter.
+              </p>
+            </div>
+            <div class="col-sm-4 offset-md-1 py-4">
+              <h4>Group Member</h4>
+              <ul class="list-unstyled">
+                <li>
+                  <a href="" class="text-white">Yiting CHEN: U2022489K</a>
+                </li>
+                <li>
+                  <a href="" class="text-white">Yu ZHAO</a>
+                </li>
+                <li>
+                  <a href="" class="text-white">Zeren ZOU</a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container">
+          <a href="" class="navbar-brand d-flex align-items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-cash-coin" viewBox="0 -7 24 24">
+              <path fill-rule="evenodd" d="M11 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm5-4a5 5 0 1 1-10 0 5 5 0 0 1 10 0z" />
+              <path
+                d="M9.438 11.944c.047.596.518 1.06 1.363 1.116v.44h.375v-.443c.875-.061 1.386-.529 1.386-1.207 0-.618-.39-.936-1.09-1.1l-.296-.07v-1.2c.376.043.614.248.671.532h.658c-.047-.575-.54-1.024-1.329-1.073V8.5h-.375v.45c-.747.073-1.255.522-1.255 1.158 0 .562.378.92 1.007 1.066l.248.061v1.272c-.384-.058-.639-.27-.696-.563h-.668zm1.36-1.354c-.369-.085-.569-.26-.569-.522 0-.294.216-.514.572-.578v1.1h-.003zm.432.746c.449.104.655.272.655.569 0 .339-.257.571-.709.614v-1.195l.054.012z" />
+              <path
+                d="M1 0a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h4.083c.058-.344.145-.678.258-1H3a2 2 0 0 0-2-2V3a2 2 0 0 0 2-2h10a2 2 0 0 0 2 2v3.528c.38.34.717.728 1 1.154V1a1 1 0 0 0-1-1H1z" />
+              <path d="M9.998 5.083 10 5a2 2 0 1 0-3.132 1.65 5.982 5.982 0 0 1 3.13-1.567z" />
+            </svg>
+            <strong>Decentralized Dutch Auction</strong>
+          </a>
+          <button
+            class="navbar-toggler collapsed"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarHeader"
+            aria-controls="navbarHeader"
+            aria-expanded="false"
+            aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Loading overlay -->
+      <div id="loading-overlay" style="display: none">
+        <div id="loading-spinner"></div>
+      </div>
+
+      <section class="py-5 text-center container">
+        <div class="row py-lg-5">
+          <div class="col-lg-6 col-md-8 mx-auto">
+            <h1 class="fw-light">Dutch Auction</h1>
+            <p class="lead text-body-secondary">
+              Welcome to the forefront of decentralized auctions: our Blockchain Dutch Auction WebApp seamlessly combines transparency, fairness, and
+              innovation to revolutionize the way you experience asset trading.
+            </p>
+            <p></p>
+          </div>
         </div>
 
         <div class="row g-5">
-          <div class="col-md-5 col-lg-4 order-md-last">
-            <h4 class="d-flex justify-content-between align-items-center mb-3">
-              <span class="text-primary">Your cart</span>
-              <span class="badge bg-primary rounded-pill">3</span>
-            </h4>
-            <ul class="list-group mb-3">
-              <li class="list-group-item d-flex justify-content-between lh-sm">
-                <div>
-                  <h6 class="my-0">Product name</h6>
-                  <small class="text-body-secondary">Brief description</small>
-                </div>
-                <span class="text-body-secondary">$12</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between lh-sm">
-                <div>
-                  <h6 class="my-0">Second product</h6>
-                  <small class="text-body-secondary">Brief description</small>
-                </div>
-                <span class="text-body-secondary">$8</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between lh-sm">
-                <div>
-                  <h6 class="my-0">Third item</h6>
-                  <small class="text-body-secondary">Brief description</small>
-                </div>
-                <span class="text-body-secondary">$5</span>
-              </li>
-              <li
-                class="list-group-item d-flex justify-content-between bg-body-tertiary"
-              >
-                <div class="text-success">
-                  <h6 class="my-0">Promo code</h6>
-                  <small>EXAMPLECODE</small>
-                </div>
-                <span class="text-success">−$5</span>
-              </li>
-              <li class="list-group-item d-flex justify-content-between">
-                <span>Total (USD)</span>
-                <strong>$20</strong>
-              </li>
-            </ul>
-
-            <form class="card p-2">
-              <div class="input-group">
-                <input
-                  type="text"
-                  class="form-control"
-                  placeholder="Promo code"
-                />
-                <button type="submit" class="btn btn-secondary">Redeem</button>
-              </div>
-            </form>
+          <div class="col-sm-6">
+            <label for="openingTime" class="form-label">Opening Time:</label>
+            <input type="text" class="form-control" id="openingTime" placeholder="" disabled />
           </div>
-          <div class="col-md-7 col-lg-8">
-            <h4 class="mb-3">Auction</h4>
-            <form class="needs-validation" novalidate="">
-              <div class="row g-3">
-                <div class="col-sm-4">
-                  <label for="firstName" class="form-label">Token Price</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="price"
-                    placeholder=""
-                    value=""
-                    required=""
-                    disabled
-                  />
-                </div>
-                <div class="col-sm-4">
-                  <label for="firstName" class="form-label">Token Pool</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="CurrentTokenAmt"
-                    placeholder=""
-                    value=""
-                    required=""
-                    disabled
-                  />
-                </div>
-                <div class="col-sm-4">
-                  <label for="lastName" class="form-label">Time</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="timeInput"
-                    placeholder=""
-                    value=""
-                    required=""
-                    disabled
-                  />
-                </div>
-                <button class="btn btn-primary" onclick="UpdateStatus()">
-                  Button
-                </button>
-                <div class="col-12">
-                  <label for="username" class="form-label">Username</label>
-                  <div class="input-group has-validation">
-                    <span class="input-group-text">@</span>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="username"
-                      placeholder="Username"
-                      required=""
-                    />
-                    <div class="invalid-feedback">
-                      Your username is required.
-                    </div>
-                  </div>
-                </div>
-
-                <div class="col-12">
-                  <label for="email" class="form-label"
-                    >Email
-                    <span class="text-body-secondary">(Optional)</span></label
-                  >
-                  <input
-                    type="email"
-                    class="form-control"
-                    id="email"
-                    placeholder="you@example.com"
-                  />
-                  <div class="invalid-feedback">
-                    Please enter a valid email address for shipping updates.
-                  </div>
-                </div>
-
-                <div class="col-12">
-                  <label for="address" class="form-label">Address</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="address"
-                    placeholder="1234 Main St"
-                    required=""
-                  />
-                  <div class="invalid-feedback">
-                    Please enter your shipping address.
-                  </div>
-                </div>
-
-                <div class="col-12">
-                  <label for="address2" class="form-label"
-                    >Address 2
-                    <span class="text-body-secondary">(Optional)</span></label
-                  >
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="address2"
-                    placeholder="Apartment or suite"
-                  />
-                </div>
-
-                <div class="col-md-5">
-                  <label for="country" class="form-label">Country</label>
-                  <select class="form-select" id="country" required="">
-                    <option value="">Choose...</option>
-                    <option>United States</option>
-                  </select>
-                  <div class="invalid-feedback">
-                    Please select a valid country.
-                  </div>
-                </div>
-
-                <div class="col-md-4">
-                  <label for="state" class="form-label">State</label>
-                  <select class="form-select" id="state" required="">
-                    <option value="">Choose...</option>
-                    <option>California</option>
-                  </select>
-                  <div class="invalid-feedback">
-                    Please provide a valid state.
-                  </div>
-                </div>
-
-                <div class="col-md-3">
-                  <label for="zip" class="form-label">Zip</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="zip"
-                    placeholder=""
-                    required=""
-                  />
-                  <div class="invalid-feedback">Zip code required.</div>
-                </div>
-              </div>
-
-              <hr class="my-4" />
-
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="same-address"
-                />
-                <label class="form-check-label" for="same-address"
-                  >Shipping address is the same as my billing address</label
-                >
-              </div>
-
-              <div class="form-check">
-                <input
-                  type="checkbox"
-                  class="form-check-input"
-                  id="save-info"
-                />
-                <label class="form-check-label" for="save-info"
-                  >Save this information for next time</label
-                >
-              </div>
-
-              <hr class="my-4" />
-
-              <h4 class="mb-3">Payment</h4>
-
-              <div class="my-3">
-                <div class="form-check">
-                  <input
-                    id="credit"
-                    name="paymentMethod"
-                    type="radio"
-                    class="form-check-input"
-                    checked=""
-                    required=""
-                  />
-                  <label class="form-check-label" for="credit"
-                    >Credit card</label
-                  >
-                </div>
-                <div class="form-check">
-                  <input
-                    id="debit"
-                    name="paymentMethod"
-                    type="radio"
-                    class="form-check-input"
-                    required=""
-                  />
-                  <label class="form-check-label" for="debit">Debit card</label>
-                </div>
-                <div class="form-check">
-                  <input
-                    id="paypal"
-                    name="paymentMethod"
-                    type="radio"
-                    class="form-check-input"
-                    required=""
-                  />
-                  <label class="form-check-label" for="paypal">PayPal</label>
-                </div>
-              </div>
-
-              <div class="row gy-3">
-                <div class="col-md-6">
-                  <label for="cc-name" class="form-label">Name on card</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="cc-name"
-                    placeholder=""
-                    required=""
-                  />
-                  <small class="text-body-secondary"
-                    >Full name as displayed on card</small
-                  >
-                  <div class="invalid-feedback">Name on card is required</div>
-                </div>
-
-                <div class="col-md-6">
-                  <label for="cc-number" class="form-label"
-                    >Credit card number</label
-                  >
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="cc-number"
-                    placeholder=""
-                    required=""
-                  />
-                  <div class="invalid-feedback">
-                    Credit card number is required
-                  </div>
-                </div>
-
-                <div class="col-md-3">
-                  <label for="cc-expiration" class="form-label"
-                    >Expiration</label
-                  >
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="cc-expiration"
-                    placeholder=""
-                    required=""
-                  />
-                  <div class="invalid-feedback">Expiration date required</div>
-                </div>
-
-                <div class="col-md-3">
-                  <label for="cc-cvv" class="form-label">CVV</label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="cc-cvv"
-                    placeholder=""
-                    required=""
-                  />
-                  <div class="invalid-feedback">Security code required</div>
-                </div>
-              </div>
-
-              <hr class="my-4" />
-
-              <button class="w-100 btn btn-primary btn-lg">
-                Continue to checkout
-              </button>
-            </form>
+          <div class="col-sm-6">
+            <label for="closingTime" class="form-label">Closing Time:</label>
+            <input type="text" class="form-control" id="closingTime" placeholder="" disabled />
           </div>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <div id="hide-when-loading" class="album py-5 bg-body-tertiary">
+        <div class="container">
+          <!-- Add a Bootstrap alert div (hidden by default) -->
+          <div class="alert alert-success alert-dismissible fade show" id="alertMessage" style="display: none">
+            <div id="alertContent"></div>
+            <!-- <button type="button" class="btn-close" onclick="hideAlert()"></button> -->
+          </div>
+          <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+            <!-- Progress Update Panel -->
+            <div class="col-md-8">
+              <div class="card shadow-sm">
+                <div class="card-header">
+                  <h4 class="card-title">Auction Progress</h4>
+                </div>
+
+                <div class="card-body">
+                  <div class="row row-cols-1 row-cols-sm-2 stage-1">
+                    <div class="col-12">
+                      <label for="progressbar">Time Progress:</label>
+                      <div class="progress">
+                        <div
+                          class="progress-bar progress-bar-striped progress-bar-animated"
+                          role="progressbar"
+                          aria-valuenow="0"
+                          aria-valuemin="0"
+                          aria-valuemax="100"
+                          style="width: 0%"
+                          id="progressbar"></div>
+                      </div>
+                    </div>
+
+                    <div class="col-12">
+                      <label for="progressbar">Coin Distribution:</label>
+                      <div id="progressBarContainer" class="progress"></div>
+                    </div>
+                  </div>
+                  <!--Time Progress Bar-->
+                  <div class="row g-3">
+                    <div class="col-12"></div>
+                  </div>
+                  <p class="card-text"></p>
+
+                  <div class="input-group mb-3 stage-1 stage-2 stage-3">
+                    <span class="input-group-text">Current Token Price</span>
+                    <input type="text" class="form-control" id="priceInput" placeholder="" disabled />
+                    <span class="input-group-text">Remaining Tokens</span>
+                    <input type="text" class="form-control" id="currentTokenAmtInput" disabled />
+                  </div>
+
+                  <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-body-secondary">Automatically refreshes every 5 seconds</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="card shadow-sm">
+                <div class="card-header">
+                  <h4 class="card-title">Your Progress</h4>
+                </div>
+                <div class="card-body">
+                  <div class="input-group mb-3">
+                    <span class="input-group-text" id="contributionMsg">$</span>
+                    <input type="text" class="form-control" id="contributionVal" disabled />
+                    <span class="input-group-text">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cash" viewBox="0 0 16 16">
+                        <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
+                        <path
+                          d="M0 4a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V4zm3 0a2 2 0 0 1-2 2v4a2 2 0 0 1 2 2h10a2 2 0 0 1 2-2V6a2 2 0 0 1-2-2H3z" />
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="input-group mb-3">
+                    <span class="input-group-text" id="coinHeldMsg">$</span>
+                    <input type="text" class="form-control" id="coinHeldVal" disabled />
+                    <span class="input-group-text">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-coin" viewBox="0 0 16 16">
+                        <path
+                          d="M5.5 9.511c.076.954.83 1.697 2.182 1.785V12h.6v-.709c1.4-.098 2.218-.846 2.218-1.932 0-.987-.626-1.496-1.745-1.76l-.473-.112V5.57c.6.068.982.396 1.074.85h1.052c-.076-.919-.864-1.638-2.126-1.716V4h-.6v.719c-1.195.117-2.01.836-2.01 1.853 0 .9.606 1.472 1.613 1.707l.397.098v2.034c-.615-.093-1.022-.43-1.114-.9H5.5zm2.177-2.166c-.59-.137-.91-.416-.91-.836 0-.47.345-.822.915-.925v1.76h-.005zm.692 1.193c.717.166 1.048.435 1.048.91 0 .542-.412.914-1.135.982V8.518l.087.02z" />
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z" />
+                        <path d="M8 13.5a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11zm0 .5A6 6 0 1 0 8 2a6 6 0 0 0 0 12z" />
+                      </svg>
+                    </span>
+                  </div>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-body-secondary">Automatically refreshes every 5 seconds</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-12">
+              <div class="card shadow-sm">
+                <div class="card-header">
+                  <h4 class="card-title">Your Action</h4>
+                </div>
+                <div class="card-body">
+                  <div class="input-group mb-3">
+                    <input
+                      class="form-control"
+                      type="number"
+                      step="1"
+                      id="placeBidInput"
+                      placeholder="Token Amount"
+                      oninput="updateWeiAmount(this)" />
+                    <span class="input-group-text">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cash-coin" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M11 15a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm5-4a5 5 0 1 1-10 0 5 5 0 0 1 10 0z" />
+                        <path
+                          d="M9.438 11.944c.047.596.518 1.06 1.363 1.116v.44h.375v-.443c.875-.061 1.386-.529 1.386-1.207 0-.618-.39-.936-1.09-1.1l-.296-.07v-1.2c.376.043.614.248.671.532h.658c-.047-.575-.54-1.024-1.329-1.073V8.5h-.375v.45c-.747.073-1.255.522-1.255 1.158 0 .562.378.92 1.007 1.066l.248.061v1.272c-.384-.058-.639-.27-.696-.563h-.668zm1.36-1.354c-.369-.085-.569-.26-.569-.522 0-.294.216-.514.572-.578v1.1h-.003zm.432.746c.449.104.655.272.655.569 0 .339-.257.571-.709.614v-1.195l.054.012z" />
+                        <path
+                          d="M1 0a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h4.083c.058-.344.145-.678.258-1H3a2 2 0 0 0-2-2V3a2 2 0 0 0 2-2h10a2 2 0 0 0 2 2v3.528c.38.34.717.728 1 1.154V1a1 1 0 0 0-1-1H1z" />
+                        <path d="M9.998 5.083 10 5a2 2 0 1 0-3.132 1.65 5.982 5.982 0 0 1 3.13-1.567z" />
+                      </svg>
+                    </span>
+                    <input type="text" class="form-control" placeholder="Wei Amount" id="bid" disabled />
+                    <button class="btn btn-outline-secondary" type="button" id="button-addon2" onclick="placeBids()">Place Bid</button>
+                  </div>
+                  <p class="card-text">Your available action are determined by your role and the current status of the auction.</p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="btn-toolbar stage-3 owner-only" role="toolbar" aria-label="Toolbar with button groups">
+                      <div class="btn-group me-2" role="group" aria-label="Owner Action On Successful Auction">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="withdrawFunds()" id="withdrawFundsBtn">
+                          Withdraw Funds
+                        </button>
+                      </div>
+                      <div class="btn-group me-2" role="group" aria-label="Owner Action On Failed Auction">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="withdrawTokenBtn" onclick="withdrawToken()">
+                          Withdraw Token
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="burnTokenBtn" onclick="burnToken()">Burn Token</button>
+                      </div>
+                    </div>
+
+                    <div class="btn-toolbar stage-2 owner-only" role="toolbar" aria-label="Toolbar with button groups">
+                      <div class="btn-group me-2" role="group" aria-label="Owner Action Stage 3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="finalize()">Finalize</button>
+                      </div>
+                    </div>
+
+                    <div class="btn-toolbar stage-3 bidder-only" role="toolbar" aria-label="Toolbar with button groups">
+                      <div class="btn-group me-2" role="group" aria-label="User Action">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="claimRefund()">Claim Refund</button>
+                      </div>
+                    </div>
+
+                    <small class="text-body-secondary">Each action comes with its conditions</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="album py-5">
+        <div class="container">
+          <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
+            <div class="col">
+              <div class="card shadow-sm">
+                <img src="./assets/dutchAuction.jpg" width="100%" height="225" class="card-img-top" alt="dutch auction" />
+                <div class="card-body">
+                  <h6 class="card-title">What is a dutch auction anyway?</h6>
+                  <p class="card-text">
+                    A Dutch auction is a special kind of price-discovery that is frequently employed in financial markets. It begins with a high price
+                    and steadily drops until buyer accepts it.
+                  </p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="btn-group">
+                      <a href="https://en.wikipedia.org/wiki/Dutch_auction#Public_offerings" class="btn btn-sm btn-outline-secondary"
+                        >View Wikipedia</a
+                      >
+                    </div>
+                    <small class="text-body-secondary">15 mins read</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col">
+              <div class="card shadow-sm">
+                <img src="./assets/dutchAuction.jpg" width="100%" height="225" class="card-img-top" alt="dutch auction" />
+                <div class="card-body">
+                  <h6 class="card-title">What is a dutch auction anyway?</h6>
+                  <p class="card-text">
+                    A Dutch auction is a special kind of price-discovery that is frequently employed in financial markets. It begins with a high price
+                    and steadily drops until buyer accepts it.
+                  </p>
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div class="btn-group">
+                      <a href="https://en.wikipedia.org/wiki/Dutch_auction#Public_offerings" class="btn btn-sm btn-outline-secondary"
+                        >View Wikipedia</a
+                      >
+                    </div>
+                    <small class="text-body-secondary">15 mins read</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="text-body-secondary py-5 bg-body-tertiary">
+      <div class="container">
+        <p class="float-end mb-1">
+          <a href="https://getbootstrap.com/docs/5.3/examples/album/#">Back to top</a>
+        </p>
+        <p class="mb-1">
+          This project is only tested locally, but feel free to try on different roles by switching between owner and bidder account!
+        </p>
+        <p class="mb-0">
+          Inspiration of the Project?
+          <a href="https://github.com/OpenZeppelin/openzeppelin-contracts/tree/release-v2.5.0/contracts/crowdsale">OpenZeppelin Crowdsale</a> and
+          <a href="https://getbootstrap.com/docs/5.3/examples/album">Bootstrap Album Example</a>.
+        </p>
+      </div>
+    </footer>
+    <script src="./external/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <script type="text/javascript" src="/frontend/index.js"></script>
     <script
-      src="/docs/5.3/dist/js/bootstrap.bundle.min.js"
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
       integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-      crossorigin="anonymous"
-    ></script>
-
-    <script src="index.js"></script>
-
-    <div id="loom-companion-mv3" ext-id="liecbddmkiiihnedobmlmillhodjkdmb">
-      <section id="shadow-host-companion"></section>
-    </div>
+      crossorigin="anonymous"></script>
   </body>
-
-  <grammarly-desktop-integration
-    data-grammarly-shadow-root="true"
-  ></grammarly-desktop-integration>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-    integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
-    crossorigin="anonymous"
-  />
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-    crossorigin="anonymous"
-  ></script>
-  <link
-    rel="stylesheet"
-    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css"
-  />
 </html>
