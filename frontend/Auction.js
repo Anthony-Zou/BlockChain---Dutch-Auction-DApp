@@ -104,25 +104,37 @@ async function placeBids() {
     );
 }
 
-function updateProgressElements(price, currentTime, tokenMaxAmount) {
+function updateProgressElements(price, currentTime, tokenMaxAmount, updateBar) {
   var timePassed = differenceInMinutes(currentTime, openingTime);
-  var timeProgressed = Math.ceil((timePassed / duration) * 100) + "%";
+  // Update 3 input boxs
   document.getElementById("currentTokenAmtInput").value = tokenMaxAmount;
   document.getElementById("priceInput").value = price;
   document.getElementById("timeInput").value =
-    Math.ceil(timePassed) + " minute";
-  var progressbar = document.getElementById("progressbar");
-  progressbar.style.width = timeProgressed;
+  Math.ceil(timePassed) + " minute";
+
+  // Update progress bar only when auction ongoing
+  if(updateBar){
+    var timeProgressed = Math.ceil((timePassed / duration) * 100) + "%";
+    var progressbar = document.getElementById("progressbar");
+    progressbar.style.width = timeProgressed;
+  }
 }
 
-function updateContributionElements(contribution, price) {
+function updateContributionElements(contribution, price, identity) {
+
   var coinHeld = Math.floor(contribution / price);
-  document.getElementById("contribution").value = contribution;
-  document.getElementById("coinHeld").value = coinHeld;
-  document.getElementById("SingerAddr").value = signerAddress;
+  if(identity === owner){
+    document.getElementById("contribution").innerHTML = `Contribution: ${contribution}`;
+    document.getElementById("coinHeld").innerHTML = `Approx Coin Held: ${coinHeld}`;
+  }else{
+    document.getElementById("contribution").innerHTML = `Total Wei Raised: ${contribution}`;
+    document.getElementById("coinHeld").innerHTML = `Approx Coin Sold: ${coinHeld}`;
+
+  }
+  //document.getElementById("SingerAddr").value = signerAddress;
 }
 
-async function UpdateStatus() {
+async function updateStatus() {
   await getAccess();
   await initialLoading();
   // Update with currentTime
@@ -153,15 +165,12 @@ async function UpdateStatus() {
     showAlert("Auction In Progress", "success");
   }
 
-  // Get price update only when auction ongoing
-  if (auctionStage === 1) {
+  // Get price update
+
+  if (auctionStage >= 1) {
     var price = await dutchAuctionContract.price();
     var remainingSupply = await dutchAuctionContract.remainingSupply();
-    updateProgressElements(price, currentTime, remainingSupply);
-  }
-
-  if (auctionStage > 1) {
-    var price = await dutchAuctionContract.price();
+    updateProgressElements(price, currentTime, remainingSupply, (auctionStage===1));
     var contribution;
     if (signerAddress === owner) {
       contribution = await dutchAuctionContract.contribution(signerAddress);
@@ -321,10 +330,12 @@ async function withdrawToken() {
 // Display Helper functions:
 function showLoading() {
   document.getElementById("loading-overlay").style.display = "block";
+  document.getElementById("hide-when-loading").style.display = "none";
 }
 
 function hideLoading() {
   document.getElementById("loading-overlay").style.display = "none";
+  document.getElementById("hide-when-loading").style.display = "flex";
 }
 
 // Function to display a Bootstrap alert with a specified message and type
@@ -396,6 +407,6 @@ initialLoading();
 // Start updating status only if the auction is not finalized
 setInterval(() => {
   if (auctionStage < 3) {
-    UpdateStatus();
+    updateStatus();
   }
 }, 5000); // 10000 milliseconds = 10 seconds

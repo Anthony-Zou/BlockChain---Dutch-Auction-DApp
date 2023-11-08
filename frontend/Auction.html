@@ -5,6 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dutch Auction</title>
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
     <style>
       .container {
         display: flex;
@@ -75,7 +76,7 @@
       style="display: none"
     >
       <div id="alertContent"></div>
-      <button type="button" class="btn-close" onclick="hideAlert()"></button>
+      <!-- <button type="button" class="btn-close" onclick="hideAlert()"></button> -->
     </div>
 
     <div class="container">
@@ -111,13 +112,11 @@
       </div>
       <div class="row g-5">
         <p class="lead">
-          Welcome to the forefront of decentralized auctions: our Blockchain
-          Dutch Auction WebApp seamlessly combines transparency, fairness, and
-          innovation to revolutionize the way you experience asset trading.
+          
         </p>
       </div>
 
-      <div class="row g-5">
+      <div class="row g-5" id="hide-when-loading" style="display: none">
         <div class="col-md-5 col-lg-4 order-md-last">
           <!--Bid List-->
           <div class="stage-1 stage-2 stage-3">
@@ -125,7 +124,7 @@
               <h4
                 class="d-flex justify-content-between align-items-center mb-3"
               >
-                <span class="text-primary">Bid List</span>
+                <span class="text-primary">Bid Stats</span>
                 <!-- <span class="badge bg-primary rounded-pill">3</span> -->
               </h4>
               <ul class="list-group mb-3">
@@ -133,25 +132,25 @@
                   class="list-group-item d-flex justify-content-between lh-sm"
                 >
                   <div>
-                    <h6 class="my-0">Contribution</h6>
+                    <h6 class="my-0" id="contribution">Contribution</h6>
                     <small class="text-body-secondary"></small>
                   </div>
-                  <span class="text-body-secondary"
+                  <!-- <span class="text-body-secondary"
                     ><input disabled id="contribution" value="0"
-                  /></span>
+                  /></span> -->
                 </li>
                 <li
                   class="list-group-item d-flex justify-content-between lh-sm"
                 >
                   <div>
-                    <h6 class="my-0">Approx Coin</h6>
+                    <h6 class="my-0" id="coinHeld">Approx Coin</h6>
                     <small class="text-body-secondary"> </small>
                   </div>
-                  <span class="text-body-secondary"
-                    ><input disabled id="coinHeld" value="0"
-                  /></span>
+                  <!-- <span class="text-body-secondary"
+                    ><input disabled value="0"
+                  /></span> -->
                 </li>
-                <li
+                <!-- <li
                   class="list-group-item d-flex justify-content-between lh-sm"
                 >
                   <div>
@@ -161,7 +160,7 @@
                   <span class="text-body-secondary"
                     ><input disabled id="SingerAddr" value="0"
                   /></span>
-                </li>
+                </li> -->
               </ul>
             </div>
           </div>
@@ -188,13 +187,12 @@
 
         <div class="col-md-5 col-lg-8">
           <!--Progress Update Panel-->
-          <div class="stage-1">
+          <div class="stage-1 stage-2">
             <div class="row g-3">
               <h4
                 class="d-flex justify-content-between align-items-center mb-3"
               >
                 <span class="text-primary">Auction Progress</span>
-                <!-- <span class="badge bg-primary rounded-pill">3</span> -->
               </h4>
               <!--Current Token Price-->
               <div class="col-sm-4">
@@ -233,7 +231,11 @@
                   disabled
                 />
               </div>
-              <!--Time Progress Bar-->
+            </div>
+          </div>
+          <div class="stage-1">
+            <!--Time Progress Bar-->
+            <div class="row g-3">
               <div class="col-12">
                 <div class="progress">
                   <div
@@ -251,67 +253,67 @@
           </div>
 
           <!--Operations Button-->
-          <div class="stage-2 stage-3">
-            <div class="row g-3">
-              <div class="col-12">
-                <hr class="my-4" />
-                <div class="">
-                  <table>
-                    <tr>
-                      <td>
-                        <button
-                          type="button"
-                          class="btn btn-outline-secondary owner-only"
-                          onclick="withdrawToken()"
-                        >
-                          Withdraw Token
-                        </button>
-                      </td>
+          <div class="row g-3">
+            <div class="col-12">
+              <hr class="my-4" />
+              <table class="stage-3">
+                <tr>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-outline-secondary owner-only"
+                      onclick="withdrawToken()"
+                    >
+                      Withdraw Token
+                    </button>
+                  </td>
 
-                      <td>
-                        <button
-                          type="button"
-                          class="btn btn-outline-success owner-only"
-                          onclick="withdrawFunds()"
-                        >
-                          Withdraw Funds
-                        </button>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          class="btn btn-outline-danger owner-only"
-                          onclick="burnToken()"
-                        >
-                          BurnToken
-                        </button>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          class="btn btn-outline-info owner-only"
-                          onclick="finalize()"
-                        >
-                          Finalize
-                        </button>
-                      </td>
-                    </tr>
-                  </table>
-                  <table>
-                    <tr>
-                      <td>
-                        <button
-                          type="button"
-                          class="btn btn-outline-warning bidder-only"
-                          onclick="claimRefund()"
-                        >
-                          ClaimRefund
-                        </button>
-                      </td>
-                    </tr>
-                  </table>
-                </div>
-              </div>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-outline-success owner-only"
+                      onclick="withdrawFunds()"
+                    >
+                      Withdraw Funds
+                    </button>
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-outline-danger owner-only"
+                      onclick="burnToken()"
+                    >
+                      BurnToken
+                    </button>
+                  </td>
+                </tr>
+              </table>
+              <table class="stage-2">
+                <tr>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-outline-info owner-only"
+                      onclick="finalize()"
+                    >
+                      Finalize
+                    </button>
+                  </td>
+                </tr>
+              </table>
+              <table>
+                <tr>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-outline-warning bidder-only"
+                      onclick="claimRefund()"
+                    >
+                      ClaimRefund
+                    </button>
+                  </td>
+                </tr>
+              </table>
             </div>
           </div>
         </div>
