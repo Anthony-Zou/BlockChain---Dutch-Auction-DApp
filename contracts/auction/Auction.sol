@@ -372,6 +372,10 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             beneficiary != address(0),
             "Auction: beneficiary is the zero address"
         );
+        require(
+            beneficiary != _owner,
+            "Auction: owner cannot place bids"
+        );
         //console.log("in _preValidateBids, beneficiary: ",beneficiary);
         require(weiAmount > 0, "Auction: weiAmount is 0");
         //console.log("_preValidateBids check passed");

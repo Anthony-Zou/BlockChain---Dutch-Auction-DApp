@@ -114,6 +114,14 @@ contract("Auction", function (accounts) {
         "Auction: weiAmount is 0"
       );
     });
+
+    it("RevertOwnerPlacedBids - Should revert if the bidder is owner.", async function () {
+      await expectRevert(
+        this.auction.send(value, { from: owner }),
+        "Auction: owner cannot place bids"
+      );
+    });
+    
     it("AcceptPaymentsWithBids - Should accept payments when placing bids.", async function () {
       await this.auction.placeBids({ value: value, from: purchaser });
     });
