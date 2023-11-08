@@ -8,7 +8,7 @@ let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
 let openingTime, closingTime, duration, tokenMaxAmount, owner;
 // 0 - Before Opening; 1 - On going; 2 - Ended; 3 - Finalized
 let auctionStage = 0;
-let currentPrice;
+let currentPrice, remainingSupply;
 
 async function loadJSON() {
   try {
@@ -133,14 +133,14 @@ function updateContributionElements(contribution, price, identity) {
     ).innerHTML = `Total Wei Raised: ${contribution}`;
     document.getElementById(
       "coinHeld"
-    ).innerHTML = `Approx Coin Sold: ${coinHeld}`;
+    ).innerHTML = `Aprox. Coin Sold: ${coinHeld}`;
   } else {
     document.getElementById(
       "contribution"
     ).innerHTML = `Contribution(in Wei): ${contribution}`;
     document.getElementById(
       "coinHeld"
-    ).innerHTML = `Approx Coin Held: ${coinHeld}`;
+    ).innerHTML = `Aprox. Coin Held: ${coinHeld}`;
   }
   //document.getElementById("SingerAddr").value = signerAddress;
 }
@@ -151,9 +151,17 @@ async function updateStatus() {
   // Update with currentTime
   const currentTime = await dutchAuctionContract.getCurrentTime();
   const finalized = await dutchAuctionContract.finalized();
+  remainingSupply = await dutchAuctionContract.remainingSupply();
   signerAddress = await signer.getAddress();
-  if (currentTime > closingTime) {
-    if (finalized) {
+
+  if (finalized) {
+    auctionStage = 3;
+    showAlert(
+      `Auction Closed at ${convertTime(closingTime)[1]}, auction finalized.`,
+      "danger"
+    );
+  } else {
+    if (currentTime > closingTime) {
       auctionStage = 2;
       showAlert(
         `Auction Closed at ${
@@ -161,26 +169,31 @@ async function updateStatus() {
         }, waiting for owner finalization.`,
         "warning"
       );
-    } else {
-      auctionStage = 3;
+    } else if (currentTime < openingTime) {
+      auctionStage = 0;
       showAlert(
-        `Auction Closed at ${convertTime(closingTime)[1]}, auction finalized.`,
+        `Auction Will Open at ${convertTime(openingTime)[1]}`,
         "danger"
       );
+    } else {
+      if (remainingSupply > 0) {
+        auctionStage = 1;
+        showAlert("Auction In Progress", "success");
+      } else {
+        auctionStage = 2;
+        showAlert(
+          `Auction Closed as token has no more remaining supply. ${
+            convertTime(closingTime)[1]
+          }, waiting for owner finalization.`,
+          "warning"
+        );
+      }
     }
-  } else if (currentTime < openingTime) {
-    auctionStage = 0;
-    showAlert(`Auction Will Open at ${convertTime(openingTime)[1]}`, "danger");
-  } else {
-    auctionStage = 1;
-    showAlert("Auction In Progress", "success");
   }
 
   // Get price update
-
   if (auctionStage >= 1) {
     currentPrice = await dutchAuctionContract.price();
-    var remainingSupply = await dutchAuctionContract.remainingSupply();
     updateProgressElements(
       currentPrice,
       currentTime,
@@ -259,15 +272,6 @@ function convertTime(hex) {
   return [time, localDate];
 }
 
-async function burnToken() {
-  await getAccess();
-  await dutchAuctionContract
-    .burnToken()
-    .then(() => showAlert("Token Burned", "success"))
-    .catch((error) =>
-      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
-    );
-}
 async function claimRefund() {
   await getAccess();
   await dutchAuctionContract
@@ -285,14 +289,31 @@ async function finalize() {
     .then(() => showAlert("Finalized", "success"))
     .catch((error) =>
       showAlert(`Failed : ${error["data"]["message"]}`, "danger")
+    )
+    .finally(() => {
+      updateStatus();
+    });
+}
+async function burnToken() {
+  await getAccess();
+  await dutchAuctionContract
+    .burnToken()
+    .then(() => {
+      showAlert("Token Burned", "success");
+      document.getElementById("burnTokenBtn").hidden = true;
+    })
+    .catch((error) =>
+      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
     );
 }
-
 async function withdrawFunds() {
   await getAccess();
   await dutchAuctionContract
     .withdrawFunds()
-    .then(() => showAlert("Fund Withdrawn", "success"))
+    .then(() => {
+      showAlert("Fund Withdrawn", "success");
+      document.getElementById("withdrawFundsBtn").hidden = true;
+    })
     .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`));
 }
 
@@ -300,7 +321,10 @@ async function withdrawToken() {
   await getAccess();
   await dutchAuctionContract
     .withdrawToken()
-    .then(() => showAlert("Token Withdrawn", "success"))
+    .then(() => {
+      showAlert("Token Withdrawn", "success");
+      document.getElementById("withdrawTokenBtn").hidden = true;
+    })
     .catch((error) =>
       showAlert(`Failed : ${error["data"]["message"]}`, "danger")
     );
@@ -377,16 +401,25 @@ function toggleStageRoleVisibility() {
   }
   // Only show the class with current stage
   stageElements[auctionStage].forEach((element) => {
-    if(signerAddress === owner){
-      if(!element.classList.contains("bidder-only")){
+    if (signerAddress === owner) {
+      if (!element.classList.contains("bidder-only")) {
         element.style.display = "flex";
       }
-    }else{
-      if(!element.classList.contains("owner-only")){
+    } else {
+      if (!element.classList.contains("owner-only")) {
         element.style.display = "flex";
       }
     }
   });
+  if (auctionStage === 3) {
+    // auction nt successful
+    if (remainingSupply > 0) {
+      document.getElementById("withdrawFundsBtn").hidden = true;
+    } else {
+      document.getElementById("withdrawTokenBtn").hidden = true;
+      document.getElementById("burnTokenBtn").hidden = true;
+    }
+  }
 }
 
 initialLoading();

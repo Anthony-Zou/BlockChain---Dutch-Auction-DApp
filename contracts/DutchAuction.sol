@@ -60,10 +60,10 @@ contract DutchAuction is DecreasingPriceAuction, RefundableAuction {
 
     // Explicitly override _preValidateBids from RefundableAuction
     function _preValidateFinalization()
-        internal
+        internal view
         override(Auction, TimedAuction)
     {
-        super._preValidateFinalization();
+        require(hasClosed() || remainingSupply()==0, "DutchAuction: Auction is not at termination stage");
     }
 
     // Explicitly override _preValidateBids from RefundableAuction

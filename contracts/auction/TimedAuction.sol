@@ -99,6 +99,7 @@ abstract contract TimedAuction is Auction {
      */
     function _preValidateFinalization() 
     internal 
+    view
     virtual 
     override
     onlyAfterClose {

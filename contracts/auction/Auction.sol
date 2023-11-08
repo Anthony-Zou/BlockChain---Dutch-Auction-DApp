@@ -483,7 +483,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     /**
      * @dev Can be overridden to add finalization validation logic.
      */
-    function _preValidateFinalization() internal virtual {
+    function _preValidateFinalization() internal view virtual {
         //cosole.log("In Auction, _preValidateFinalization()");
     }
 
