@@ -110,10 +110,10 @@ function updateProgressElements(price, currentTime, tokenMaxAmount, updateBar) {
   document.getElementById("currentTokenAmtInput").value = tokenMaxAmount;
   document.getElementById("priceInput").value = price;
   document.getElementById("timeInput").value =
-  Math.ceil(timePassed) + " minute";
+    Math.ceil(timePassed) + " minute";
 
   // Update progress bar only when auction ongoing
-  if(updateBar){
+  if (updateBar) {
     var timeProgressed = Math.ceil((timePassed / duration) * 100) + "%";
     var progressbar = document.getElementById("progressbar");
     progressbar.style.width = timeProgressed;
@@ -121,15 +121,21 @@ function updateProgressElements(price, currentTime, tokenMaxAmount, updateBar) {
 }
 
 function updateContributionElements(contribution, price, identity) {
-
   var coinHeld = Math.floor(contribution / price);
-  if(identity === owner){
-    document.getElementById("contribution").innerHTML = `Contribution: ${contribution}`;
-    document.getElementById("coinHeld").innerHTML = `Approx Coin Held: ${coinHeld}`;
-  }else{
-    document.getElementById("contribution").innerHTML = `Total Wei Raised: ${contribution}`;
-    document.getElementById("coinHeld").innerHTML = `Approx Coin Sold: ${coinHeld}`;
-
+  if (identity === owner) {
+    document.getElementById(
+      "contribution"
+    ).innerHTML = `Contribution: ${contribution}`;
+    document.getElementById(
+      "coinHeld"
+    ).innerHTML = `Approx Coin Held: ${coinHeld}`;
+  } else {
+    document.getElementById(
+      "contribution"
+    ).innerHTML = `Total Wei Raised: ${contribution}`;
+    document.getElementById(
+      "coinHeld"
+    ).innerHTML = `Approx Coin Sold: ${coinHeld}`;
   }
   //document.getElementById("SingerAddr").value = signerAddress;
 }
@@ -170,55 +176,22 @@ async function updateStatus() {
   if (auctionStage >= 1) {
     var price = await dutchAuctionContract.price();
     var remainingSupply = await dutchAuctionContract.remainingSupply();
-    updateProgressElements(price, currentTime, remainingSupply, (auctionStage===1));
+    updateProgressElements(
+      price,
+      currentTime,
+      remainingSupply,
+      auctionStage === 1
+    );
     var contribution;
     if (signerAddress === owner) {
       contribution = await dutchAuctionContract.contribution(signerAddress);
     } else {
-      contribution = await dutchAuctionContract.weiAmount();
+      contribution = await dutchAuctionContract.weiRaised();
     }
-    updateContributionElements(contribution, price);
+    updateContributionElements(contribution, price, signerAddress);
   }
   toggleStageVisibility();
   toggleOwnerBidderVisibility();
-
-  // console.log("afterOpen " + (await dutchAuctionContract.afterOpen()));
-  // console.log("allowRefund " + (await dutchAuctionContract.allowRefund()));
-  // console.log("closingTime " + (await dutchAuctionContract.closingTime()));
-  // console.log("finalized " + (await dutchAuctionContract.finalized()));
-  // console.log("hasClosed " + (await dutchAuctionContract.hasClosed()));
-  // console.log("initialPrice " + (await dutchAuctionContract.initialPrice()));
-  // console.log("isOpen " + (await dutchAuctionContract.isOpen()));
-  // console.log("minimalGoal " + (await dutchAuctionContract.minimalGoal()));
-  // console.log(
-  //   "minimalGoalMet " + (await dutchAuctionContract.minimalGoalMet())
-  // );
-  // console.log("openingTime " + (await dutchAuctionContract.openingTime()));
-  // console.log("owner " + (await dutchAuctionContract.owner()));
-  // console.log("price " + (await dutchAuctionContract.price()));
-  // console.log(
-  //   "remainingSupply " + (await dutchAuctionContract.remainingSupply())
-  // );
-  // console.log(
-  //   "remainingSupply " + (await dutchAuctionContract.remainingSupply())
-  // );
-  // console.log("token " + (await dutchAuctionContract.token()));
-  // console.log(
-  //   "tokenMaxAmount " + (await dutchAuctionContract.tokenMaxAmount())
-  // );
-  // console.log("weiRaised " + (await dutchAuctionContract.weiRaised()));
-  // console.log(
-  //   "getCurrentTime " + (await dutchAuctionContract.getCurrentTime())
-  // );
-  // console.log(
-  //   "getcontribution " +
-  //     (await dutchAuctionContract.contribution(
-  //       "await dutchAuctionContract.owner()"
-  //     ))
-  // );
-  // getMetaMaskAccount().then((account) => {
-  //   console.log("Current MetaMask account:", account);
-  // });
 }
 
 async function getMetaMaskAccount() {
@@ -410,3 +383,8 @@ setInterval(() => {
     updateStatus();
   }
 }, 5000); // 10000 milliseconds = 10 seconds
+window.ethereum.on("accountsChanged", (accounts) => {
+  // Handle the new accounts, or reload the page.
+  console.log("Accounts changed:", accounts);
+  updateStatus();
+});
