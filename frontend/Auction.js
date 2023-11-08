@@ -6,6 +6,8 @@ let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
 
 // Cache openingTime, closingTime, and tokenMaxAmount
 let openingTime, closingTime, duration, tokenMaxAmount, owner;
+// 0 - Before Opening; 1 - On going; 2 - Ended; 3 - Finalized
+let auctionStage = 0;
 let isAuctionActive = true; // Track if the auction is active
 
 async function loadJSON() {
@@ -46,7 +48,7 @@ async function getAccess() {
 }
 
 async function initialLoading() {
-  if(openingTime && closingTime && duration && tokenMaxAmount && owner) return;
+  if (openingTime && closingTime && duration && tokenMaxAmount && owner) return;
 
   // Cache openingTime and closingTime
   showLoading();
@@ -64,7 +66,7 @@ async function initialLoading() {
   if (!tokenMaxAmount) {
     tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
   }
-  if(!owner){
+  if (!owner) {
     owner = await dutchAuctionContract.owner();
   }
   hideLoading();
@@ -101,50 +103,73 @@ async function placeBids() {
       )
     );
 }
+
+function updateProgressElements(price, currentTime, tokenMaxAmount) {
+  var timePassed = differenceInMinutes(currentTime, openingTime);
+  var timeProgressed = Math.ceil((timePassed / duration) * 100) + "%";
+  document.getElementById("currentTokenAmtInput").value = tokenMaxAmount;
+  document.getElementById("priceInput").value = price;
+  document.getElementById("timeInput").value =
+    Math.ceil(timePassed) + " minute";
+  var progressbar = document.getElementById("progressbar");
+  progressbar.style.width = timeProgressed;
+}
+
+function updateContributionElements(contribution, price) {
+  var coinHeld = Math.floor(contribution / price);
+  document.getElementById("contribution").value = contribution;
+  document.getElementById("coinHeld").value = coinHeld;
+  document.getElementById("SingerAddr").value = signerAddress;
+}
+
 async function UpdateStatus() {
   await getAccess();
   await initialLoading();
   // Update with currentTime
   const currentTime = await dutchAuctionContract.getCurrentTime();
+  const finalized = await dutchAuctionContract.finalized();
+  signerAddress = await signer.getAddress();
   if (currentTime > closingTime) {
-    showAlert(`Auction Closed at ${convertTime(closingTime)[1]}`, "danger");
+    if (finalized) {
+      auctionStage = 2;
+      showAlert(
+        `Auction Closed at ${
+          convertTime(closingTime)[1]
+        }, waiting for owner finalization.`,
+        "warning"
+      );
+    } else {
+      auctionStage = 3;
+      showAlert(
+        `Auction Closed at ${convertTime(closingTime)[1]}, auction finalized.`,
+        "danger"
+      );
+    }
   } else if (currentTime < openingTime) {
+    auctionStage = 0;
     showAlert(`Auction Will Open at ${convertTime(openingTime)[1]}`, "danger");
   } else {
+    auctionStage = 1;
     showAlert("Auction In Progress", "success");
   }
-  if (currentTime <= closingTime) {
-    isAuctionActive = true;
+
+  // Get price update only when auction ongoing
+  if (auctionStage === 1) {
     var price = await dutchAuctionContract.price();
-    var tokenMaxAmount = await dutchAuctionContract.remainingSupply();
-    // Convert Unix timestamp to milliseconds and create a Date object
-
-    //var getCurrentTime = convertTime(await dutchAuctionContract.getCurrentTime());
-    //var openingTime = convertTime(await dutchAuctionContract.openingTime());
-    //var closingTime = convertTime(await dutchAuctionContract.closingTime());
-    // console.log("getCurrentTime: " + getCurrentTime[0]);
-    // console.log("openingTime: " + openingTime[0]);
-    // console.log("closingTime: " + closingTime[0]);
-
-    var TimePassed = differenceInMinutes(currentTime, openingTime);
-    document.getElementById("CurrentTokenAmtInput").value = tokenMaxAmount;
-    document.getElementById("priceInput").value = price;
-    document.getElementById("timeInput").value =
-      Math.ceil(TimePassed) + " minute";
-    var timeProgressed = Math.ceil((TimePassed / duration) * 100) + "%";
-    var progressbar = document.getElementById("progressbar");
-    progressbar.style.width = timeProgressed;
-  } else {
-    // Auction is not active
-    isAuctionActive = false;
+    var remainingSupply = await dutchAuctionContract.remainingSupply();
+    updateProgressElements(price, currentTime, remainingSupply);
   }
 
-  signerAddress = await signer.getAddress();
-  var contribution = await dutchAuctionContract.contribution(signerAddress);
-  var coinHeld = Math.floor(contribution / price);
-  document.getElementById("contribution").value = contribution;
-  document.getElementById("coinHeld").value = coinHeld;
-  document.getElementById("SingerAddr").value = signerAddress;
+  if (auctionStage > 1) {
+    var price = await dutchAuctionContract.price();
+    var contribution;
+    if (signerAddress === owner) {
+      contribution = await dutchAuctionContract.contribution(signerAddress);
+    } else {
+      contribution = await dutchAuctionContract.weiAmount();
+    }
+    updateContributionElements(contribution, price);
+  }
   toggleStageVisibility();
   toggleOwnerBidderVisibility();
 
@@ -332,7 +357,7 @@ function toggleOwnerBidderVisibility() {
   const ownerElements = document.querySelectorAll(".owner-only");
   const bidderElements = document.querySelector(".bidder-only");
 
-  if (signerAddress === owner ) {
+  if (signerAddress === owner) {
     // Conditions are met, show the buttons in the first row
     ownerElements.forEach((button) => {
       button.style.display = "block"; // Change to your preferred display style (e.g., "inline-block")
@@ -349,23 +374,28 @@ function toggleOwnerBidderVisibility() {
 
 // Function to toggle the visibility of buttons based on conditions
 function toggleStageVisibility() {
-  const openOnlyElements = document.querySelectorAll(".open-only");
-
-  if (isAuctionActive) {
-    openOnlyElements.forEach((button) => {
-      button.style.display = "flex";
-    });
-  } else {
-    openOnlyElements.forEach((button) => {
+  const stageElements = [
+    document.querySelectorAll(".stage-0"),
+    document.querySelectorAll(".stage-1"),
+    document.querySelectorAll(".stage-2"),
+    document.querySelectorAll(".stage-3"),
+  ];
+  // Set everything to none first
+  for (let i = 0; i < 4; i++) {
+    stageElements[i].forEach((button) => {
       button.style.display = "none";
     });
   }
+  // Only show the class with current stage
+  stageElements[auctionStage].forEach((button) => {
+    button.style.display = "flex";
+  });
 }
 
 initialLoading();
-// Start updating status only if the auction is active
+// Start updating status only if the auction is not finalized
 setInterval(() => {
-  if (isAuctionActive) {
+  if (auctionStage < 3) {
     UpdateStatus();
   }
 }, 5000); // 10000 milliseconds = 10 seconds
