@@ -1,7 +1,8 @@
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer, signerAddress, dutchAuctionContract, tokenContract;
-const CONVERT_TO_ETH_THRESHOLD = Math.pow(10, 12);
-const REMAINING_DIGIT = Math.pow(10, -6);
+const THRESHOLD_DIGIT = 6;
+const CONVERT_TO_ETH_THRESHOLD = Math.pow(10, 18-THRESHOLD_DIGIT);
+const REMAINING_DIGIT = Math.pow(10, -THRESHOLD_DIGIT);
 
 // Declare a global variable to store JSON data
 let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
@@ -63,7 +64,7 @@ async function initialLoading() {
     document.getElementById("closingTime").value = convertTime(closingTime)[1]; // Set closing price
   }
   if (!duration) {
-    duration = differenceInMinutes(closingTime, openingTime);
+    duration = differenceInMinutes(closingTime, openingTime)[0];
   }
   if (!tokenMaxAmount) {
     tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
@@ -115,19 +116,19 @@ function updateProgressElements(
   remainingSupply,
   updateBar
 ) {
-  var timePassed = differenceInMinutes(currentTime, openingTime);
+  var [minutesPassed, secondsPassed] = differenceInMinutes(currentTime, openingTime);
   // Update 3 input boxs
   document.getElementById("currentTokenAmtInput").value = remainingSupply;
   var [val, unit] = getPriceAndUnit(price);
   document.getElementById("priceInput").value = `${val} (${unit})`;
-  document.getElementById("timeInput").value =
-    Math.ceil(timePassed) + " minute";
+  //document.getElementById("timeInput").value = minutesPassed + " minute";
 
   // Update progress bar only when auction ongoing
   if (updateBar) {
-    var timeProgressed = Math.ceil((timePassed / duration) * 100) + "%";
+    var timeProgressed = Math.ceil((minutesPassed / duration) * 100) + "%";
     var progressbar = document.getElementById("progressbar");
     progressbar.style.width = timeProgressed;
+    progressbar.innerHTML = `${minutesPassed}m${String(secondsPassed).padStart(2, '0')}s/${duration}m (${timeProgressed})`;
   }
 }
 
@@ -136,7 +137,7 @@ function getPriceAndUnit(price) {
     return [price, "wei"];
   }
   return [
-    price.div(CONVERT_TO_ETH_THRESHOLD.toString()) * REMAINING_DIGIT,
+    (price.div(CONVERT_TO_ETH_THRESHOLD.toString()) * REMAINING_DIGIT).toFixed(THRESHOLD_DIGIT),
     "ether",
   ];
 }
@@ -152,13 +153,13 @@ function updateContributionElements(contribution, price, identity) {
       "coinHeld"
     ).innerHTML = `Aprox. Coin Sold: ${coinHeld}`;
   } else {
-    var [val, unit] = getPriceAndUnit(price);
+    var [val, unit] = getPriceAndUnit(contribution);
     document.getElementById(
       "contribution"
     ).innerHTML = `Contribution: ${val}(${unit})`;
     document.getElementById(
       "coinHeld"
-    ).innerHTML = `Aprox. Coin Held: ${coinHeld}`;
+    ).innerHTML = `Aprox. Token Bought: ${coinHeld}`;
   }
   //document.getElementById("SingerAddr").value = signerAddress;
 }
@@ -268,9 +269,10 @@ function differenceInMinutes(hex1, hex2) {
   const differenceInMilliseconds = Math.abs(date1.getTime() - date2.getTime());
 
   // Convert milliseconds to minutes
-  const differenceInMinutes = differenceInMilliseconds / (1000 * 60);
+  const differenceInMinutes = Math.floor(differenceInMilliseconds / (1000 * 60));
+  const differenceInSeconds = Math.floor((differenceInMilliseconds / 1000) % 60);
 
-  return differenceInMinutes;
+  return [differenceInMinutes, differenceInSeconds];
 }
 
 function convertTime(hex) {
