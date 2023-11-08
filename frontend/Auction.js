@@ -79,9 +79,11 @@ async function UpdateStatus() {
   // Cache openingTime and closingTime
   if (!openingTime) {
     openingTime = await dutchAuctionContract.openingTime();
+    document.getElementById("openingTime").value = convertTime(openingTime)[1]; // Set opening price
   }
   if (!closingTime) {
     closingTime = await dutchAuctionContract.closingTime();
+    document.getElementById("closingTime").value = convertTime(closingTime)[1]; // Set closing price
   }
   if (!duration) {
     duration = differenceInMinutes(closingTime, openingTime);
@@ -89,6 +91,7 @@ async function UpdateStatus() {
   if (!tokenMaxAmount) {
     tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
   }
+
   const currentTime = await dutchAuctionContract.getCurrentTime();
   if (currentTime < closingTime) {
     isAuctionActive = true;
