@@ -29,7 +29,7 @@ async function main() {
   await writeDeploymentInfo(da, "da.json");
 
   // Mine blocks at intervals after deployment
-  const totalBlockCount =config.auctionDuration / config.priceRefreshInterval;
+  const totalBlockCount = config.auctionDuration * 3 / config.priceRefreshInterval;
 
   for (let i = 0; i < totalBlockCount; i++) {
     // Forward time by the block interval

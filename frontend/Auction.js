@@ -8,7 +8,7 @@ let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
 let openingTime, closingTime, duration, tokenMaxAmount, owner;
 // 0 - Before Opening; 1 - On going; 2 - Ended; 3 - Finalized
 let auctionStage = 0;
-let isAuctionActive = true; // Track if the auction is active
+let currentPrice;
 
 async function loadJSON() {
   try {
@@ -88,6 +88,11 @@ async function getTokenAmount() {
   document.getElementById("tokenmaxamount").innerHTML = tokenMaxAmount;
 }
 
+function updateWeiAmount(value) {
+  // Get a reference to the second input element
+  document.getElementById("bid").value = value * currentPrice;
+}
+
 async function placeBids() {
   await getAccess();
   const numEthToSpend = document.getElementById("bid").value;
@@ -125,17 +130,17 @@ function updateContributionElements(contribution, price, identity) {
   if (identity === owner) {
     document.getElementById(
       "contribution"
-    ).innerHTML = `Contribution: ${contribution}`;
-    document.getElementById(
-      "coinHeld"
-    ).innerHTML = `Approx Coin Held: ${coinHeld}`;
-  } else {
-    document.getElementById(
-      "contribution"
     ).innerHTML = `Total Wei Raised: ${contribution}`;
     document.getElementById(
       "coinHeld"
     ).innerHTML = `Approx Coin Sold: ${coinHeld}`;
+  } else {
+    document.getElementById(
+      "contribution"
+    ).innerHTML = `Contribution(in Wei): ${contribution}`;
+    document.getElementById(
+      "coinHeld"
+    ).innerHTML = `Approx Coin Held: ${coinHeld}`;
   }
   //document.getElementById("SingerAddr").value = signerAddress;
 }
@@ -174,24 +179,24 @@ async function updateStatus() {
   // Get price update
 
   if (auctionStage >= 1) {
-    var price = await dutchAuctionContract.price();
+    currentPrice = await dutchAuctionContract.price();
     var remainingSupply = await dutchAuctionContract.remainingSupply();
     updateProgressElements(
-      price,
+      currentPrice,
       currentTime,
       remainingSupply,
       auctionStage === 1
     );
     var contribution;
     if (signerAddress === owner) {
-      contribution = await dutchAuctionContract.contribution(signerAddress);
-    } else {
       contribution = await dutchAuctionContract.weiRaised();
+    } else {
+      contribution = await dutchAuctionContract.contribution(signerAddress);
     }
-    updateContributionElements(contribution, price, signerAddress);
+    updateContributionElements(contribution, currentPrice, signerAddress);
   }
-  toggleStageVisibility();
-  toggleOwnerBidderVisibility();
+  toggleStageRoleVisibility();
+  //toggleOwnerBidderVisibility();
 }
 
 async function getMetaMaskAccount() {
@@ -336,28 +341,28 @@ function hideAlert() {
   alertElement.style.display = "none";
 }
 
-// Function to toggle the visibility of buttons based on conditions
-function toggleOwnerBidderVisibility() {
-  const ownerElements = document.querySelectorAll(".owner-only");
-  const bidderElements = document.querySelector(".bidder-only");
+// // Function to toggle the visibility of buttons based on conditions
+// function toggleOwnerBidderVisibility() {
+//   const ownerElements = document.querySelectorAll(".owner-only");
+//   const bidderElements = document.querySelector(".bidder-only");
 
-  if (signerAddress === owner) {
-    // Conditions are met, show the buttons in the first row
-    ownerElements.forEach((button) => {
-      button.style.display = "block"; // Change to your preferred display style (e.g., "inline-block")
-    });
-    bidderElements.style.display = "none";
-  } else {
-    // Conditions are not met, show the button in the second table
-    ownerElements.forEach((button) => {
-      button.style.display = "none";
-    });
-    bidderElements.style.display = "block"; // Change to your preferred display style
-  }
-}
+//   if (signerAddress === owner) {
+//     // Conditions are met, show the buttons in the first row
+//     ownerElements.querySelectorAll(`.stage-${auctionStage}`).forEach((button) => {
+//       button.style.display = "flex"; // Change to your preferred display style (e.g., "inline-block")
+//     });
+//     bidderElements.style.display = "none";
+//   } else {
+//     // Conditions are not met, show the button in the second table
+//     ownerElements.forEach((button) => {
+//       button.style.display = "none";
+//     });
+//     bidderElements.style.display = "flex"; // Change to your preferred display style
+//   }
+// }
 
 // Function to toggle the visibility of buttons based on conditions
-function toggleStageVisibility() {
+function toggleStageRoleVisibility() {
   const stageElements = [
     document.querySelectorAll(".stage-0"),
     document.querySelectorAll(".stage-1"),
@@ -371,8 +376,16 @@ function toggleStageVisibility() {
     });
   }
   // Only show the class with current stage
-  stageElements[auctionStage].forEach((button) => {
-    button.style.display = "flex";
+  stageElements[auctionStage].forEach((element) => {
+    if(signerAddress === owner){
+      if(!element.classList.contains("bidder-only")){
+        element.style.display = "flex";
+      }
+    }else{
+      if(!element.classList.contains("owner-only")){
+        element.style.display = "flex";
+      }
+    }
   });
 }
 
@@ -383,6 +396,7 @@ setInterval(() => {
     updateStatus();
   }
 }, 5000); // 10000 milliseconds = 10 seconds
+
 window.ethereum.on("accountsChanged", (accounts) => {
   // Handle the new accounts, or reload the page.
   console.log("Accounts changed:", accounts);

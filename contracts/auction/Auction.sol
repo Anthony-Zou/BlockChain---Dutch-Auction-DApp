@@ -203,7 +203,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @return Dynamically calculated amount of tokens left in the allowance
      */
     function remainingSupply() public view returns (uint256) {
-        if(finalized()){
+        if (finalized()) {
             return tokenMaxAmount().sub(tokenDistributed());
         }
         uint256 currentDemand = _getTokenAmount(weiRaised());
@@ -238,7 +238,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * another `nonReentrant` function.
      */
     function placeBids() public payable virtual nonReentrant {
-        // No requirement on non-null bidder because 
+        // No requirement on non-null bidder because
         // by right there will never be msg from ZERO_ADDRESS
         uint256 weiAmount = msg.value;
         _preValidateBids(_msgSender(), weiAmount);
@@ -255,7 +255,9 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
 
         _forwardFunds();
         _postValidateBids(_msgSender(), contributionRecorded);
-        emit BidsPlaced(_msgSender(), contributionRecorded);
+        if(contributionRecorded > 0){
+            emit BidsPlaced(_msgSender(), contributionRecorded);
+        }
     }
 
     /**
@@ -289,8 +291,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         );
         // Put status update first to prevent re-entry attack
         _tokenCleanedUp = true;
-        uint256 remainingTokens = tokenMaxAmount() -
-            tokenDistributed();
+        uint256 remainingTokens = tokenMaxAmount() - tokenDistributed();
 
         if (remainingTokens > 0) {
             _tokenDistributed = _tokenDistributed.add(remainingTokens);
@@ -372,10 +373,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             beneficiary != address(0),
             "Auction: beneficiary is the zero address"
         );
-        require(
-            beneficiary != _owner,
-            "Auction: owner cannot place bids"
-        );
+        require(beneficiary != _owner, "Auction: owner cannot place bids");
         //console.log("in _preValidateBids, beneficiary: ",beneficiary);
         require(weiAmount > 0, "Auction: weiAmount is 0");
         //console.log("_preValidateBids check passed");
@@ -395,8 +393,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     }
 
     /**
-     * @dev Process bids after finalization. 
-     * Override this method to modify the way in which the Auction ultimately 
+     * @dev Process bids after finalization.
+     * Override this method to modify the way in which the Auction ultimately
      * process bids
      * @param beneficiary Address performing the token purchase
      * @param weiAmount Number of weiAmount contributed to this beneficiary
@@ -445,16 +443,18 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         uint256 maxAllowed = remainingSupply() * price();
         ////cosole.log("in Auction _updatePurchasingState maxAllowed", maxAllowed);
         uint256 recordedAmount = Math.min(maxAllowed, weiAmount);
-        // update state
-        _weiRaised = _weiRaised.add(recordedAmount);
-        if (_contributions[beneficiary] == 0) {
-            // Push only if the beneficiary only placed bid once
-            _queue.push(beneficiary);
-            //console.log("Added beneficiary to queue", beneficiary);
+        if (recordedAmount > 0) {
+            // update state
+            _weiRaised = _weiRaised.add(recordedAmount);
+            if (_contributions[beneficiary] == 0) {
+                // Push only if the beneficiary only placed bid once
+                _queue.push(beneficiary);
+                //console.log("Added beneficiary to queue", beneficiary);
+            }
+            _contributions[beneficiary] = _contributions[beneficiary].add(
+                recordedAmount
+            );
         }
-        _contributions[beneficiary] = _contributions[beneficiary].add(
-            recordedAmount
-        );
         return recordedAmount;
     }
 
