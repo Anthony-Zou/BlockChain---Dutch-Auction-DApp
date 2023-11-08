@@ -1,6 +1,6 @@
 {
-    "initialPrice": 800000000000000000,
-    "finalPrice":   100000000000000000,
+    "initialPrice": "800000000000000000",
+    "finalPrice":   "100000000000000000",
     "tokenMaxAmount": 10000, 
     "auctionDuration": 1200,
     "priceRefreshInterval": 5,

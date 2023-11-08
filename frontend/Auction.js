@@ -1,5 +1,7 @@
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer, signerAddress, dutchAuctionContract, tokenContract;
+const CONVERT_TO_ETH_THRESHOLD = Math.pow(10, 12);
+const REMAINING_DIGIT = Math.pow(10, -6);
 
 // Declare a global variable to store JSON data
 let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
@@ -72,25 +74,23 @@ async function initialLoading() {
   hideLoading();
 }
 
-async function getTokenPrice() {
-  await getAccess();
-  const price = await dutchAuctionContract.price();
-
-  //console.log(await dutchAuctionContract.getCurrentTime());
-  //console.log(await dutchAuctionContract.openingTime());
-  console.log(price);
-  document.getElementById("price").innerHTML = price;
-}
-
-async function getTokenAmount() {
-  await getAccess();
-  const tokenMaxAmount = await dutchAuctionContract.remainingSupply();
-  document.getElementById("tokenmaxamount").innerHTML = tokenMaxAmount;
-}
-
-function updateWeiAmount(value) {
+function updateWeiAmount(inputElement) {
+  //   if(!value){
+  //     return;
+  //   }
+  //   if(value>remainingSupply){
+  //     console.log(value);
+  //     document.getElementById("placeBidInput").value = remainingSupply.toString();
+  //   }
+  const maxLimit = parseInt(remainingSupply.toString());
   // Get a reference to the second input element
-  document.getElementById("bid").value = value * currentPrice;
+  if (!inputElement.value) {
+    return;
+  }
+  if (inputElement.value > maxLimit) {
+    inputElement.value = maxLimit;
+  }
+  document.getElementById("bid").value = currentPrice.mul(inputElement.value);
 }
 
 async function placeBids() {
@@ -109,11 +109,17 @@ async function placeBids() {
     );
 }
 
-function updateProgressElements(price, currentTime, tokenMaxAmount, updateBar) {
+function updateProgressElements(
+  price,
+  currentTime,
+  remainingSupply,
+  updateBar
+) {
   var timePassed = differenceInMinutes(currentTime, openingTime);
   // Update 3 input boxs
-  document.getElementById("currentTokenAmtInput").value = tokenMaxAmount;
-  document.getElementById("priceInput").value = price;
+  document.getElementById("currentTokenAmtInput").value = remainingSupply;
+  var [val, unit] = getPriceAndUnit(price);
+  document.getElementById("priceInput").value = `${val} (${unit})`;
   document.getElementById("timeInput").value =
     Math.ceil(timePassed) + " minute";
 
@@ -125,19 +131,31 @@ function updateProgressElements(price, currentTime, tokenMaxAmount, updateBar) {
   }
 }
 
+function getPriceAndUnit(price) {
+  if (price < CONVERT_TO_ETH_THRESHOLD) {
+    return [price, "wei"];
+  }
+  return [
+    price.div(CONVERT_TO_ETH_THRESHOLD.toString()) * REMAINING_DIGIT,
+    "ether",
+  ];
+}
+
 function updateContributionElements(contribution, price, identity) {
-  var coinHeld = Math.floor(contribution / price);
+  var coinHeld = Math.floor(contribution.div(price));
   if (identity === owner) {
+    var [val, unit] = getPriceAndUnit(contribution);
     document.getElementById(
       "contribution"
-    ).innerHTML = `Total Wei Raised: ${contribution}`;
+    ).innerHTML = `Funds Raised: ${val}(${unit})`;
     document.getElementById(
       "coinHeld"
     ).innerHTML = `Aprox. Coin Sold: ${coinHeld}`;
   } else {
+    var [val, unit] = getPriceAndUnit(price);
     document.getElementById(
       "contribution"
-    ).innerHTML = `Contribution(in Wei): ${contribution}`;
+    ).innerHTML = `Contribution: ${val}(${unit})`;
     document.getElementById(
       "coinHeld"
     ).innerHTML = `Aprox. Coin Held: ${coinHeld}`;
@@ -149,7 +167,7 @@ async function updateStatus() {
   await getAccess();
   await initialLoading();
   // Update with currentTime
-  const currentTime = await dutchAuctionContract.getCurrentTime();
+  const currentTime = await dutchAuctionContract.getCurrentTime(); //bignumber
   const finalized = await dutchAuctionContract.finalized();
   remainingSupply = await dutchAuctionContract.remainingSupply();
   signerAddress = await signer.getAddress();

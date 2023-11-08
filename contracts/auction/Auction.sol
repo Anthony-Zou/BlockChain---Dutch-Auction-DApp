@@ -221,6 +221,16 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         return _tokenDistributed;
     }
 
+    function getNonZeroContributions() public view returns (uint256[] memory) {
+        // Create an array to store the non-zero contributions
+        uint256[] memory contributions = new uint256[](_queue.length);
+
+        for (uint i = 0; i < _queue.length; i++) {
+            contributions[i] = contribution(_queue[i]);
+        }
+        return contributions;
+    }
+
     /**
      * @dev Returns the amount contributed so far by a specific beneficiary.
      * @param beneficiary Address of contributor
@@ -255,7 +265,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
 
         _forwardFunds();
         _postValidateBids(_msgSender(), contributionRecorded);
-        if(contributionRecorded > 0){
+        if (contributionRecorded > 0) {
             emit BidsPlaced(_msgSender(), contributionRecorded);
         }
     }
