@@ -7,8 +7,8 @@ async function main() {
   await token.deployed();
 
   const DutchAuction = await hre.ethers.getContractFactory("DutchAuction");
-  const openingTime = (await ethers.provider.getBlock("latest")).timestamp + 1;
-  const closingTime = openingTime + 1200;
+  const openingTime = (await ethers.provider.getBlock("latest")).timestamp + 10;
+  const auctionDuration = 1200;
   const initialPrice = 80000;
   const finalPrice = 10000;
   const tokenMaxAmount = 10000;
@@ -17,7 +17,7 @@ async function main() {
 
   const da = await DutchAuction.deploy(
     openingTime,
-    closingTime,
+    openingTime + auctionDuration,
     initialPrice,
     finalPrice,
     wallet,
@@ -25,21 +25,25 @@ async function main() {
     tokenMaxAmount
   );
   await token.transfer(da.address, tokenMaxAmount);
+
   await da.deployed();
   await writeDeploymentInfo(token, "token.json");
   await writeDeploymentInfo(da, "da.json");
 
   // Mine blocks at intervals after deployment
-  for (let i = 0; i < 20; i++) {
-    // Forward time by 1 minute
-    await new Promise((resolve) => setTimeout(resolve, 60 * 1000));
+  const blockIntervalSeconds = 5;
+  const totalBlockCount = auctionDuration / blockIntervalSeconds;
+
+  for (let i = 0; i < totalBlockCount; i++) {
+    // Forward time by the block interval
+    await new Promise((resolve) => setTimeout(resolve, blockIntervalSeconds * 1000));
     const newTimestampInSeconds =
-      (await ethers.provider.getBlock("latest")).timestamp + 60;
+      (await ethers.provider.getBlock("latest")).timestamp + blockIntervalSeconds;
     await ethers.provider.send("evm_mine", [newTimestampInSeconds]);
-    console.log(
-      `Time forwarded by 1 minute and new block mined. Current block timestamp: ${newTimestampInSeconds}`
-    );
-    // Wait for 1 minute in real time if needed
+    // console.log(
+    //   `Time forwarded by ${blockIntervalSeconds} seconds and new block mined. Current block timestamp: ${newTimestampInSeconds}`
+    // );
+    // Wait for the block interval in real time if needed
   }
 }
 
