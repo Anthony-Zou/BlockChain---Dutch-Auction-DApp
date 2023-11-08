@@ -246,7 +246,7 @@ async function updateStatus() {
   remainingSupply = await dutchAuctionContract.remainingSupply();
   signerAddress = await signer.getAddress();
   coinDistribution = await dutchAuctionContract.getNonZeroContributions();
-  console.log(coinDistribution);
+
   if (finalized) {
     auctionStage = 3;
     showAlert(
