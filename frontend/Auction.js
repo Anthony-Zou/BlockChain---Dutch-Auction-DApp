@@ -1,7 +1,7 @@
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer, signerAddress, dutchAuctionContract, tokenContract;
 const THRESHOLD_DIGIT = 6;
-const CONVERT_TO_ETH_THRESHOLD = Math.pow(10, 18-THRESHOLD_DIGIT);
+const CONVERT_TO_ETH_THRESHOLD = Math.pow(10, 18 - THRESHOLD_DIGIT);
 const REMAINING_DIGIT = Math.pow(10, -THRESHOLD_DIGIT);
 
 // Declare a global variable to store JSON data
@@ -40,11 +40,7 @@ async function getAccess() {
 
   await provider.send("eth_requestAccounts", []);
   signer = provider.getSigner();
-  dutchAuctionContract = new ethers.Contract(
-    dutchAuctionAddress,
-    dutchAuctionAbi,
-    signer
-  );
+  dutchAuctionContract = new ethers.Contract(dutchAuctionAddress, dutchAuctionAbi, signer);
   tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
   console.log(tokenContract);
   console.log(dutchAuctionContract);
@@ -102,20 +98,10 @@ async function placeBids() {
       value: numEthToSpend,
     })
     .then(() => showAlert("Bid Placed", "success"))
-    .catch((error) =>
-      showAlert(
-        `Failed to purchase Place Bid: ${error["data"]["message"]}`,
-        "danger"
-      )
-    );
+    .catch((error) => showAlert(`Failed to purchase Place Bid: ${error["data"]["message"]}`, "danger"));
 }
 
-function updateProgressElements(
-  price,
-  currentTime,
-  remainingSupply,
-  updateBar
-) {
+function updateProgressElements(price, currentTime, remainingSupply, updateBar) {
   var [minutesPassed, secondsPassed] = differenceInMinutes(currentTime, openingTime);
   // Update 3 input boxs
   document.getElementById("currentTokenAmtInput").value = remainingSupply;
@@ -128,7 +114,7 @@ function updateProgressElements(
     var timeProgressed = Math.ceil((minutesPassed / duration) * 100) + "%";
     var progressbar = document.getElementById("progressbar");
     progressbar.style.width = timeProgressed;
-    progressbar.innerHTML = `${minutesPassed}m${String(secondsPassed).padStart(2, '0')}s/${duration}m (${timeProgressed})`;
+    progressbar.innerHTML = `${minutesPassed}m${String(secondsPassed).padStart(2, "0")}s/${duration}m (${timeProgressed})`;
   }
 }
 
@@ -136,31 +122,44 @@ function getPriceAndUnit(price) {
   if (price < CONVERT_TO_ETH_THRESHOLD) {
     return [price, "wei"];
   }
-  return [
-    (price.div(CONVERT_TO_ETH_THRESHOLD.toString()) * REMAINING_DIGIT).toFixed(THRESHOLD_DIGIT),
-    "ether",
-  ];
+  return [(price.div(CONVERT_TO_ETH_THRESHOLD.toString()) * REMAINING_DIGIT).toFixed(THRESHOLD_DIGIT), "ether"];
 }
 
 function updateContributionElements(contribution, price, identity) {
   var coinHeld = Math.floor(contribution.div(price));
   if (identity === owner) {
     var [val, unit] = getPriceAndUnit(contribution);
-    document.getElementById(
-      "contribution"
-    ).innerHTML = `Funds Raised: ${val}(${unit})`;
-    document.getElementById(
-      "coinHeld"
-    ).innerHTML = `Aprox. Coin Sold: ${coinHeld}`;
+    document.getElementById("contributionMsg").innerHTML = `Fund Raised(${unit})`;
+    document.getElementById("contributionVal").value = `${val}`;
+
+    document.getElementById("coinHeldMsg").innerHTML = "Aprox. Coin Sold";
+    document.getElementById("coinHeldVal").value = `${coinHeld}`;
   } else {
     var [val, unit] = getPriceAndUnit(contribution);
-    document.getElementById(
-      "contribution"
-    ).innerHTML = `Contribution: ${val}(${unit})`;
-    document.getElementById(
-      "coinHeld"
-    ).innerHTML = `Aprox. Token Bought: ${coinHeld}`;
+    document.getElementById("contributionMsg").innerHTML = `Contribution(${unit})`;
+    document.getElementById("contributionVal").innerHTML = `${val}`;
+
+    document.getElementById("coinHeldMsg").innerHTML = "Aprox. Token Bought";
+    document.getElementById("coinHeldVal").innerHTML = `${coinHeld}`;
   }
+
+  // if (identity === owner) {
+  //   var [val, unit] = getPriceAndUnit(contribution);
+  //   document.getElementById(
+  //     "contribution"
+  //   ).innerHTML = `Funds Raised: ${val}(${unit})`;
+  //   document.getElementById(
+  //     "coinHeld"
+  //   ).innerHTML = `Aprox. Coin Sold: ${coinHeld}`;
+  // } else {
+  //   var [val, unit] = getPriceAndUnit(contribution);
+  //   document.getElementById(
+  //     "contribution"
+  //   ).innerHTML = `Contribution: ${val}(${unit})`;
+  //   document.getElementById(
+  //     "coinHeld"
+  //   ).innerHTML = `Aprox. Token Bought: ${coinHeld}`;
+  // }
   //document.getElementById("SingerAddr").value = signerAddress;
 }
 
@@ -175,37 +174,21 @@ async function updateStatus() {
 
   if (finalized) {
     auctionStage = 3;
-    showAlert(
-      `Auction Closed at ${convertTime(closingTime)[1]}, auction finalized.`,
-      "danger"
-    );
+    showAlert(`Auction Closed at ${convertTime(closingTime)[1]}, auction finalized.`, "danger");
   } else {
     if (currentTime > closingTime) {
       auctionStage = 2;
-      showAlert(
-        `Auction Closed at ${
-          convertTime(closingTime)[1]
-        }, waiting for owner finalization.`,
-        "warning"
-      );
+      showAlert(`Auction Closed at ${convertTime(closingTime)[1]}, waiting for owner finalization.`, "warning");
     } else if (currentTime < openingTime) {
       auctionStage = 0;
-      showAlert(
-        `Auction Will Open at ${convertTime(openingTime)[1]}`,
-        "danger"
-      );
+      showAlert(`Auction Will Open at ${convertTime(openingTime)[1]}`, "danger");
     } else {
       if (remainingSupply > 0) {
         auctionStage = 1;
         showAlert("Auction In Progress", "success");
       } else {
         auctionStage = 2;
-        showAlert(
-          `Auction Closed as token has no more remaining supply. ${
-            convertTime(closingTime)[1]
-          }, waiting for owner finalization.`,
-          "warning"
-        );
+        showAlert(`Auction Closed as token has no more remaining supply. ${convertTime(closingTime)[1]}, waiting for owner finalization.`, "warning");
       }
     }
   }
@@ -213,12 +196,7 @@ async function updateStatus() {
   // Get price update
   if (auctionStage >= 1) {
     currentPrice = await dutchAuctionContract.price();
-    updateProgressElements(
-      currentPrice,
-      currentTime,
-      remainingSupply,
-      auctionStage === 1
-    );
+    updateProgressElements(currentPrice, currentTime, remainingSupply, auctionStage === 1);
     var contribution;
     if (signerAddress === owner) {
       contribution = await dutchAuctionContract.weiRaised();
@@ -246,9 +224,7 @@ async function getMetaMaskAccount() {
       console.error("User denied account access or an error occurred:", error);
     }
   } else {
-    console.log(
-      "MetaMask is not installed. Please consider installing it: https://metamask.io/download.html"
-    );
+    console.log("MetaMask is not installed. Please consider installing it: https://metamask.io/download.html");
   }
 }
 function differenceInMinutes(hex1, hex2) {
@@ -297,9 +273,7 @@ async function claimRefund() {
   await dutchAuctionContract
     .claimRefund()
     .then(() => showAlert("Fund Claimed", "success"))
-    .catch((error) =>
-      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
-    );
+    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
 }
 
 async function finalize() {
@@ -307,9 +281,7 @@ async function finalize() {
   await dutchAuctionContract
     .finalize()
     .then(() => showAlert("Finalized", "success"))
-    .catch((error) =>
-      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
-    )
+    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"))
     .finally(() => {
       updateStatus();
     });
@@ -322,9 +294,7 @@ async function burnToken() {
       showAlert("Token Burned", "success");
       document.getElementById("burnTokenBtn").hidden = true;
     })
-    .catch((error) =>
-      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
-    );
+    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
 }
 async function withdrawFunds() {
   await getAccess();
@@ -345,9 +315,7 @@ async function withdrawToken() {
       showAlert("Token Withdrawn", "success");
       document.getElementById("withdrawTokenBtn").hidden = true;
     })
-    .catch((error) =>
-      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
-    );
+    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
 }
 // Display Helper functions:
 function showLoading() {
@@ -366,11 +334,7 @@ function showAlert(message, type) {
 
   // Set the alert message and type
   document.getElementById("alertContent").innerHTML = message;
-  alertElement.classList.remove(
-    "alert-success",
-    "alert-danger",
-    "alert-warning"
-  );
+  alertElement.classList.remove("alert-success", "alert-danger", "alert-warning");
   alertElement.classList.add("alert-" + type);
 
   // Show the alert
