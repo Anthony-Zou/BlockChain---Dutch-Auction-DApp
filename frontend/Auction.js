@@ -1,11 +1,11 @@
 const provider = new ethers.providers.Web3Provider(window.ethereum);
-let signer, dutchAuctionContract, tokenContract;
+let signer, signerAddress, dutchAuctionContract, tokenContract;
 
 // Declare a global variable to store JSON data
 let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
 
 // Cache openingTime, closingTime, and tokenMaxAmount
-let openingTime, closingTime, duration, tokenMaxAmount;
+let openingTime, closingTime, duration, tokenMaxAmount, owner;
 let isAuctionActive = true; // Track if the auction is active
 
 async function loadJSON() {
@@ -46,7 +46,7 @@ async function getAccess() {
 }
 
 async function initialLoading() {
-  if (openingTime && closingTime && duration && tokenMaxAmount) return;
+  if(openingTime && closingTime && duration && tokenMaxAmount && owner) return;
 
   // Cache openingTime and closingTime
   showLoading();
@@ -63,6 +63,9 @@ async function initialLoading() {
   }
   if (!tokenMaxAmount) {
     tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
+  }
+  if(!owner){
+    owner = await dutchAuctionContract.owner();
   }
   hideLoading();
 }
@@ -136,12 +139,14 @@ async function UpdateStatus() {
     isAuctionActive = false;
   }
 
-  var signerAddress = await signer.getAddress();
+  signerAddress = await signer.getAddress();
   var contribution = await dutchAuctionContract.contribution(signerAddress);
   var coinHeld = Math.floor(contribution / price);
   document.getElementById("contribution").value = contribution;
   document.getElementById("coinHeld").value = coinHeld;
   document.getElementById("SingerAddr").value = signerAddress;
+  toggleStageVisibility();
+  toggleOwnerBidderVisibility();
 
   // console.log("afterOpen " + (await dutchAuctionContract.afterOpen()));
   // console.log("allowRefund " + (await dutchAuctionContract.allowRefund()));
@@ -320,6 +325,41 @@ function hideAlert() {
 
   // Hide the alert
   alertElement.style.display = "none";
+}
+
+// Function to toggle the visibility of buttons based on conditions
+function toggleOwnerBidderVisibility() {
+  const ownerElements = document.querySelectorAll(".owner-only");
+  const bidderElements = document.querySelector(".bidder-only");
+
+  if (signerAddress === owner ) {
+    // Conditions are met, show the buttons in the first row
+    ownerElements.forEach((button) => {
+      button.style.display = "block"; // Change to your preferred display style (e.g., "inline-block")
+    });
+    bidderElements.style.display = "none";
+  } else {
+    // Conditions are not met, show the button in the second table
+    ownerElements.forEach((button) => {
+      button.style.display = "none";
+    });
+    bidderElements.style.display = "block"; // Change to your preferred display style
+  }
+}
+
+// Function to toggle the visibility of buttons based on conditions
+function toggleStageVisibility() {
+  const openOnlyElements = document.querySelectorAll(".open-only");
+
+  if (isAuctionActive) {
+    openOnlyElements.forEach((button) => {
+      button.style.display = "flex";
+    });
+  } else {
+    openOnlyElements.forEach((button) => {
+      button.style.display = "none";
+    });
+  }
 }
 
 initialLoading();

@@ -93,6 +93,36 @@
         </p>
       </div>
       <div class="row g-5">
+        <div class="col-sm-6">
+          <label for="openingTime" class="form-label">Opening Time</label>
+          <input
+            type="text"
+            class="form-control"
+            id="openingTime"
+            placeholder=""
+            disabled
+          />
+        </div>
+        <div class="col-sm-6">
+          <label for="closingTime" class="form-label">Closing Time</label>
+          <input
+            type="text"
+            class="form-control"
+            id="closingTime"
+            placeholder=""
+            disabled
+          />
+        </div>
+      </div>
+      <div class="row g-5">
+        <p class="lead">
+          Welcome to the forefront of decentralized auctions: our Blockchain
+          Dutch Auction WebApp seamlessly combines transparency, fairness, and
+          innovation to revolutionize the way you experience asset trading.
+        </p>
+      </div>
+
+      <div class="row g-5 open-only">
         <div class="col-md-5 col-lg-4 order-md-last">
           <h4 class="d-flex justify-content-between align-items-center mb-3">
             <span class="text-primary">Bid List</span>
@@ -143,28 +173,12 @@
           </div>
         </div>
 
-        <div class="col-md-7 col-lg-8">
-          <div class="row g-3">
-            <div class="col-sm-6">
-              <label for="openingTime" class="form-label">Opening Time</label>
-              <input
-                type="text"
-                class="form-control"
-                id="openingTime"
-                placeholder=""
-                disabled
-              />
-            </div>
-            <div class="col-sm-6">
-              <label for="closingTime" class="form-label">Closing Time</label>
-              <input
-                type="text"
-                class="form-control"
-                id="closingTime"
-                placeholder=""
-                disabled
-              />
-            </div>
+        <div class="col-md-5 col-lg-8">
+          <h4 class="d-flex justify-content-between align-items-center mb-3">
+            <span class="text-primary">Auction Progress</span>
+            <!-- <span class="badge bg-primary rounded-pill">3</span> -->
+          </h4>
+          <div class = "row g-3">
             <div class="col-sm-4">
               <label for="firstName" class="form-label"
                 >Current Token Price</label
@@ -214,7 +228,7 @@
                     <td>
                       <button
                         type="button"
-                        class="btn btn-outline-secondary"
+                        class="btn btn-outline-secondary owner-only"
                         onclick="withdrawToken()"
                       >
                         Withdraw Token
@@ -224,39 +238,25 @@
                     <td>
                       <button
                         type="button"
-                        class="btn btn-outline-success"
+                        class="btn btn-outline-success owner-only"
                         onclick="withdrawFunds()"
                       >
                         Withdraw Funds
                       </button>
                     </td>
-                    <!-- </tr>
-                  <tr></tr>
-                  <tr> -->
                     <td>
                       <button
                         type="button"
-                        class="btn btn-outline-danger"
+                        class="btn btn-outline-danger owner-only"
                         onclick="burnToken()"
                       >
                         BurnToken
                       </button>
                     </td>
-
                     <td>
                       <button
                         type="button"
-                        class="btn btn-outline-warning"
-                        onclick="claimRefund()"
-                      >
-                        ClaimRefund
-                      </button>
-                    </td>
-
-                    <td>
-                      <button
-                        type="button"
-                        class="btn btn-outline-info"
+                        class="btn btn-outline-info owner-only"
                         onclick="finalize()"
                       >
                         Finalize
@@ -264,8 +264,19 @@
                     </td>
                   </tr>
                 </table>
+                <table><tr>
+                  <td>
+                    <button
+                      type="button"
+                      class="btn btn-outline-warning bidder-only"
+                      onclick="claimRefund()"
+                    >
+                      ClaimRefund
+                    </button>
+                  </td></tr></table>
               </div>
             </div>
+          </div>
           </div>
         </div>
       </div>
