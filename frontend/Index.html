@@ -17,7 +17,7 @@
       crossorigin="anonymous" />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
+    <link rel="icon" type="image/x-icon" href="./assets/favicon.ico" />
 
     <style>
       #loading-overlay {
@@ -208,21 +208,21 @@
             <div class="col-sm-8 col-md-7 py-4">
               <h4>About</h4>
               <p class="text-body-secondary">
-                Add some information about the album below, the author, or any other background context. Make it a few sentences long so folks can
-                pick up some informative tidbits. Then, link them off to some social networking sites or contact information.
+                This Ethereum-based smart contract transforms token launches and is modelled after Algorand's Dutch Auction. With ERC20 compatibility,
+                safe token distribution, and strong anti-reentry measures, it provides fair, market-driven prices with customizable parameter.
               </p>
             </div>
             <div class="col-sm-4 offset-md-1 py-4">
-              <h4>Contact</h4>
+              <h4>Group Member</h4>
               <ul class="list-unstyled">
                 <li>
-                  <a href="https://getbootstrap.com/docs/5.3/examples/album/#" class="text-white">Follow on Twitter</a>
+                  <a href="" class="text-white">Yiting CHEN: U2022489K</a>
                 </li>
                 <li>
-                  <a href="https://getbootstrap.com/docs/5.3/examples/album/#" class="text-white">Like on Facebook</a>
+                  <a href="" class="text-white">Yu ZHAO</a>
                 </li>
                 <li>
-                  <a href="https://getbootstrap.com/docs/5.3/examples/album/#" class="text-white">Email me</a>
+                  <a href="" class="text-white">Zeren ZOU</a>
                 </li>
               </ul>
             </div>
@@ -240,7 +240,7 @@
                 d="M1 0a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h4.083c.058-.344.145-.678.258-1H3a2 2 0 0 0-2-2V3a2 2 0 0 0 2-2h10a2 2 0 0 0 2 2v3.528c.38.34.717.728 1 1.154V1a1 1 0 0 0-1-1H1z" />
               <path d="M9.998 5.083 10 5a2 2 0 1 0-3.132 1.65 5.982 5.982 0 0 1 3.13-1.567z" />
             </svg>
-            <strong>Smart Contract</strong>
+            <strong>Decentralized Dutch Auction</strong>
           </a>
           <button
             class="navbar-toggler collapsed"
@@ -350,7 +350,7 @@
                 <div class="card-body">
                   <div class="input-group mb-3">
                     <span class="input-group-text" id="contributionMsg">$</span>
-                    <input type="text" class="form-control" id="contributionVal" />
+                    <input type="text" class="form-control" id="contributionVal" disabled />
                     <span class="input-group-text">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-cash" viewBox="0 0 16 16">
                         <path d="M8 10a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />
@@ -361,7 +361,7 @@
                   </div>
                   <div class="input-group mb-3">
                     <span class="input-group-text" id="coinHeldMsg">$</span>
-                    <input type="text" class="form-control" id="coinHeldVal" />
+                    <input type="text" class="form-control" id="coinHeldVal" disabled />
                     <span class="input-group-text">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-coin" viewBox="0 0 16 16">
                         <path
@@ -438,79 +438,71 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="album py-5">
+        <div class="container">
+          <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-3">
             <div class="col">
               <div class="card shadow-sm">
-                <svg
-                  class="bd-placeholder-img card-img-top"
-                  width="100%"
-                  height="225"
-                  xmlns="http://www.w3.org/2000/svg"
-                  role="img"
-                  aria-label="Placeholder: Thumbnail"
-                  preserveAspectRatio="xMidYMid slice"
-                  focusable="false">
-                  <title>Placeholder</title>
-                  <rect width="100%" height="100%" fill="#55595c"></rect>
-                  <text x="50%" y="50%" fill="#eceeef" dy=".3em">Thumbnail</text>
-                </svg>
+                <img src="./assets/dutchAuction.jpg" width="100%" height="225" class="card-img-top" alt="dutch auction" />
                 <div class="card-body">
+                  <h6 class="card-title">What is a dutch auction anyway?</h6>
                   <p class="card-text">
-                    This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.
+                    A Dutch auction is a special kind of price-discovery that is frequently employed in financial markets. It begins with a high price
+                    and steadily drops until buyer accepts it.
                   </p>
                   <div class="d-flex justify-content-between align-items-center">
                     <div class="btn-group">
-                      <button type="button" class="btn btn-sm btn-outline-secondary">View</button>
-                      <button type="button" class="btn btn-sm btn-outline-secondary">Edit</button>
+                      <a href="https://en.wikipedia.org/wiki/Dutch_auction#Public_offerings" class="btn btn-sm btn-outline-secondary"
+                        >View Wikipedia</a
+                      >
                     </div>
-                    <small class="text-body-secondary">9 mins</small>
+                    <small class="text-body-secondary">15 mins read</small>
                   </div>
                 </div>
               </div>
             </div>
+
             <div class="col">
               <div class="card shadow-sm">
-                <svg
-                  class="bd-placeholder-img card-img-top"
-                  width="100%"
-                  height="225"
-                  xmlns="http://www.w3.org/2000/svg"
-                  role="img"
-                  aria-label="Placeholder: Thumbnail"
-                  preserveAspectRatio="xMidYMid slice"
-                  focusable="false">
-                  <title>Placeholder</title>
-                  <rect width="100%" height="100%" fill="#55595c"></rect>
-                  <text x="50%" y="50%" fill="#eceeef" dy=".3em">Thumbnail</text>
-                </svg>
+                <img src="./assets/dutchAuction.jpg" width="100%" height="225" class="card-img-top" alt="dutch auction" />
                 <div class="card-body">
+                  <h6 class="card-title">What is a dutch auction anyway?</h6>
                   <p class="card-text">
-                    This is a wider card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.
+                    A Dutch auction is a special kind of price-discovery that is frequently employed in financial markets. It begins with a high price
+                    and steadily drops until buyer accepts it.
                   </p>
                   <div class="d-flex justify-content-between align-items-center">
                     <div class="btn-group">
-                      <button type="button" class="btn btn-sm btn-outline-secondary">View</button>
-                      <button type="button" class="btn btn-sm btn-outline-secondary">Edit</button>
+                      <a href="https://en.wikipedia.org/wiki/Dutch_auction#Public_offerings" class="btn btn-sm btn-outline-secondary"
+                        >View Wikipedia</a
+                      >
                     </div>
-                    <small class="text-body-secondary">9 mins</small>
+                    <small class="text-body-secondary">15 mins read</small>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
     </main>
 
-    <footer class="text-body-secondary py-5">
+    <footer class="text-body-secondary py-5 bg-body-tertiary">
       <div class="container">
         <p class="float-end mb-1">
           <a href="https://getbootstrap.com/docs/5.3/examples/album/#">Back to top</a>
         </p>
-        <p class="mb-1">Album example is © Bootstrap, but please download and customize it for yourself!</p>
+        <p class="mb-1">
+          This project is only tested locally, but feel free to try on different roles by switching between owner and bidder account!
+        </p>
         <p class="mb-0">
-          New to Bootstrap?
-          <a href="https://getbootstrap.com/">Visit the homepage</a> or read our
-          <a href="https://getbootstrap.com/docs/5.3/getting-started/introduction/">getting started guide</a>.
+          Inspiration of the Project?
+          <a href="https://github.com/OpenZeppelin/openzeppelin-contracts/tree/release-v2.5.0/contracts/crowdsale">OpenZeppelin Crowdsale</a> and
+          <a href="https://getbootstrap.com/docs/5.3/examples/album">Bootstrap Album Example</a>.
         </p>
       </div>
     </footer>
