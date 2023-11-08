@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dutch Auction</title>
-    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <style>
       .container {
         display: flex;
@@ -111,9 +111,7 @@
         </div>
       </div>
       <div class="row g-5">
-        <p class="lead">
-          
-        </p>
+        <p class="lead"></p>
       </div>
 
       <div class="row g-5" id="hide-when-loading" style="display: none">
@@ -194,6 +192,24 @@
               >
                 <span class="text-primary">Auction Progress</span>
               </h4>
+              <div class="stage-1">
+                <!--Time Progress Bar-->
+                <div class="row g-3">
+                  <div class="col-12">
+                    <div class="progress">
+                      <div
+                        class="progress-bar progress-bar-striped progress-bar-animated"
+                        role="progressbar"
+                        aria-valuenow="0"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        style="width: 0%"
+                        id="progressbar"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <!--Current Token Price-->
               <div class="col-sm-4">
                 <label for="firstName" class="form-label"
@@ -230,24 +246,6 @@
                   id="timeInput"
                   disabled
                 />
-              </div>
-            </div>
-          </div>
-          <div class="stage-1">
-            <!--Time Progress Bar-->
-            <div class="row g-3">
-              <div class="col-12">
-                <div class="progress">
-                  <div
-                    class="progress-bar progress-bar-striped progress-bar-animated"
-                    role="progressbar"
-                    aria-valuenow="0"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    style="width: 0%"
-                    id="progressbar"
-                  ></div>
-                </div>
               </div>
             </div>
           </div>
