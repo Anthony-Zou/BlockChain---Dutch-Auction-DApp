@@ -8,7 +8,6 @@ let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
 let openingTime, closingTime, duration, tokenMaxAmount;
 let isAuctionActive = true; // Track if the auction is active
 
-
 async function loadJSON() {
   try {
     // Use the Fetch API to load the JSON data
@@ -47,7 +46,7 @@ async function getAccess() {
 }
 
 async function initialLoading() {
-  if(openingTime && closingTime && duration && tokenMaxAmount) return;
+  if (openingTime && closingTime && duration && tokenMaxAmount) return;
 
   // Cache openingTime and closingTime
   showLoading();
@@ -93,7 +92,10 @@ async function placeBids() {
     })
     .then(() => showAlert("Bid Placed", "success"))
     .catch((error) =>
-    showAlert(`Failed to purchase Place Bid: ${error["data"]["message"]}`, "danger")
+      showAlert(
+        `Failed to purchase Place Bid: ${error["data"]["message"]}`,
+        "danger"
+      )
     );
 }
 async function UpdateStatus() {
@@ -101,17 +103,17 @@ async function UpdateStatus() {
   await initialLoading();
   // Update with currentTime
   const currentTime = await dutchAuctionContract.getCurrentTime();
-  if(currentTime >closingTime){
+  if (currentTime > closingTime) {
     showAlert(`Auction Closed at ${convertTime(closingTime)[1]}`, "danger");
-  }else if(currentTime <openingTime){
+  } else if (currentTime < openingTime) {
     showAlert(`Auction Will Open at ${convertTime(openingTime)[1]}`, "danger");
-  }else{
+  } else {
     showAlert("Auction In Progress", "success");
   }
   if (currentTime <= closingTime) {
     isAuctionActive = true;
-    const price = await dutchAuctionContract.price();
-    const tokenMaxAmount = await dutchAuctionContract.remainingSupply();
+    var price = await dutchAuctionContract.price();
+    var tokenMaxAmount = await dutchAuctionContract.remainingSupply();
     // Convert Unix timestamp to milliseconds and create a Date object
 
     //var getCurrentTime = convertTime(await dutchAuctionContract.getCurrentTime());
@@ -133,6 +135,13 @@ async function UpdateStatus() {
     // Auction is not active
     isAuctionActive = false;
   }
+
+  var signerAddress = await signer.getAddress();
+  var contribution = await dutchAuctionContract.contribution(signerAddress);
+  var coinHeld = Math.floor(contribution / price);
+  document.getElementById("contribution").value = contribution;
+  document.getElementById("coinHeld").value = coinHeld;
+  document.getElementById("SingerAddr").value = signerAddress;
 
   // console.log("afterOpen " + (await dutchAuctionContract.afterOpen()));
   // console.log("allowRefund " + (await dutchAuctionContract.allowRefund()));
@@ -172,6 +181,7 @@ async function UpdateStatus() {
   //   console.log("Current MetaMask account:", account);
   // });
 }
+
 async function getMetaMaskAccount() {
   // Check if MetaMask is installed
   if (window.ethereum) {
@@ -237,14 +247,18 @@ async function burnToken() {
   await dutchAuctionContract
     .burnToken()
     .then(() => showAlert("Token Burned", "success"))
-    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
+    .catch((error) =>
+      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
+    );
 }
 async function claimRefund() {
   await getAccess();
   await dutchAuctionContract
     .claimRefund()
     .then(() => showAlert("Fund Claimed", "success"))
-    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
+    .catch((error) =>
+      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
+    );
 }
 
 async function finalize() {
@@ -252,7 +266,9 @@ async function finalize() {
   await dutchAuctionContract
     .finalize()
     .then(() => showAlert("Finalized", "success"))
-    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
+    .catch((error) =>
+      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
+    );
 }
 
 async function withdrawFunds() {
@@ -268,7 +284,9 @@ async function withdrawToken() {
   await dutchAuctionContract
     .withdrawToken()
     .then(() => showAlert("Token Withdrawn", "success"))
-    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
+    .catch((error) =>
+      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
+    );
 }
 // Display Helper functions:
 function showLoading() {
@@ -282,12 +300,16 @@ function hideLoading() {
 // Function to display a Bootstrap alert with a specified message and type
 function showAlert(message, type) {
   const alertElement = document.getElementById("alertMessage");
-  
+
   // Set the alert message and type
   document.getElementById("alertContent").innerHTML = message;
-  alertElement.classList.remove("alert-success", "alert-danger", "alert-warning");
+  alertElement.classList.remove(
+    "alert-success",
+    "alert-danger",
+    "alert-warning"
+  );
   alertElement.classList.add("alert-" + type);
-  
+
   // Show the alert
   alertElement.style.display = "block";
 }
@@ -295,7 +317,7 @@ function showAlert(message, type) {
 // Function to hide the Bootstrap alert
 function hideAlert() {
   const alertElement = document.getElementById("alertMessage");
-  
+
   // Hide the alert
   alertElement.style.display = "none";
 }
