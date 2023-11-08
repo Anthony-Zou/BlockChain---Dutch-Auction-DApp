@@ -46,6 +46,28 @@ async function getAccess() {
   console.log(dutchAuctionContract);
 }
 
+async function initialLoading() {
+  if(openingTime && closingTime && duration && tokenMaxAmount) return;
+
+  // Cache openingTime and closingTime
+  showLoading();
+  if (!openingTime) {
+    openingTime = await dutchAuctionContract.openingTime();
+    document.getElementById("openingTime").value = convertTime(openingTime)[1]; // Set opening price
+  }
+  if (!closingTime) {
+    closingTime = await dutchAuctionContract.closingTime();
+    document.getElementById("closingTime").value = convertTime(closingTime)[1]; // Set closing price
+  }
+  if (!duration) {
+    duration = differenceInMinutes(closingTime, openingTime);
+  }
+  if (!tokenMaxAmount) {
+    tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
+  }
+  hideLoading();
+}
+
 async function getTokenPrice() {
   await getAccess();
   const price = await dutchAuctionContract.price();
@@ -76,24 +98,17 @@ async function placeBids() {
 }
 async function UpdateStatus() {
   await getAccess();
-  // Cache openingTime and closingTime
-  if (!openingTime) {
-    openingTime = await dutchAuctionContract.openingTime();
-    document.getElementById("openingTime").value = convertTime(openingTime)[1]; // Set opening price
-  }
-  if (!closingTime) {
-    closingTime = await dutchAuctionContract.closingTime();
-    document.getElementById("closingTime").value = convertTime(closingTime)[1]; // Set closing price
-  }
-  if (!duration) {
-    duration = differenceInMinutes(closingTime, openingTime);
-  }
-  if (!tokenMaxAmount) {
-    tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
-  }
-
+  await initialLoading();
+  // Update with currentTime
   const currentTime = await dutchAuctionContract.getCurrentTime();
-  if (currentTime < closingTime) {
+  if(currentTime >closingTime){
+    showAlert(`Auction Closed at ${convertTime(closingTime)[1]}`, "danger");
+  }else if(currentTime <openingTime){
+    showAlert(`Auction Will Open at ${convertTime(openingTime)[1]}`, "danger");
+  }else{
+    showAlert("Auction In Progress", "success");
+  }
+  if (currentTime <= closingTime) {
     isAuctionActive = true;
     const price = await dutchAuctionContract.price();
     const tokenMaxAmount = await dutchAuctionContract.remainingSupply();
@@ -255,6 +270,14 @@ async function withdrawToken() {
     .then(() => showAlert("Token Withdrawn", "success"))
     .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
 }
+// Display Helper functions:
+function showLoading() {
+  document.getElementById("loading-overlay").style.display = "block";
+}
+
+function hideLoading() {
+  document.getElementById("loading-overlay").style.display = "none";
+}
 
 // Function to display a Bootstrap alert with a specified message and type
 function showAlert(message, type) {
@@ -277,6 +300,7 @@ function hideAlert() {
   alertElement.style.display = "none";
 }
 
+initialLoading();
 // Start updating status only if the auction is active
 setInterval(() => {
   if (isAuctionActive) {
