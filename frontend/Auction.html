@@ -5,7 +5,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dutch Auction</title>
-    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <link rel="icon" type="image/x-icon" href="./favicon.ico" />
     <style>
       .container {
         display: flex;
@@ -90,7 +90,7 @@
       </div>
       <div class="row g-5">
         <div class="col-sm-6">
-          <label for="openingTime" class="form-label">Opening Time</label>
+          <label for="openingTime" class="form-label">Opening Time:</label>
           <input
             type="text"
             class="form-control"
@@ -100,7 +100,7 @@
           />
         </div>
         <div class="col-sm-6">
-          <label for="closingTime" class="form-label">Closing Time</label>
+          <label for="closingTime" class="form-label">Closing Time:</label>
           <input
             type="text"
             class="form-control"
@@ -111,9 +111,7 @@
         </div>
       </div>
       <div class="row g-5">
-        <p class="lead">
-          
-        </p>
+        <p class="lead"></p>
       </div>
 
       <div class="row g-5" id="hide-when-loading" style="display: none">
@@ -171,10 +169,21 @@
               <div class="card p-2">
                 <div class="input-group">
                   <input
+                    type="number"
+                    step="1"
+                    id="placeBidInput"
+                    class="form-control"
+                    placeholder="Token Amount"
+                    oninput="updateWeiAmount(this)"
+                  />
+                </div>
+                <div class="input-group">
+                  <input
                     type="text"
                     class="form-control"
-                    placeholder="Bid Price"
+                    placeholder="Wei Amount"
                     id="bid"
+                    disabled
                   />
                   <button class="btn btn-secondary" onclick="placeBids()">
                     PlaceBids
@@ -187,17 +196,39 @@
 
         <div class="col-md-5 col-lg-8">
           <!--Progress Update Panel-->
-          <div class="stage-1 stage-2">
+          <div class="stage-1 stage-2 stage-3">
             <div class="row g-3">
               <h4
                 class="d-flex justify-content-between align-items-center mb-3"
               >
                 <span class="text-primary">Auction Progress</span>
               </h4>
+              <div class="stage-1">
+                <!--Time Progress Bar-->
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label for="progressbar">Coin Distribution:</label>
+                    <div id="progressBarContainer" class="progress"></div>
+                    <label for="progressbar">Time Progress:</label>
+
+                    <div class="progress">
+                      <div
+                        class="progress-bar progress-bar-striped progress-bar-animated"
+                        role="progressbar"
+                        aria-valuenow="0"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        style="width: 0%"
+                        id="progressbar"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
               <!--Current Token Price-->
-              <div class="col-sm-4">
+              <div class="col-sm-6">
                 <label for="firstName" class="form-label"
-                  >Current Token Price</label
+                  >Current Token Price:</label
                 >
                 <input
                   type="text"
@@ -208,9 +239,9 @@
                 />
               </div>
               <!-- Remaining Tokens -->
-              <div class="col-sm-4">
+              <div class="col-sm-6">
                 <label for="firstName" class="form-label"
-                  >Remaining Tokens</label
+                  >Remaining Tokens:</label
                 >
                 <input
                   type="text"
@@ -220,9 +251,9 @@
                 />
               </div>
               <!--Auction Opened For-->
-              <div class="col-sm-4">
+              <!-- <div class="col-sm-4">
                 <label for="lastName" class="form-label"
-                  >Auction Opened For</label
+                  >Time Since OpeningTime</label
                 >
                 <input
                   type="text"
@@ -230,25 +261,7 @@
                   id="timeInput"
                   disabled
                 />
-              </div>
-            </div>
-          </div>
-          <div class="stage-1">
-            <!--Time Progress Bar-->
-            <div class="row g-3">
-              <div class="col-12">
-                <div class="progress">
-                  <div
-                    class="progress-bar progress-bar-striped progress-bar-animated"
-                    role="progressbar"
-                    aria-valuenow="0"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    style="width: 0%"
-                    id="progressbar"
-                  ></div>
-                </div>
-              </div>
+              </div> -->
             </div>
           </div>
 
@@ -256,23 +269,24 @@
           <div class="row g-3">
             <div class="col-12">
               <hr class="my-4" />
-              <table class="stage-3">
+              <table class="stage-3 owner-only">
                 <tr>
                   <td>
                     <button
                       type="button"
-                      class="btn btn-outline-secondary owner-only"
+                      class="btn btn-outline-secondary btn-block"
+                      id="withdrawTokenBtn"
                       onclick="withdrawToken()"
                     >
                       Withdraw Token
                     </button>
                   </td>
-
                   <td>
                     <button
                       type="button"
-                      class="btn btn-outline-success owner-only"
+                      class="btn btn-outline-success btn-block"
                       onclick="withdrawFunds()"
+                      id="withdrawFundsBtn"
                     >
                       Withdraw Funds
                     </button>
@@ -280,7 +294,8 @@
                   <td>
                     <button
                       type="button"
-                      class="btn btn-outline-danger owner-only"
+                      class="btn btn-outline-danger btn-block"
+                      id="burnTokenBtn"
                       onclick="burnToken()"
                     >
                       BurnToken
@@ -288,12 +303,12 @@
                   </td>
                 </tr>
               </table>
-              <table class="stage-2">
+              <table class="stage-2 owner-only">
                 <tr>
                   <td>
                     <button
                       type="button"
-                      class="btn btn-outline-info owner-only"
+                      class="btn btn-outline-info btn-block"
                       onclick="finalize()"
                     >
                       Finalize
@@ -301,12 +316,12 @@
                   </td>
                 </tr>
               </table>
-              <table>
+              <table class="stage-3 bidder-only">
                 <tr>
                   <td>
                     <button
                       type="button"
-                      class="btn btn-outline-warning bidder-only"
+                      class="btn btn-outline-warning btn-block"
                       onclick="claimRefund()"
                     >
                       ClaimRefund
@@ -335,5 +350,6 @@
       integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
       crossorigin="anonymous"
     ></script>
+    <!-- <a target="_blank" href="https://icons8.com/icon/64632/auction">Auction</a> icon by <a target="_blank" href="https://icons8.com">Icons8</a> -->
   </body>
 </html>

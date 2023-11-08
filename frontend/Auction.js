@@ -1,14 +1,17 @@
 const provider = new ethers.providers.Web3Provider(window.ethereum);
 let signer, signerAddress, dutchAuctionContract, tokenContract;
+const THRESHOLD_DIGIT = 6;
+const CONVERT_TO_ETH_THRESHOLD = Math.pow(10, 18 - THRESHOLD_DIGIT);
+const REMAINING_DIGIT = Math.pow(10, -THRESHOLD_DIGIT);
 
 // Declare a global variable to store JSON data
 let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
 
 // Cache openingTime, closingTime, and tokenMaxAmount
-let openingTime, closingTime, duration, tokenMaxAmount, owner;
+let openingTime, closingTime, duration, tokenMaxAmount, owner, coinDistribution;
 // 0 - Before Opening; 1 - On going; 2 - Ended; 3 - Finalized
 let auctionStage = 0;
-let isAuctionActive = true; // Track if the auction is active
+let currentPrice, remainingSupply;
 
 async function loadJSON() {
   try {
@@ -61,7 +64,7 @@ async function initialLoading() {
     document.getElementById("closingTime").value = convertTime(closingTime)[1]; // Set closing price
   }
   if (!duration) {
-    duration = differenceInMinutes(closingTime, openingTime);
+    duration = differenceInMinutes(closingTime, openingTime)[0];
   }
   if (!tokenMaxAmount) {
     tokenMaxAmount = await dutchAuctionContract.tokenMaxAmount();
@@ -69,23 +72,27 @@ async function initialLoading() {
   if (!owner) {
     owner = await dutchAuctionContract.owner();
   }
+
   hideLoading();
 }
 
-async function getTokenPrice() {
-  await getAccess();
-  const price = await dutchAuctionContract.price();
-
-  //console.log(await dutchAuctionContract.getCurrentTime());
-  //console.log(await dutchAuctionContract.openingTime());
-  console.log(price);
-  document.getElementById("price").innerHTML = price;
-}
-
-async function getTokenAmount() {
-  await getAccess();
-  const tokenMaxAmount = await dutchAuctionContract.remainingSupply();
-  document.getElementById("tokenmaxamount").innerHTML = tokenMaxAmount;
+function updateWeiAmount(inputElement) {
+  //   if(!value){
+  //     return;
+  //   }
+  //   if(value>remainingSupply){
+  //     console.log(value);
+  //     document.getElementById("placeBidInput").value = remainingSupply.toString();
+  //   }
+  const maxLimit = parseInt(remainingSupply.toString());
+  // Get a reference to the second input element
+  if (!inputElement.value) {
+    return;
+  }
+  if (inputElement.value > maxLimit) {
+    inputElement.value = maxLimit;
+  }
+  document.getElementById("bid").value = currentPrice.mul(inputElement.value);
 }
 
 async function placeBids() {
@@ -103,33 +110,129 @@ async function placeBids() {
       )
     );
 }
+function createSegment(value, color, coinValue) {
+  const div = document.createElement("div");
+  div.className = `progress-bar ${color} progress-bar-striped progress-bar-animated`;
+  div.setAttribute("role", "progressbar");
+  div.style.width = `${value}%`;
+  div.setAttribute("aria-valuenow", value.toString());
+  div.setAttribute("aria-valuemin", "0");
+  div.setAttribute("aria-valuemax", "100");
+  // div.textContent = `${value}%`; // Optional: add text content to the bar
+  div.textContent = `${Math.floor(coinValue / currentPrice)}`; // Optional: add text content to the bar
+  return div;
+}
 
-function updateProgressElements(price, currentTime, tokenMaxAmount, updateBar) {
-  var timePassed = differenceInMinutes(currentTime, openingTime);
+// Function to generate segments for each number in the array
+function generateSegments(numbers) {
+  const progressBarContainer = document.getElementById("progressBarContainer");
+  const colors = [
+    "bg-primary",
+    "bg-secondary",
+    "bg-success",
+    "bg-danger",
+    "bg-warning",
+    "bg-info",
+    "bg-dark",
+  ];
+
+  // Calculate the total sum of the numbers
+  const totalSum = numbers.reduce((acc, number) => acc + parseInt(number), 0);
+
+  // Clear the progress bar container
+  progressBarContainer.innerHTML = "";
+
+  // Variable to store the index of the last color used
+  let lastColorIndex = -1;
+
+  // Iterate over the numbers and create segments
+  numbers.forEach((number) => {
+    const percentage = (parseInt(number) / totalSum) * 100;
+
+    // Get a random color index different from the last one
+    let randomColorIndex;
+    do {
+      randomColorIndex = Math.floor(Math.random() * colors.length);
+    } while (randomColorIndex === lastColorIndex);
+
+    // Update the last color index
+    lastColorIndex = randomColorIndex;
+
+    const segmentElement = createSegment(
+      percentage.toFixed(2),
+      colors[randomColorIndex],
+      parseInt(number)
+    );
+    progressBarContainer.appendChild(segmentElement);
+  });
+}
+
+// Your array of numbers
+var numbers = [20, 30, 40, 10];
+
+function updateProgressElements(
+  price,
+  currentTime,
+  remainingSupply,
+  updateBar
+) {
+  var [minutesPassed, secondsPassed] = differenceInMinutes(
+    currentTime,
+    openingTime
+  );
   // Update 3 input boxs
-  document.getElementById("currentTokenAmtInput").value = tokenMaxAmount;
-  document.getElementById("priceInput").value = price;
-  document.getElementById("timeInput").value =
-  Math.ceil(timePassed) + " minute";
+  document.getElementById("currentTokenAmtInput").value = remainingSupply;
+  var [val, unit] = getPriceAndUnit(price);
+  document.getElementById("priceInput").value = `${val} (${unit})`;
+  //document.getElementById("timeInput").value = minutesPassed + " minute";
 
   // Update progress bar only when auction ongoing
-  if(updateBar){
-    var timeProgressed = Math.ceil((timePassed / duration) * 100) + "%";
+  if (updateBar) {
+    var timeProgressed = Math.ceil((minutesPassed / duration) * 100) + "%";
     var progressbar = document.getElementById("progressbar");
     progressbar.style.width = timeProgressed;
+    progressbar.innerHTML = `${minutesPassed}m${String(secondsPassed).padStart(
+      2,
+      "0"
+    )}s/${duration}m (${timeProgressed})`;
+
+    // Call the generateSegments function with the numbers array
+    if (coinDistribution) {
+      generateSegments(coinDistribution);
+    }
   }
 }
 
+function getPriceAndUnit(price) {
+  if (price < CONVERT_TO_ETH_THRESHOLD) {
+    return [price, "wei"];
+  }
+  return [
+    (price.div(CONVERT_TO_ETH_THRESHOLD.toString()) * REMAINING_DIGIT).toFixed(
+      THRESHOLD_DIGIT
+    ),
+    "ether",
+  ];
+}
+
 function updateContributionElements(contribution, price, identity) {
-
-  var coinHeld = Math.floor(contribution / price);
-  if(identity === owner){
-    document.getElementById("contribution").innerHTML = `Contribution: ${contribution}`;
-    document.getElementById("coinHeld").innerHTML = `Approx Coin Held: ${coinHeld}`;
-  }else{
-    document.getElementById("contribution").innerHTML = `Total Wei Raised: ${contribution}`;
-    document.getElementById("coinHeld").innerHTML = `Approx Coin Sold: ${coinHeld}`;
-
+  var coinHeld = Math.floor(contribution.div(price));
+  if (identity === owner) {
+    var [val, unit] = getPriceAndUnit(contribution);
+    document.getElementById(
+      "contribution"
+    ).innerHTML = `Funds Raised: ${val}(${unit})`;
+    document.getElementById(
+      "coinHeld"
+    ).innerHTML = `Aprox. Coin Sold: ${coinHeld}`;
+  } else {
+    var [val, unit] = getPriceAndUnit(contribution);
+    document.getElementById(
+      "contribution"
+    ).innerHTML = `Contribution: ${val}(${unit})`;
+    document.getElementById(
+      "coinHeld"
+    ).innerHTML = `Aprox. Token Bought: ${coinHeld}`;
   }
   //document.getElementById("SingerAddr").value = signerAddress;
 }
@@ -138,11 +241,20 @@ async function updateStatus() {
   await getAccess();
   await initialLoading();
   // Update with currentTime
-  const currentTime = await dutchAuctionContract.getCurrentTime();
+  const currentTime = await dutchAuctionContract.getCurrentTime(); //bignumber
   const finalized = await dutchAuctionContract.finalized();
+  remainingSupply = await dutchAuctionContract.remainingSupply();
   signerAddress = await signer.getAddress();
-  if (currentTime > closingTime) {
-    if (finalized) {
+  coinDistribution = await dutchAuctionContract.getNonZeroContributions();
+
+  if (finalized) {
+    auctionStage = 3;
+    showAlert(
+      `Auction Closed at ${convertTime(closingTime)[1]}, auction finalized.`,
+      "danger"
+    );
+  } else {
+    if (currentTime > closingTime) {
       auctionStage = 2;
       showAlert(
         `Auction Closed at ${
@@ -150,75 +262,47 @@ async function updateStatus() {
         }, waiting for owner finalization.`,
         "warning"
       );
-    } else {
-      auctionStage = 3;
+    } else if (currentTime < openingTime) {
+      auctionStage = 0;
       showAlert(
-        `Auction Closed at ${convertTime(closingTime)[1]}, auction finalized.`,
+        `Auction Will Open at ${convertTime(openingTime)[1]}`,
         "danger"
       );
+    } else {
+      if (remainingSupply > 0) {
+        auctionStage = 1;
+        showAlert("Auction In Progress", "success");
+      } else {
+        auctionStage = 2;
+        showAlert(
+          `Auction Closed as token has no more remaining supply. ${
+            convertTime(closingTime)[1]
+          }, waiting for owner finalization.`,
+          "warning"
+        );
+      }
     }
-  } else if (currentTime < openingTime) {
-    auctionStage = 0;
-    showAlert(`Auction Will Open at ${convertTime(openingTime)[1]}`, "danger");
-  } else {
-    auctionStage = 1;
-    showAlert("Auction In Progress", "success");
   }
 
   // Get price update
-
   if (auctionStage >= 1) {
-    var price = await dutchAuctionContract.price();
-    var remainingSupply = await dutchAuctionContract.remainingSupply();
-    updateProgressElements(price, currentTime, remainingSupply, (auctionStage===1));
+    currentPrice = await dutchAuctionContract.price();
+    updateProgressElements(
+      currentPrice,
+      currentTime,
+      remainingSupply,
+      auctionStage === 1
+    );
     var contribution;
     if (signerAddress === owner) {
-      contribution = await dutchAuctionContract.contribution(signerAddress);
+      contribution = await dutchAuctionContract.weiRaised();
     } else {
-      contribution = await dutchAuctionContract.weiAmount();
+      contribution = await dutchAuctionContract.contribution(signerAddress);
     }
-    updateContributionElements(contribution, price);
+    updateContributionElements(contribution, currentPrice, signerAddress);
   }
-  toggleStageVisibility();
-  toggleOwnerBidderVisibility();
-
-  // console.log("afterOpen " + (await dutchAuctionContract.afterOpen()));
-  // console.log("allowRefund " + (await dutchAuctionContract.allowRefund()));
-  // console.log("closingTime " + (await dutchAuctionContract.closingTime()));
-  // console.log("finalized " + (await dutchAuctionContract.finalized()));
-  // console.log("hasClosed " + (await dutchAuctionContract.hasClosed()));
-  // console.log("initialPrice " + (await dutchAuctionContract.initialPrice()));
-  // console.log("isOpen " + (await dutchAuctionContract.isOpen()));
-  // console.log("minimalGoal " + (await dutchAuctionContract.minimalGoal()));
-  // console.log(
-  //   "minimalGoalMet " + (await dutchAuctionContract.minimalGoalMet())
-  // );
-  // console.log("openingTime " + (await dutchAuctionContract.openingTime()));
-  // console.log("owner " + (await dutchAuctionContract.owner()));
-  // console.log("price " + (await dutchAuctionContract.price()));
-  // console.log(
-  //   "remainingSupply " + (await dutchAuctionContract.remainingSupply())
-  // );
-  // console.log(
-  //   "remainingSupply " + (await dutchAuctionContract.remainingSupply())
-  // );
-  // console.log("token " + (await dutchAuctionContract.token()));
-  // console.log(
-  //   "tokenMaxAmount " + (await dutchAuctionContract.tokenMaxAmount())
-  // );
-  // console.log("weiRaised " + (await dutchAuctionContract.weiRaised()));
-  // console.log(
-  //   "getCurrentTime " + (await dutchAuctionContract.getCurrentTime())
-  // );
-  // console.log(
-  //   "getcontribution " +
-  //     (await dutchAuctionContract.contribution(
-  //       "await dutchAuctionContract.owner()"
-  //     ))
-  // );
-  // getMetaMaskAccount().then((account) => {
-  //   console.log("Current MetaMask account:", account);
-  // });
+  toggleStageRoleVisibility();
+  //toggleOwnerBidderVisibility();
 }
 
 async function getMetaMaskAccount() {
@@ -259,9 +343,14 @@ function differenceInMinutes(hex1, hex2) {
   const differenceInMilliseconds = Math.abs(date1.getTime() - date2.getTime());
 
   // Convert milliseconds to minutes
-  const differenceInMinutes = differenceInMilliseconds / (1000 * 60);
+  const differenceInMinutes = Math.floor(
+    differenceInMilliseconds / (1000 * 60)
+  );
+  const differenceInSeconds = Math.floor(
+    (differenceInMilliseconds / 1000) % 60
+  );
 
-  return differenceInMinutes;
+  return [differenceInMinutes, differenceInSeconds];
 }
 
 function convertTime(hex) {
@@ -281,15 +370,6 @@ function convertTime(hex) {
   return [time, localDate];
 }
 
-async function burnToken() {
-  await getAccess();
-  await dutchAuctionContract
-    .burnToken()
-    .then(() => showAlert("Token Burned", "success"))
-    .catch((error) =>
-      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
-    );
-}
 async function claimRefund() {
   await getAccess();
   await dutchAuctionContract
@@ -307,14 +387,31 @@ async function finalize() {
     .then(() => showAlert("Finalized", "success"))
     .catch((error) =>
       showAlert(`Failed : ${error["data"]["message"]}`, "danger")
+    )
+    .finally(() => {
+      updateStatus();
+    });
+}
+async function burnToken() {
+  await getAccess();
+  await dutchAuctionContract
+    .burnToken()
+    .then(() => {
+      showAlert("Token Burned", "success");
+      document.getElementById("burnTokenBtn").hidden = true;
+    })
+    .catch((error) =>
+      showAlert(`Failed : ${error["data"]["message"]}`, "danger")
     );
 }
-
 async function withdrawFunds() {
   await getAccess();
   await dutchAuctionContract
     .withdrawFunds()
-    .then(() => showAlert("Fund Withdrawn", "success"))
+    .then(() => {
+      showAlert("Fund Withdrawn", "success");
+      document.getElementById("withdrawFundsBtn").hidden = true;
+    })
     .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`));
 }
 
@@ -322,7 +419,10 @@ async function withdrawToken() {
   await getAccess();
   await dutchAuctionContract
     .withdrawToken()
-    .then(() => showAlert("Token Withdrawn", "success"))
+    .then(() => {
+      showAlert("Token Withdrawn", "success");
+      document.getElementById("withdrawTokenBtn").hidden = true;
+    })
     .catch((error) =>
       showAlert(`Failed : ${error["data"]["message"]}`, "danger")
     );
@@ -363,28 +463,28 @@ function hideAlert() {
   alertElement.style.display = "none";
 }
 
-// Function to toggle the visibility of buttons based on conditions
-function toggleOwnerBidderVisibility() {
-  const ownerElements = document.querySelectorAll(".owner-only");
-  const bidderElements = document.querySelector(".bidder-only");
+// // Function to toggle the visibility of buttons based on conditions
+// function toggleOwnerBidderVisibility() {
+//   const ownerElements = document.querySelectorAll(".owner-only");
+//   const bidderElements = document.querySelector(".bidder-only");
 
-  if (signerAddress === owner) {
-    // Conditions are met, show the buttons in the first row
-    ownerElements.forEach((button) => {
-      button.style.display = "block"; // Change to your preferred display style (e.g., "inline-block")
-    });
-    bidderElements.style.display = "none";
-  } else {
-    // Conditions are not met, show the button in the second table
-    ownerElements.forEach((button) => {
-      button.style.display = "none";
-    });
-    bidderElements.style.display = "block"; // Change to your preferred display style
-  }
-}
+//   if (signerAddress === owner) {
+//     // Conditions are met, show the buttons in the first row
+//     ownerElements.querySelectorAll(`.stage-${auctionStage}`).forEach((button) => {
+//       button.style.display = "flex"; // Change to your preferred display style (e.g., "inline-block")
+//     });
+//     bidderElements.style.display = "none";
+//   } else {
+//     // Conditions are not met, show the button in the second table
+//     ownerElements.forEach((button) => {
+//       button.style.display = "none";
+//     });
+//     bidderElements.style.display = "flex"; // Change to your preferred display style
+//   }
+// }
 
 // Function to toggle the visibility of buttons based on conditions
-function toggleStageVisibility() {
+function toggleStageRoleVisibility() {
   const stageElements = [
     document.querySelectorAll(".stage-0"),
     document.querySelectorAll(".stage-1"),
@@ -398,9 +498,26 @@ function toggleStageVisibility() {
     });
   }
   // Only show the class with current stage
-  stageElements[auctionStage].forEach((button) => {
-    button.style.display = "flex";
+  stageElements[auctionStage].forEach((element) => {
+    if (signerAddress === owner) {
+      if (!element.classList.contains("bidder-only")) {
+        element.style.display = "flex";
+      }
+    } else {
+      if (!element.classList.contains("owner-only")) {
+        element.style.display = "flex";
+      }
+    }
   });
+  if (auctionStage === 3) {
+    // auction nt successful
+    if (remainingSupply > 0) {
+      document.getElementById("withdrawFundsBtn").hidden = true;
+    } else {
+      document.getElementById("withdrawTokenBtn").hidden = true;
+      document.getElementById("burnTokenBtn").hidden = true;
+    }
+  }
 }
 
 initialLoading();
@@ -410,3 +527,9 @@ setInterval(() => {
     updateStatus();
   }
 }, 5000); // 10000 milliseconds = 10 seconds
+
+window.ethereum.on("accountsChanged", (accounts) => {
+  // Handle the new accounts, or reload the page.
+  console.log("Accounts changed:", accounts);
+  updateStatus();
+});
