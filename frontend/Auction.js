@@ -8,7 +8,7 @@ const REMAINING_DIGIT = Math.pow(10, -THRESHOLD_DIGIT);
 let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
 
 // Cache openingTime, closingTime, and tokenMaxAmount
-let openingTime, closingTime, duration, tokenMaxAmount, owner;
+let openingTime, closingTime, duration, tokenMaxAmount, owner, coinDistribution;
 // 0 - Before Opening; 1 - On going; 2 - Ended; 3 - Finalized
 let auctionStage = 0;
 let currentPrice, remainingSupply;
@@ -68,6 +68,7 @@ async function initialLoading() {
   if (!owner) {
     owner = await dutchAuctionContract.owner();
   }
+
   hideLoading();
 }
 
@@ -100,6 +101,53 @@ async function placeBids() {
     .then(() => showAlert("Bid Placed", "success"))
     .catch((error) => showAlert(`Failed to purchase Place Bid: ${error["data"]["message"]}`, "danger"));
 }
+function createSegment(value, color, coinValue) {
+  const div = document.createElement("div");
+  div.className = `progress-bar ${color} progress-bar-striped progress-bar-animated`;
+  div.setAttribute("role", "progressbar");
+  div.style.width = `${value}%`;
+  div.setAttribute("aria-valuenow", value.toString());
+  div.setAttribute("aria-valuemin", "0");
+  div.setAttribute("aria-valuemax", "100");
+  // div.textContent = `${value}%`; // Optional: add text content to the bar
+  div.textContent = `${Math.floor(coinValue / currentPrice)}`; // Optional: add text content to the bar
+  return div;
+}
+
+// Function to generate segments for each number in the array
+function generateSegments(numbers) {
+  const progressBarContainer = document.getElementById("progressBarContainer");
+  const colors = ["bg-primary", "bg-secondary", "bg-success", "bg-danger", "bg-warning", "bg-info", "bg-dark"];
+
+  // Calculate the total sum of the numbers
+  const totalSum = numbers.reduce((acc, number) => acc + parseInt(number), 0);
+
+  // Clear the progress bar container
+  progressBarContainer.innerHTML = "";
+
+  // Variable to store the index of the last color used
+  let lastColorIndex = -1;
+
+  // Iterate over the numbers and create segments
+  numbers.forEach((number) => {
+    const percentage = (parseInt(number) / totalSum) * 100;
+
+    // Get a random color index different from the last one
+    let randomColorIndex;
+    do {
+      randomColorIndex = Math.floor(Math.random() * colors.length);
+    } while (randomColorIndex === lastColorIndex);
+
+    // Update the last color index
+    lastColorIndex = randomColorIndex;
+
+    const segmentElement = createSegment(percentage.toFixed(2), colors[randomColorIndex], parseInt(number));
+    progressBarContainer.appendChild(segmentElement);
+  });
+}
+
+// Your array of numbers
+var numbers = [20, 30, 40, 10];
 
 function updateProgressElements(price, currentTime, remainingSupply, updateBar) {
   var [minutesPassed, secondsPassed] = differenceInMinutes(currentTime, openingTime);
@@ -171,6 +219,7 @@ async function updateStatus() {
   const finalized = await dutchAuctionContract.finalized();
   remainingSupply = await dutchAuctionContract.remainingSupply();
   signerAddress = await signer.getAddress();
+  coinDistribution = await dutchAuctionContract.getNonZeroContributions();
 
   if (finalized) {
     auctionStage = 3;
