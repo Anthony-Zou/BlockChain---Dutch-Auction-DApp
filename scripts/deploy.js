@@ -1,32 +1,47 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// You can also run a script with `npx hardhat run <script>`. If you do that, Hardhat
-// will compile your contracts, add the Hardhat Runtime Environment's members to the
-// global scope, and execute the script.
 const hre = require("hardhat");
 const fs = require("fs/promises");
+// Load deployment configuration from the config file
+const config = require("./deploymentConfig.json");
 
 async function main() {
   const Token = await hre.ethers.getContractFactory("Token");
-  const token = await Token.deploy("1000000");
+  const token = await Token.deploy(config.tokenMaxAmount);
   await token.deployed();
+
   const DutchAuction = await hre.ethers.getContractFactory("DutchAuction");
-  const startingPrice = 8000; //  starting price in wei
-  const discountRate = 5; //  discount rate in percent
-  const startTime = (await ethers.provider.getBlock("latest")).timestamp + 1; // Start time is 60 seconds from now
+  const openingTime = (await ethers.provider.getBlock("latest")).timestamp + config.openingAfter;
+  const [deployer] = await hre.ethers.getSigners(); // This will get the deployer's address
+  const wallet = deployer.address;
+
   const da = await DutchAuction.deploy(
+    openingTime,
+    openingTime + config.auctionDuration,
+    config.initialPrice,
+    config.finalPrice,
+    wallet,
     token.address,
-    startingPrice,
-    discountRate,
-    startTime
+    config.tokenMaxAmount
   );
+  await token.transfer(da.address, config.tokenMaxAmount);
 
   await da.deployed();
   await writeDeploymentInfo(token, "token.json");
   await writeDeploymentInfo(da, "da.json");
-  console.log(await da.startingPrice());
-  console.log(await da.discountRate());
+
+  // Mine blocks at intervals after deployment
+  const totalBlockCount = config.auctionDuration * 3 / config.priceRefreshInterval;
+
+  for (let i = 0; i < totalBlockCount; i++) {
+    // Forward time by the block interval
+    await new Promise((resolve) => setTimeout(resolve, config.priceRefreshInterval * 1000));
+    const newTimestampInSeconds =
+      (await ethers.provider.getBlock("latest")).timestamp + config.priceRefreshInterval;
+    await ethers.provider.send("evm_mine", [newTimestampInSeconds]);
+    // console.log(
+    //   `Time forwarded by ${blockIntervalSeconds} seconds and new block mined. Current block timestamp: ${newTimestampInSeconds}`
+    // );
+    // Wait for the block interval in real time if needed
+  }
 }
 
 async function writeDeploymentInfo(contract, filename = "") {
@@ -43,9 +58,9 @@ async function writeDeploymentInfo(contract, filename = "") {
   await fs.writeFile(filename, content, { encoding: "utf-8" });
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+main()
+  .then(() => process.exit(0))
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  });

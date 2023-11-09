@@ -209,21 +209,21 @@ async function updateStatus() {
 
   if (finalized) {
     auctionStage = 3;
-    showAlert(`Auction Closed at ${convertTime(closingTime)[1]}, auction finalized.`, "danger");
+    showAlert(`Auction closed at ${convertTime(closingTime)[1]}, auction finalized.`, "danger");
   } else {
     if (currentTime > closingTime) {
       auctionStage = 2;
-      showAlert(`Auction Closed at ${convertTime(closingTime)[1]}, waiting for owner finalization.`, "warning");
+      showAlert(`Auction closed at ${convertTime(closingTime)[1]}. Waiting for owner finalization.`, "warning");
     } else if (currentTime < openingTime) {
       auctionStage = 0;
-      showAlert(`Auction Will Open at ${convertTime(openingTime)[1]}`, "danger");
+      showAlert(`Auction will open at ${convertTime(openingTime)[1]}`, "danger");
     } else {
       if (remainingSupply > 0) {
         auctionStage = 1;
-        showAlert("Auction In Progress", "success");
+        showAlert("Auction in progress", "success");
       } else {
         auctionStage = 2;
-        showAlert(`Auction Closed as token has no more remaining supply. ${convertTime(closingTime)[1]}, waiting for owner finalization.`, "warning");
+        showAlert(`Auction closed as token has no more remaining supply. Waiting for owner finalization.`, "warning");
       }
     }
   }
