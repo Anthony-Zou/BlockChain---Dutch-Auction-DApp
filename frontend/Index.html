@@ -170,7 +170,7 @@
 
       <section class="py-5 text-center container">
         <div class="row py-lg-5">
-          <div class="col-lg-6 col-md-8 mx-auto">
+          <div class="col-lg-6 col-md-8 mx-auto mb-3">
             <h1 class="fw-light">Dutch Auction</h1>
             <p class="lead text-body-secondary">
               Welcome to the forefront of decentralized auctions: our Blockchain Dutch Auction WebApp seamlessly combines transparency, fairness, and
@@ -181,18 +181,21 @@
         </div>
 
         <div class="row g-5">
-          <div class="col-sm-6">
+          <div class="col-sm-6 hide-when-loading" style="display: none">
             <label for="openingTime" class="form-label">Opening Time:</label>
             <input type="text" class="form-control" id="openingTime" placeholder="" disabled />
           </div>
-          <div class="col-sm-6">
+          <div class="col-sm-6 hide-when-loading" style="display: none">
             <label for="closingTime" class="form-label">Closing Time:</label>
             <input type="text" class="form-control" id="closingTime" placeholder="" disabled />
           </div>
         </div>
+        <div class="col-sm-12 mb-3" hidden="true" id="retryBtnContainer">
+          <button class="form-control" onclick="run()">Retry Connection</button>
+        </div>
       </section>
 
-      <div id="hide-when-loading" class="album py-5 bg-body-tertiary">
+      <div class="album py-5 bg-body-tertiary hide-when-loading" style="display: none">
         <div class="container">
           <!-- Add a Bootstrap alert div (hidden by default) -->
           <div class="alert alert-success alert-dismissible fade show" id="alertMessage" style="display: none">
