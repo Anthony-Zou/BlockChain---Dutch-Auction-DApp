@@ -176,6 +176,7 @@ async function updateStatus() {
   signerAddress = await signer.getAddress();
   coinDistribution = await dutchAuctionContract.getNonZeroContributions();
 
+  var oldStage = auctionStage;
   if (finalized) {
     auctionStage = 3;
     showAlert(`Auction closed at ${convertTime(closingTime)[1]}, auction finalized.`, "danger");
@@ -193,6 +194,9 @@ async function updateStatus() {
       } else {
         auctionStage = 2;
         showAlert(`Auction closed as token has no more remaining supply. Waiting for owner finalization.`, "warning");
+      }
+      if (oldStage != auctionStage) {
+        showFireworks();
       }
     }
   }
@@ -217,6 +221,9 @@ async function updateStatus() {
     }
     if (remainingSupply < 1) {
       document.getElementById("tokenHandlingGroup").hidden = true;
+    }
+    if (!(await dutchAuctionContract.allowRefund())) {
+      document.getElementById("claimRefundBtn").hidden = true;
     }
   }
   toggleStageRoleVisibility();
@@ -427,6 +434,26 @@ function showLoading() {
 function hideLoading() {
   document.getElementById("loading-overlay").style.display = "none";
   document.getElementById("hide-when-loading").style.display = "flex";
+}
+
+// Call this function when your conditions are met
+function showFireworks() {
+  const start = () => {
+    setTimeout(function () {
+      confetti.start();
+    }, 1000); // 1000 is time that after 1 second start the confetti ( 1000 = 1 sec)
+  };
+
+  //  Stop
+
+  const stop = () => {
+    setTimeout(function () {
+      confetti.stop();
+    }, 5000); // 5000 is time that after 5 second stop the confetti ( 5000 = 5 sec)
+  };
+
+  start();
+  stop();
 }
 
 // Function to display a Bootstrap alert with a specified message and type
