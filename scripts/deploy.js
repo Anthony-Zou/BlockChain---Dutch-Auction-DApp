@@ -1,7 +1,7 @@
 const hre = require("hardhat");
 const fs = require("fs/promises");
 // Load deployment configuration from the config file
-const config = require("./deploymentConfig.json");
+const config = require("./deployConfig.json");
 
 async function main() {
   const Token = await hre.ethers.getContractFactory("Token");
@@ -29,13 +29,12 @@ async function main() {
   await writeDeploymentInfo(da, "da.json");
 
   // Mine blocks at intervals after deployment
-  const totalBlockCount = config.auctionDuration * 3 / config.priceRefreshInterval;
+  const totalBlockCount = (config.auctionDuration * 3) / config.priceRefreshInterval;
 
   for (let i = 0; i < totalBlockCount; i++) {
     // Forward time by the block interval
     await new Promise((resolve) => setTimeout(resolve, config.priceRefreshInterval * 1000));
-    const newTimestampInSeconds =
-      (await ethers.provider.getBlock("latest")).timestamp + config.priceRefreshInterval;
+    const newTimestampInSeconds = (await ethers.provider.getBlock("latest")).timestamp + config.priceRefreshInterval;
     await ethers.provider.send("evm_mine", [newTimestampInSeconds]);
     // console.log(
     //   `Time forwarded by ${blockIntervalSeconds} seconds and new block mined. Current block timestamp: ${newTimestampInSeconds}`
