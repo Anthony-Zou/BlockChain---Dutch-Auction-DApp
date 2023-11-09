@@ -83,7 +83,7 @@ function updateWeiAmount(inputElement) {
   const maxLimit = parseInt(remainingSupply.toString());
   // Get a reference to the second input element
   if (!inputElement.value) {
-    return;
+    document.getElementById("bid").value = "";
   }
   if (inputElement.value > maxLimit) {
     inputElement.value = maxLimit;
@@ -163,6 +163,11 @@ function updateProgressElements(price, currentTime, remainingSupply, updateBar) 
     var progressbar = document.getElementById("progressbar");
     progressbar.style.width = timeProgressed;
     progressbar.innerHTML = `${minutesPassed}m${String(secondsPassed).padStart(2, "0")}s/${duration}m (${timeProgressed})`;
+
+    // Call the generateSegments function with the numbers array
+    if (coinDistribution) {
+      generateSegments(coinDistribution);
+    }
   }
 }
 
@@ -185,30 +190,11 @@ function updateContributionElements(contribution, price, identity) {
   } else {
     var [val, unit] = getPriceAndUnit(contribution);
     document.getElementById("contributionMsg").innerHTML = `Contribution(${unit})`;
-    document.getElementById("contributionVal").innerHTML = `${val}`;
+    document.getElementById("contributionVal").value = `${val}`;
 
     document.getElementById("coinHeldMsg").innerHTML = "Aprox. Token Bought";
-    document.getElementById("coinHeldVal").innerHTML = `${coinHeld}`;
+    document.getElementById("coinHeldVal").value = `${coinHeld}`;
   }
-
-  // if (identity === owner) {
-  //   var [val, unit] = getPriceAndUnit(contribution);
-  //   document.getElementById(
-  //     "contribution"
-  //   ).innerHTML = `Funds Raised: ${val}(${unit})`;
-  //   document.getElementById(
-  //     "coinHeld"
-  //   ).innerHTML = `Aprox. Coin Sold: ${coinHeld}`;
-  // } else {
-  //   var [val, unit] = getPriceAndUnit(contribution);
-  //   document.getElementById(
-  //     "contribution"
-  //   ).innerHTML = `Contribution: ${val}(${unit})`;
-  //   document.getElementById(
-  //     "coinHeld"
-  //   ).innerHTML = `Aprox. Token Bought: ${coinHeld}`;
-  // }
-  //document.getElementById("SingerAddr").value = signerAddress;
 }
 
 async function updateStatus() {
@@ -254,8 +240,17 @@ async function updateStatus() {
     }
     updateContributionElements(contribution, currentPrice, signerAddress);
   }
+
+  if (auctionStage === 3) {
+    // auction finalized
+    if (!(await dutchAuctionContract.allowOwnerWithdrawl())) {
+      document.getElementById("fundHandlingGroup").hidden = true;
+    }
+    if (remainingSupply < 1) {
+      document.getElementById("tokenHandlingGroup").hidden = true;
+    }
+  }
   toggleStageRoleVisibility();
-  //toggleOwnerBidderVisibility();
 }
 
 async function getMetaMaskAccount() {
@@ -341,7 +336,7 @@ async function burnToken() {
     .burnToken()
     .then(() => {
       showAlert("Token Burned", "success");
-      document.getElementById("burnTokenBtn").hidden = true;
+      document.getElementById("tokenHandlingGroup").hidden = true;
     })
     .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
 }
@@ -351,7 +346,7 @@ async function withdrawFunds() {
     .withdrawFunds()
     .then(() => {
       showAlert("Fund Withdrawn", "success");
-      document.getElementById("withdrawFundsBtn").hidden = true;
+      document.getElementById("fundHandlingGroup").hidden = true;
     })
     .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`));
 }
@@ -362,7 +357,7 @@ async function withdrawToken() {
     .withdrawToken()
     .then(() => {
       showAlert("Token Withdrawn", "success");
-      document.getElementById("withdrawTokenBtn").hidden = true;
+      document.getElementById("tokenHandlingGroup").hidden = true;
     })
     .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
 }
@@ -444,15 +439,6 @@ function toggleStageRoleVisibility() {
       }
     }
   });
-  if (auctionStage === 3) {
-    // auction nt successful
-    if (remainingSupply > 0) {
-      document.getElementById("withdrawFundsBtn").hidden = true;
-    } else {
-      document.getElementById("withdrawTokenBtn").hidden = true;
-      document.getElementById("burnTokenBtn").hidden = true;
-    }
-  }
 }
 
 initialLoading();
