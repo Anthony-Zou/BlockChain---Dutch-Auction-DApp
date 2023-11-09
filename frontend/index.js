@@ -49,6 +49,7 @@ async function initialLoading() {
 
   // Cache openingTime and closingTime
   showLoading();
+  await getAccess();
   if (!openingTime) {
     openingTime = await dutchAuctionContract.openingTime();
     document.getElementById("openingTime").value = convertTime(openingTime)[1]; // Set opening price
@@ -428,12 +429,16 @@ async function withdrawFunds(button) {
 // Display Helper functions:
 function showLoading() {
   document.getElementById("loading-overlay").style.display = "block";
-  document.getElementById("hide-when-loading").style.display = "none";
+  document.querySelectorAll(".hide-when-loading").forEach((element) => {
+    element.style.display = "none";
+  });
 }
 
 function hideLoading() {
   document.getElementById("loading-overlay").style.display = "none";
-  document.getElementById("hide-when-loading").style.display = "flex";
+  document.querySelectorAll(".hide-when-loading").forEach((element) => {
+    element.style.display = "flex";
+  });
 }
 
 // Call this function when your conditions are met
@@ -533,21 +538,47 @@ function toggleStageRoleVisibility() {
   });
 }
 
-initialLoading();
-// Start updating status only if the auction is not finalized
-setInterval(() => {
-  if (auctionStage < 3) {
-    updateStatus();
-  }
-}, 5000); // 10000 milliseconds = 10 seconds
+async function run() {
+  const initialLoadingTimeout = 10000;
+  try {
+    // Create a timeout promise for initialLoading
+    const initialLoadingTimeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => {
+        reject(new Error("Initial loading timed out"));
+      }, initialLoadingTimeout);
+    });
 
-window.ethereum.on("accountsChanged", (accounts) => {
-  // Handle the new accounts, or reload the page.
-  console.log("Accounts changed:", accounts);
-  updateStatus();
-  showModal(
-    "Welcome to dutch auction!",
-    `You are ${signerAddress == owner ? "the OWNER" : "a BIDDER"}. Your address will be used for your message: ${signerAddress}`,
-    "success"
-  );
-});
+    // Call initialLoading with a timeout
+    await Promise.race([initialLoading(), initialLoadingTimeoutPromise]);
+  } catch (error) {
+    console.error(error.message); // Log the timeout error or other errors
+
+    if (error.message == "Initial loading timed out") {
+      showModal("Connection Error", `Failed to connect to contract after ${initialLoadingTimeout / 1000} seconds.`, "danger");
+      document.getElementById("loading-overlay").style.display = "none";
+      document.getElementById("retryBtnContainer").hidden = false;
+      return;
+    }
+  }
+
+  document.getElementById("retryBtnContainer").hidden = true;
+  // Start updating status only if the auction is not finalized
+  setInterval(() => {
+    if (auctionStage < 3) {
+      updateStatus();
+    }
+  }, 5000); // 10000 milliseconds = 10 seconds
+
+  window.ethereum.on("accountsChanged", (accounts) => {
+    // Handle the new accounts, or reload the page.
+    console.log("Accounts changed:", accounts);
+    updateStatus();
+    showModal(
+      "Welcome to dutch auction!",
+      `You are ${signerAddress == owner ? "the OWNER" : "a BIDDER"}. Your address will be used for your message: ${signerAddress}`,
+      "success"
+    );
+  });
+}
+
+run();
