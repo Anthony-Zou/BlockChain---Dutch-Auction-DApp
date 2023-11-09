@@ -3,6 +3,7 @@ let signer, signerAddress, dutchAuctionContract, tokenContract;
 const THRESHOLD_DIGIT = 6;
 const CONVERT_TO_ETH_THRESHOLD = Math.pow(10, 18 - THRESHOLD_DIGIT);
 const REMAINING_DIGIT = Math.pow(10, -THRESHOLD_DIGIT);
+const UNKNOWN_ERROR_MSG = "Unknown error, please try to clear the activity tab data in metamask if the problem is 'too high nonce'";
 
 // Declare a global variable to store JSON data
 let dutchAuctionAbi, tokenAbi, tokenAddress, dutchAuctionAddress;
@@ -35,15 +36,12 @@ async function getAccess() {
   if (tokenContract) return;
   // Call the loadJSON function to get address and abi
   await loadJSON();
-  //console.log(dutchAuctionAddress);
-  //console.log(dutchAuctionAbi);
 
   await provider.send("eth_requestAccounts", []);
   signer = provider.getSigner();
   dutchAuctionContract = new ethers.Contract(dutchAuctionAddress, dutchAuctionAbi, signer);
   tokenContract = new ethers.Contract(tokenAddress, tokenAbi, signer);
-  console.log(tokenContract);
-  console.log(dutchAuctionContract);
+  console.log("2 contract initialized"); //dutchAuctionContract, tokenContract);
 }
 
 async function initialLoading() {
@@ -72,35 +70,6 @@ async function initialLoading() {
   hideLoading();
 }
 
-function updateWeiAmount(inputElement) {
-  //   if(!value){
-  //     return;
-  //   }
-  //   if(value>remainingSupply){
-  //     console.log(value);
-  //     document.getElementById("placeBidInput").value = remainingSupply.toString();
-  //   }
-  const maxLimit = parseInt(remainingSupply.toString());
-  // Get a reference to the second input element
-  if (!inputElement.value) {
-    document.getElementById("bid").value = "";
-  }
-  if (inputElement.value > maxLimit) {
-    inputElement.value = maxLimit;
-  }
-  document.getElementById("bid").value = currentPrice.mul(inputElement.value);
-}
-
-async function placeBids() {
-  await getAccess();
-  const numEthToSpend = document.getElementById("bid").value;
-  await dutchAuctionContract
-    .placeBids({
-      value: numEthToSpend,
-    })
-    .then(() => showAlert("Bid Placed", "success"))
-    .catch((error) => showAlert(`Failed to purchase Place Bid: ${error["data"]["message"]}`, "danger"));
-}
 function createSegment(value, color, coinValue) {
   const div = document.createElement("div");
   div.className = `progress-bar ${color} progress-bar-striped progress-bar-animated`;
@@ -312,55 +281,143 @@ function convertTime(hex) {
   return [time, localDate];
 }
 
-async function claimRefund() {
-  await getAccess();
-  await dutchAuctionContract
-    .claimRefund()
-    .then(() => showAlert("Fund Claimed", "success"))
-    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
+function updateWeiAmount(inputElement) {
+  const maxLimit = parseInt(remainingSupply.toString());
+  // Get a reference to the second input element
+  if (!inputElement.value) {
+    document.getElementById("bid").value = "";
+  }
+  if (inputElement.value > maxLimit) {
+    inputElement.value = maxLimit;
+  }
+  document.getElementById("bid").value = currentPrice.mul(inputElement.value);
 }
 
-async function finalize() {
+async function placeBids(button) {
   await getAccess();
-  await dutchAuctionContract
-    .finalize()
-    .then(() => showAlert("Finalized", "success"))
-    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"))
-    .finally(() => {
-      updateStatus();
+  const numWeiToSpend = document.getElementById("bid").value;
+
+  // Check if numEthToSpend is 0
+  if (numWeiToSpend == 0) {
+    showModal("Invalid Bid", "Please enter a non-zero value for your bid.");
+    return;
+  }
+  console.log(button);
+  // Disable the button while waiting for placeBids function to return
+  button.disabled = true;
+
+  try {
+    await getAccess();
+
+    // Call placeBids function
+    await dutchAuctionContract.placeBids({
+      value: numWeiToSpend,
     });
-}
-async function burnToken() {
-  await getAccess();
-  await dutchAuctionContract
-    .burnToken()
-    .then(() => {
-      showAlert("Token Burned", "success");
-      document.getElementById("tokenHandlingGroup").hidden = true;
-    })
-    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
-}
-async function withdrawFunds() {
-  await getAccess();
-  await dutchAuctionContract
-    .withdrawFunds()
-    .then(() => {
-      showAlert("Fund Withdrawn", "success");
-      document.getElementById("fundHandlingGroup").hidden = true;
-    })
-    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`));
+
+    // Show success modal
+    showModal("Bid Placed", "Your bid has been successfully placed.");
+  } catch (error) {
+    // Get the error message or show "Unknown error"
+    const errorMessage = error?.data?.message || UNKNOWN_ERROR_MSG;
+    // Show error modal
+    showModal("Error", `Failed to place bid: ${errorMessage}`);
+  } finally {
+    // Enable the button after the operation is complete (success or failure)
+    button.disabled = false;
+  }
 }
 
-async function withdrawToken() {
-  await getAccess();
-  await dutchAuctionContract
-    .withdrawToken()
-    .then(() => {
-      showAlert("Token Withdrawn", "success");
-      document.getElementById("tokenHandlingGroup").hidden = true;
-    })
-    .catch((error) => showAlert(`Failed : ${error["data"]["message"]}`, "danger"));
+async function claimRefund(button) {
+  button.disabled = true;
+
+  try {
+    await getAccess();
+    await dutchAuctionContract.claimRefund();
+    showModal("Fund Claimed", "Your refund has been successfully claimed.", "success");
+  } catch (error) {
+    const errorMessage = error?.data?.message || UNKNOWN_ERROR_MSG;
+    showModal("Error", `Failed to claim refund: ${errorMessage}`, "danger");
+    button.disabled = false; // Show button again only if claimRefund failed at the first time
+  }
 }
+
+async function finalize(button) {
+  button.disabled = true;
+
+  try {
+    await getAccess();
+    await dutchAuctionContract.finalize();
+    showModal("Auction Finalized", "The auction has been successfully finalized.", "success");
+    auctionStage = 3;
+  } catch (error) {
+    const errorMessage = error?.data?.message || UNKNOWN_ERROR_MSG;
+    showModal("Error", `Failed to finalize auction: ${errorMessage}`, "danger");
+    button.disabled = false; // Show button again only if finalize failed at the first time
+  } finally {
+    updateStatus();
+  }
+}
+
+async function burnToken(button) {
+  var withdrawTokenBtn = document.getElementById("withdrawTokenBtn");
+  button.disabled = true;
+  withdrawTokenBtn.disabled = true;
+
+  try {
+    await getAccess();
+    await dutchAuctionContract.burnToken();
+    showModal("Token Burned", "The token has been successfully burned.", "success");
+    document.getElementById("tokenHandlingGroup").hidden = true; // hide button group if successful
+  } catch (error) {
+    const errorMessage = error?.data?.message || UNKNOWN_ERROR_MSG;
+    showModal("Error", `Failed to burn token: ${errorMessage}`, "danger");
+    // Only enable button again if first transaction failed
+    button.disabled = false;
+    withdrawTokenBtn.disabled = false;
+  } finally {
+    updateStatus();
+  }
+}
+
+async function withdrawToken(button) {
+  var burnTokenBtn = document.getElementById("burnTokenBtn");
+  button.disabled = true;
+  burnTokenBtn.disabled = true;
+
+  try {
+    await getAccess();
+    await dutchAuctionContract.withdrawToken();
+    showModal("Token Withdrawn", "The token has been successfully withdrawn.", "success");
+    document.getElementById("tokenHandlingGroup").hidden = true;
+  } catch (error) {
+    const errorMessage = error?.data?.message || UNKNOWN_ERROR_MSG;
+    showModal("Error", `Failed to withdraw token: ${errorMessage}`, "danger");
+    // Only enable button again if first transaction failed
+    button.disabled = false;
+    burnTokenBtn.disabled = false;
+  } finally {
+    updateStatus();
+  }
+}
+
+async function withdrawFunds(button) {
+  button.disabled = true;
+
+  try {
+    await getAccess();
+    await dutchAuctionContract.withdrawFunds();
+    showModal("Funds Withdrawn", "The funds have been successfully withdrawn.", "success");
+    document.getElementById("fundHandlingGroup").hidden = true; // hide button group if successful
+  } catch (error) {
+    const errorMessage = error?.data?.message || UNKNOWN_ERROR_MSG;
+    showModal("Error", `Failed to withdraw funds: ${errorMessage}`, "danger");
+    // Only enable button again if first transaction failed
+    button.disabled = false;
+  } finally {
+    updateStatus();
+  }
+}
+
 // Display Helper functions:
 function showLoading() {
   document.getElementById("loading-overlay").style.display = "block";
@@ -393,25 +450,33 @@ function hideAlert() {
   alertElement.style.display = "none";
 }
 
-// // Function to toggle the visibility of buttons based on conditions
-// function toggleOwnerBidderVisibility() {
-//   const ownerElements = document.querySelectorAll(".owner-only");
-//   const bidderElements = document.querySelector(".bidder-only");
+let prevModal;
+async function showModal(title, message, theme = "") {
+  var myModal = new bootstrap.Modal(document.getElementById("myModal"));
+  // Check if the modal is currently visible
+  if (prevModal?._isShown) {
+    // If it's already visible, hide it
+    prevModal.hide();
+  }
 
-//   if (signerAddress === owner) {
-//     // Conditions are met, show the buttons in the first row
-//     ownerElements.querySelectorAll(`.stage-${auctionStage}`).forEach((button) => {
-//       button.style.display = "flex"; // Change to your preferred display style (e.g., "inline-block")
-//     });
-//     bidderElements.style.display = "none";
-//   } else {
-//     // Conditions are not met, show the button in the second table
-//     ownerElements.forEach((button) => {
-//       button.style.display = "none";
-//     });
-//     bidderElements.style.display = "flex"; // Change to your preferred display style
-//   }
-// }
+  // Set the title
+  var modalTitle = document.querySelector(".modal-title");
+  modalTitle.textContent = title;
+
+  // Set the message
+  var modalBody = document.querySelector(".modal-body p");
+  modalBody.textContent = message;
+
+  // Set the theme
+  var modalDialog = document.querySelector(".modal-title");
+  modalDialog.classList.remove("modal-primary", "modal-success", "modal-danger", "modal-warning");
+  if (theme != "") {
+    modalDialog.classList.add(`modal-${theme}`);
+  }
+  // Show the modal
+  myModal.show();
+  prevModal = myModal;
+}
 
 // Function to toggle the visibility of buttons based on conditions
 function toggleStageRoleVisibility() {
@@ -453,4 +518,9 @@ window.ethereum.on("accountsChanged", (accounts) => {
   // Handle the new accounts, or reload the page.
   console.log("Accounts changed:", accounts);
   updateStatus();
+  showModal(
+    "Welcome to dutch auction!",
+    `You are ${signerAddress == owner ? "the OWNER" : "a BIDDER"}. Your address will be used for your message: ${signerAddress}`,
+    "success"
+  );
 });

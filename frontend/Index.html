@@ -128,6 +128,22 @@
       .bd-mode-toggle .dropdown-menu .active .bi {
         display: block !important;
       }
+
+      .modal-primary {
+        color: #007bff;
+      }
+
+      .modal-success {
+        color: #28a745;
+      }
+
+      .modal-danger {
+        color: #dc3545;
+      }
+
+      .modal-warning {
+        color: #ffc107;
+      }
     </style>
   </head>
   <body>
@@ -255,6 +271,22 @@
         </div>
       </div>
     </header>
+
+    <div class="modal" id="myModal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <!-- Modal Header -->
+          <div class="modal-header">
+            <h5 class="modal-title">Modal Title</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <!-- Modal Body -->
+          <div class="modal-body">
+            <p>Modal content goes here.</p>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <main>
       <!-- Loading overlay -->
@@ -403,30 +435,67 @@
                       </svg>
                     </span>
                     <input type="text" class="form-control" placeholder="Wei Amount" id="bid" disabled />
-                    <button class="btn btn-outline-secondary" type="button" id="button-addon2" onclick="placeBids()">Place Bid</button>
+                    <button
+                      class="btn btn-outline-secondary"
+                      type="button"
+                      id="placeBidBtn"
+                      onclick="placeBids(document.getElementById('placeBidBtn'))">
+                      Place Bid
+                    </button>
                   </div>
                   <p class="card-text">Your available action are determined by your role and the current status of the auction.</p>
                   <div class="d-flex justify-content-between align-items-center">
                     <div class="btn-toolbar stage-3 owner-only" role="toolbar" aria-label="Toolbar with button groups">
                       <div class="btn-group me-2" role="group" aria-label="Owner Action On Successful Auction" id="fundHandlingGroup">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="withdrawFunds()">Withdraw Funds</button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          id="withdrawFundsBtn"
+                          onclick="withdrawFunds(document.getElementById('withdrawFundsBtn'))">
+                          Withdraw Funds
+                        </button>
                       </div>
 
                       <div class="btn-group me-2" role="group" aria-label="Owner Action On Failed Auction" id="tokenHandlingGroup">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="withdrawToken()">Withdraw Token</button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="burnToken()">Burn Token</button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          id="withdrawTokenBtn"
+                          onclick="withdrawToken(document.getElementById('withdrawTokenBtn'))">
+                          Withdraw Token
+                        </button>
+
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          id="burnTokenBtn"
+                          onclick="burnToken(document.getElementById('burnTokenBtn'))">
+                          Burn Token
+                        </button>
                       </div>
                     </div>
 
                     <div class="btn-toolbar stage-2 owner-only" role="toolbar" aria-label="Toolbar with button groups">
                       <div class="btn-group me-2" role="group" aria-label="Owner Action Stage 3">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="finalize()">Finalize</button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          id="finalizeBtn"
+                          onclick="finalize(document.getElementById('finalizeBtn'))">
+                          Finalize
+                        </button>
                       </div>
                     </div>
 
                     <div class="btn-toolbar stage-3 bidder-only" role="toolbar" aria-label="Toolbar with button groups">
                       <div class="btn-group me-2" role="group" aria-label="User Action">
-                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="claimRefund()">Claim Refund</button>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-secondary"
+                          id="claimRefundBtn"
+                          onclick="claimRefund(document.getElementById('claimRefundBtn'))">
+                          Claim Refund
+                        </button>
                       </div>
                     </div>
 

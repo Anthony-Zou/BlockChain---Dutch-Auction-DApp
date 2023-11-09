@@ -23,7 +23,7 @@ npx hardhat node
 // Getting test case coverage
 npx hardhat coverage
 
-npx hardhat run --network localhost ./scripts/newDeployment.js
+npx hardhat run --network localhost ./scripts/deploy.js
 
 Using the Frontend
 
@@ -155,19 +155,3 @@ Function pending tests:
 
 
     ]
-
-
-    metamask error message:"{
-    "code": -32603,
-    "message": "Internal JSON-RPC error.",
-    "data": {
-        "code": -32603,
-        "message": "Error: VM Exception while processing transaction: reverted with reason string 'RefundableAuction: no refunds available'",
-        "data": {
-            "message": "Error: VM Exception while processing transaction: reverted with reason string 'RefundableAuction: no refunds available'",
-            "data": "0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000027526566756e6461626c6541756374696f6e3a206e6f20726566756e647320617661696c61626c6500000000000000000000000000000000000000000000000000"
-        }
-    },
-    "stack": "{\n  \"code\": -32603,\n  \"message\": \"Internal JSON-RPC error.\",\n  \"data\": {\n    \"code\": -32603,\n    \"message\": \"Error: VM Exception while processing transaction: reverted with reason string 'RefundableAuction: no refunds available'\",\n    \"data\": {\n      \"message\": \"Error: VM Exception while processing transaction: reverted with reason string 'RefundableAuction: no refunds available'\",\n      \"data\": \"0x08c379a000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000027526566756e6461626c6541756374696f6e3a206e6f20726566756e647320617661696c61626c6500000000000000000000000000000000000000000000000000\"\n    }\n  },\n  \"stack\": \"Error: Internal JSON-RPC error.\\n    at i (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:16:10940)\\n    at s (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:16:13880)\\n    at Object.internal (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:16:14490)\\n    at u (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-0.js:7:49968)\\n    at chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-0.js:7:50970\\n    at async chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-4.js:19:37935\"\n}\n  at i (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:16:10940)\n  at s (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:16:13880)\n  at Object.internal (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-3.js:16:14490)\n  at u (chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-0.js:7:49968)\n  at chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/background-0.js:7:50970\n  at async chrome-extension://nkbihfbeogaeaoehlefnkodbefgpgknn/common-4.js:19:37935"
-
-}"
