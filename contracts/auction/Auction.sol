@@ -53,9 +53,6 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     // Whether the auction funds is withdrawn by the owner
     bool private _allowOwnerWithdrawl;
 
-    // Whether the token is withdrawn or burnt by the owner
-    bool private _tokenCleanedUp;
-
     // Max amount of token to be sold in the auction
     uint256 private _tokenMaxAmount;
 
@@ -134,7 +131,6 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
 
         _finalized = false;
         _allowOwnerWithdrawl = false;
-        _tokenCleanedUp = false;
 
         _setupRole(DEFAULT_ADMIN_ROLE, owner_);
     }
@@ -167,6 +163,13 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      */
     function owner() public view returns (address payable) {
         return _owner;
+    }
+
+    /**
+     * @return whether allow owner to withdraw.
+     */
+    function allowOwnerWithdrawl() public view returns (bool) {
+        return _allowOwnerWithdrawl;
     }
 
     /**
@@ -295,19 +298,12 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      */
     function burnToken() public virtual onlyWhileFinalized onlyOwner {
         // Burn the remaining tokens only allowed after finalization
-        require(
-            !_tokenCleanedUp,
-            "Auction: Token already withdrawn or burnt by owner."
-        );
-        // Put status update first to prevent re-entry attack
-        _tokenCleanedUp = true;
         uint256 remainingTokens = tokenMaxAmount() - tokenDistributed();
-
-        if (remainingTokens > 0) {
-            _tokenDistributed = _tokenDistributed.add(remainingTokens);
-            _token.burn(remainingTokens); // Burn tokens directly
-            emit TokensBurned(remainingTokens);
-        }
+        require(remainingTokens > 0, "Auction: Remaining tokens is 0.");
+        // Put status update first to prevent re-entry attack
+        _tokenDistributed = _tokenDistributed.add(remainingTokens);
+        _token.burn(remainingTokens); // Burn tokens directly
+        emit TokensBurned(remainingTokens);
     }
 
     /**
@@ -323,20 +319,10 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         onlyOwner
         nonReentrant
     {
-        require(
-            !_tokenCleanedUp,
-            "Auction: Token already withdrawn or burnt by owner."
-        );
-        // Update the status first to prevent re-entrance attack
-        _tokenCleanedUp = true;
-        // Burn the remaining tokens only allowed after finalization
-        uint256 remainingTokens = tokenMaxAmount() -
-            _getTokenAmount(weiRaised());
-
-        if (remainingTokens > 0) {
-            _deliverTokens(_owner, remainingTokens);
-            emit TokensEmissioned(_owner, 0, remainingTokens);
-        }
+        uint256 remainingTokens = tokenMaxAmount() - tokenDistributed();
+        require(remainingTokens > 0, "Auction: Remaining tokens is 0.");
+        _deliverTokens(_owner, remainingTokens);
+        emit TokensEmissioned(_owner, 0, remainingTokens);
     }
 
     /**
@@ -476,26 +462,18 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _getTokenAmount(
         uint256 weiAmount
     ) internal view virtual returns (uint256) {
-        //console.log("weiAmount", weiAmount);
-        //console.log("_price", _price);
-        //console.log("weiAmount.div(_price)", weiAmount.div(_price));
         return weiAmount.div(price());
     }
 
     /**
      * @dev Determines how ETH is stored/forwarded on receiving bids.
      */
-    function _forwardFunds() internal {
-        //_owner.transfer(msg.value);
-        //console.log("Auction: Funds forwarded", msg.value);
-    }
+    function _forwardFunds() internal {}
 
     /**
      * @dev Can be overridden to add finalization validation logic.
      */
-    function _preValidateFinalization() internal view virtual {
-        //cosole.log("In Auction, _preValidateFinalization()");
-    }
+    function _preValidateFinalization() internal view virtual {}
 
     /**
      * @dev Can be overridden to add finalization logic. The overriding function
