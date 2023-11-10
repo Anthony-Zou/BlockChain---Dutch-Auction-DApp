@@ -92,7 +92,6 @@ abstract contract RefundableAuction is Auction {
     function _postValidateFinalization() internal virtual override {
         if(minimalGoalMet())
             super._postValidateFinalization();
-        // console.log("In RefundableAuction, _postValidateFinalization()");
         _allowRefund = true;
     }
 }

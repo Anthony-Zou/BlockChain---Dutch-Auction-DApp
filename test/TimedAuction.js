@@ -29,8 +29,6 @@ contract("TimedAuction", function (accounts) {
   });
   context("1. Initial Constraints", function () {
     it("Opening Time Validity - Reverts if the opening time is in the past", async function () {
-      //console.log("****************************************");
-      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
       await expectRevert(
         TimedAuctionImpl.new(
           (await time.latest()).sub(time.duration.days(1)),

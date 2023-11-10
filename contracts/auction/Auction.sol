@@ -176,7 +176,6 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
      * @return the price per token.
      */
     function price() public view virtual returns (uint256) {
-        //console.log("price called", _price);
         return _price;
     }
 
@@ -338,7 +337,6 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
         nonReentrant
     {
         _prevalidateWithdrawFunds();
-        //console.log("In withdrawFunds(), passed all validation");
         // Update the status first to prevent re-entrance attack
         _allowOwnerWithdrawl = false;
         _owner.transfer(weiRaised());
@@ -370,9 +368,7 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             "Auction: beneficiary is the zero address"
         );
         require(beneficiary != _owner, "Auction: owner cannot place bids");
-        //console.log("in _preValidateBids, beneficiary: ",beneficiary);
         require(weiAmount > 0, "Auction: weiAmount is 0");
-        //console.log("_preValidateBids check passed");
     }
 
     /**
@@ -439,7 +435,6 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
             if (_contributions[beneficiary] == 0) {
                 // Push only if the beneficiary only placed bid once
                 _queue.push(beneficiary);
-                //console.log("Added beneficiary to queue", beneficiary);
             }
             _contributions[beneficiary] = _contributions[beneficiary].add(
                 recordedAmount
@@ -477,18 +472,14 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     function _finalization() internal virtual {
         // solhint-disable-previous-line no-empty-blocks
         // The simplest logic:
-        //cosole.log("In Auction, _finalization, length of queue: ", _queue.length);
         for (uint i = 0; i < _queue.length; i++) {
             // get the corresponding weiAmount from the map
             uint256 weiAmount = contribution(_queue[i]);
 
             // update contributions to prevent re-entrance attack on the tokens
             _contributions[_queue[i]] = 0;
-
-            //console.log("In _finalization loop, weiAmount: ", weiAmount);
             _processPurchase(_queue[i], weiAmount);
         }
-        //console.log("Out of loop, before return");
     }
 
     /**

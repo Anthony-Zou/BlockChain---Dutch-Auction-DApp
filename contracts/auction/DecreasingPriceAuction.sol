@@ -74,9 +74,6 @@ abstract contract DecreasingPriceAuction is TimedAuction {
     //
      */
     function price() public view override virtual returns (uint256) {
-       //console.log("in DecreasingPriceAuction, price() called");
-       //console.log("in DecreasingPriceAuction, _getTimedPrice()", _getTimedPrice());
-       //console.log("in DecreasingPriceAuction, _getDemandPrice()", _getDemandPrice());
         return Math.max(_getTimedPrice(), _getDemandPrice());
     }
 
@@ -100,7 +97,6 @@ abstract contract DecreasingPriceAuction is TimedAuction {
      * @dev Returns the demand price determined by user bids.
      */
     function _getDemandPrice() internal view returns (uint256) {
-        //console.log("weiRaised().div(tokenMaxAmount())", weiRaised().div(tokenMaxAmount()));
         return weiRaised().div(tokenMaxAmount());
     }
 }

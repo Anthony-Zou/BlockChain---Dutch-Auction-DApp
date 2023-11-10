@@ -48,8 +48,6 @@ contract("DutchAuction", function (accounts) {
     });
 
     it("NonZeroPrice - Reverts if the final price is smaller than the initial price", async function () {
-      //console.log("****************************************");
-      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
       await expectRevert(
         DutchAuction.new(this.openingTime, this.closingTime, initialPrice, 0, owner, this.token.address, tokenSupply),
         "DecreasingPriceAuction: final price is 0"
@@ -57,8 +55,6 @@ contract("DutchAuction", function (accounts) {
     });
 
     it("NonZeroPrice - Reverts if the initial price is euqal to the final price", async function () {
-      //console.log("****************************************");
-      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
       await expectRevert(
         DutchAuction.new(this.openingTime, this.closingTime, initialPrice, initialPrice, owner, this.token.address, tokenSupply),
         "DecreasingPriceAuction: initial price is not greater than final price"
@@ -66,8 +62,6 @@ contract("DutchAuction", function (accounts) {
     });
 
     it("NonZeroPrice - Reverts if the price difference is smaller than the time range", async function () {
-      //console.log("****************************************");
-      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
       await expectRevert(
         DutchAuction.new(this.openingTime, this.closingTime, new BN(2), new BN(1), owner, this.token.address, tokenSupply),
         "DecreasingPriceAuction: price discount rate is 0"
@@ -89,8 +83,6 @@ contract("DutchAuction", function (accounts) {
     });
 
     it("ValidTime - Reverts if the opening time is in the past", async function () {
-      //console.log("****************************************");
-      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
       await expectRevert(
         DutchAuction.new(
           (await time.latest()).sub(time.duration.days(1)),
@@ -576,11 +568,8 @@ contract("DutchAuction", function (accounts) {
       const balanceTracker = await balance.tracker(owner);
       await this.auction.placeBids({ value, from: purchaser });
       expect(await balanceTracker.delta()).to.be.bignumber.equal(new BN(0));
-      //console.log(            "before withdrawl, balance",            await balance.current(owner));
-
+      
       await expectRevert(this.auction.withdrawFunds({ from: owner }), "Auction: not finalized");
-      //console.log("after withdrawl, balance", await balance.current(owner));
-      //console.log("reverted", await balanceTracker.delta());
       expect(await balanceTracker.delta()).to.closeTo(new BN(0), expectedGasFee);
     });
     it("WithdrawalRestriction - Shouldn't allow owner to withdrawl from a failed auction", async function () {
@@ -591,15 +580,12 @@ contract("DutchAuction", function (accounts) {
       await this.auction.finalize({ from: owner });
       expect(await this.auction.minimalGoalMet()).to.be.false;
       await expectRevert(this.auction.withdrawFunds({ from: owner }), "Auction: Don't allow owner withdrawl");
-      //console.log("after withdrawl, balance", await balance.current(owner));
-      //console.log("reverted", await balanceTracker.delta());
       expect(await balanceTracker.delta()).to.closeTo(new BN(0), expectedGasFee);
     });
     it("LogTokenEmissionAndFinalization - Should log AuctionFinalized events.", async function () {
       await this.auction.placeBids({ value: value, from: investor });
       await time.increaseTo(this.afterClosingTime);
       const receipt = await this.auction.finalize({ from: owner });
-      //console.log(receipt);
       expect(await this.auction.minimalGoalMet()).to.equal(false);
       await expectEvent.inLogs(receipt.logs, "AuctionFinalized", {});
     });
@@ -672,20 +658,16 @@ contract("DutchAuction", function (accounts) {
       const balanceTracker = await balance.tracker(owner);
       await this.auction.send(value, { from: investor });
       // Check contribution
-      //console.log("1");
       const currentPrice = await this.auction.price();
       const maxBid = currentPrice.mul(insufficientTokenSupply);
       expect(await this.auction.contribution(investor)).to.be.bignumber.equal(maxBid);
 
-      //console.log("2");
       // Check weiRaised
       expect(await this.auction.weiRaised()).to.be.bignumber.equal(maxBid);
 
-      //console.log("3");
       // Check fund forwarding (shouldn't forward fund yet)
       expect(await balanceTracker.delta()).to.equal(0);
 
-      //console.log("4");
       // Check remaining supply
       expect(await this.auction.remainingSupply()).to.equal(0);
     });
@@ -697,22 +679,17 @@ contract("DutchAuction", function (accounts) {
       });
       const currentPrice = await this.auction.price();
       const maxBid = currentPrice.mul(insufficientTokenSupply);
-      //console.log("currentPrice", currentPrice);
       expect(await this.auction.contribution(purchaser)).to.be.bignumber.equal(maxBid);
-      //console.log("1");
       // Check contribution
 
       // Check weiRaised
       expect(await this.auction.weiRaised()).to.be.bignumber.equal(maxBid);
-      //console.log("2");
-
+      
       // Check remaining supply
       expect(await this.auction.remainingSupply()).to.equal(0);
-      //console.log("3");
-
+      
       // Check fund forwarding
       const actualRefund = await balanceTracker.delta();
-      //console.log("actualRefund", actualRefund);
       expect((-actualRefund).toString()).to.be.bignumber.closeTo(maxBid, expectedGasFee);
     });
 
@@ -798,9 +775,6 @@ contract("DutchAuction", function (accounts) {
       await time.increaseTo(this.afterClosingTime);
       const receipt = await this.auction.finalize({ from: owner });
       expect(await this.auction.minimalGoalMet()).to.equal(false);
-      //const claimableRefundLogs = receipt.logs.filter((log)=>log.event == 'ClaimableRefund');
-      //console.log(claimableRefundLogs[0]);
-      //console.log(receipt.logs.filter((log)=>log.event == 'ClaimableRefund'));
       await expectEvent.inLogs(receipt.logs, "ClaimableRefund", {
         beneficiary: investor,
         value: value,
@@ -887,31 +861,6 @@ contract("DutchAuction", function (accounts) {
     });
   });
 
-  /**
-   * 
-  context("9. Role Management Tests", async function () {
-    it("GrantRole - Should allow the owner to grant a role to an account", async function () {
-      const role = await this.auction.DEFAULT_ADMIN_ROLE();
-      const accountToGrant = investor;
-      await this.auction.grantRole(role, accountToGrant, { from: owner });
-      const hasRole = await this.auction.hasRole(role, accountToGrant);
-      expect(hasRole).to.be.true;
-    });
-
-    it("RevokeRole - Should allow the owner to revoke a role from an account", async function () {
-      const role = await this.auction.DEFAULT_ADMIN_ROLE();
-      const accountToRevoke = investor;
-      await this.auction.grantRole(role, accountToRevoke, { from: owner });
-      let hasRole = await this.auction.hasRole(role, accountToRevoke);
-      expect(hasRole).to.be.true;
-
-      await this.auction.revokeRole(role, accountToRevoke, { from: owner });
-      hasRole = await this.auction.hasRole(role, accountToRevoke);
-      expect(hasRole).to.be.false;
-    });
-  });
-
-   */
   context("10. Withdraw Token Functionality Tests", async function () {
     beforeEach(async function () {
       this.token = await SimpleToken.new(tokenSupply);

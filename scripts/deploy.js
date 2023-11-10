@@ -36,10 +36,6 @@ async function main() {
     await new Promise((resolve) => setTimeout(resolve, config.priceRefreshInterval * 1000));
     const newTimestampInSeconds = (await ethers.provider.getBlock("latest")).timestamp + config.priceRefreshInterval;
     await ethers.provider.send("evm_mine", [newTimestampInSeconds]);
-    // console.log(
-    //   `Time forwarded by ${blockIntervalSeconds} seconds and new block mined. Current block timestamp: ${newTimestampInSeconds}`
-    // );
-    // Wait for the block interval in real time if needed
   }
 }
 

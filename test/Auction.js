@@ -164,17 +164,13 @@ contract("Auction", function (accounts) {
       const balanceTracker = await balance.tracker(owner);
       await this.auction.placeBids({ value, from: purchaser });
       expect(await balanceTracker.delta()).to.be.bignumber.equal(new BN(0));
-      //console.log(            "before withdrawl, balance",            await balance.current(owner));
 
       await expectRevert(this.auction.withdrawFunds({ from: owner }), "Auction: not finalized");
-      //console.log("after withdrawl, balance", await balance.current(owner));
-      //console.log("reverted", await balanceTracker.delta());
       expect(await balanceTracker.delta()).to.closeTo(new BN(0), expectedGasFee);
     });
     it("LogTokenEmissionAndFinalization - Should log TokenEmission and AuctionFinalized events.", async function () {
       await this.auction.placeBids({ value: value, from: investor });
       const receipt = await this.auction.finalize({ from: owner });
-      //console.log(receipt);
       await expectEvent.inLogs(receipt.logs, "AuctionFinalized", {});
       await expectEvent.inLogs(receipt.logs, "TokensEmissioned", {
         beneficiary: investor,
@@ -234,19 +230,15 @@ contract("Auction", function (accounts) {
       const balanceTracker = await balance.tracker(owner);
       await this.auction.send(value, { from: investor });
       // Check contribution
-      //console.log("1");
 
       expect(await this.auction.contribution(investor)).to.be.bignumber.equal(value);
 
-      //console.log("2");
       // Check weiRaised
       expect(await this.auction.weiRaised()).to.be.bignumber.equal(value);
 
-      //console.log("3");
       // Check fund forwarding (shouldn't forward fund yet)
       expect(await balanceTracker.delta()).to.equal(0);
 
-      //console.log("4");
       // Check remaining supply
       expect(await this.auction.remainingSupply()).to.equal(0);
     });

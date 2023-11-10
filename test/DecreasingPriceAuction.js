@@ -49,8 +49,6 @@ contract("DecreasingPriceAuction", function (accounts) {
     });
 
     it("RevertsIfFinalPriceSmallerThanInitial - Reverts if the final price is smaller than the initial price.", async function () {
-      //console.log("****************************************");
-      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
       await expectRevert(
         DecreasingPriceAuctionImpl.new(
           this.openingTime,
@@ -66,8 +64,6 @@ contract("DecreasingPriceAuction", function (accounts) {
     });
 
     it("RevertsIfInitialPriceEqualsFinalPrice - Reverts if the initial price is equal to the final price.", async function () {
-      //console.log("****************************************");
-      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
       await expectRevert(
         DecreasingPriceAuctionImpl.new(
           this.openingTime,
@@ -83,8 +79,6 @@ contract("DecreasingPriceAuction", function (accounts) {
     });
 
     it("RevertsIfPriceDifferenceSmallerThanTimeRange - Reverts if the price difference is smaller than the time range.", async function () {
-      //console.log("****************************************");
-      //console.log(web3.utils.soliditySha3('INVESTOR_WHITELISTED'));
       await expectRevert(
         DecreasingPriceAuctionImpl.new(
           this.openingTime,
