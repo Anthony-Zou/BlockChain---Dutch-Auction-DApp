@@ -538,8 +538,9 @@ function toggleStageRoleVisibility() {
   });
 }
 
+let currentAccount=null;
 async function run() {
-  const initialLoadingTimeout = 10000;
+  const initialLoadingTimeout = 45000;
   try {
     // Create a timeout promise for initialLoading
     const initialLoadingTimeoutPromise = new Promise((_, reject) => {
@@ -570,14 +571,24 @@ async function run() {
   }, 5000); // 10000 milliseconds = 10 seconds
 
   window.ethereum.on("accountsChanged", (accounts) => {
-    // Handle the new accounts, or reload the page.
-    console.log("Accounts changed:", accounts);
-    updateStatus();
-    showModal(
-      "Welcome to dutch auction!",
-      `You are ${accounts[1].toLowerCase() == owner.toString().toLowerCase() ? "the OWNER" : "a BIDDER"}. Your address will be used for your message: ${accounts[1]}`,
-      "success"
-    );
+
+    if (accounts.length === 0) {
+      // MetaMask is locked or the user has not connected any accounts.
+      console.log('Please connect to MetaMask.');
+    } else if (accounts[0] !== currentAccount) {
+      // Handle the new accounts, or reload the page.
+      console.log("Accounts changed:", accounts);
+      updateStatus();
+      // Reload your interface with accounts[0].
+      currentAccount = accounts[0];
+
+      showModal(
+        "Welcome to dutch auction!",
+        `You are ${currentAccount.toLowerCase() == owner.toString().toLowerCase() ? "the OWNER" : "a BIDDER"}. Your address will be used for your message: ${currentAccount}`,
+        "success"
+      );
+    }
+
   });
 }
 
