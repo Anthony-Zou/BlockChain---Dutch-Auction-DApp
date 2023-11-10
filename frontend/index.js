@@ -575,7 +575,7 @@ async function run() {
     updateStatus();
     showModal(
       "Welcome to dutch auction!",
-      `You are ${signerAddress == owner ? "the OWNER" : "a BIDDER"}. Your address will be used for your message: ${signerAddress}`,
+      `You are ${accounts[1].toLowerCase() == owner.toString().toLowerCase() ? "the OWNER" : "a BIDDER"}. Your address will be used for your message: ${accounts[1]}`,
       "success"
     );
   });
