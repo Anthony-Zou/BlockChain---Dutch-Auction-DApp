@@ -83,24 +83,7 @@ abstract contract RefundableAuction is Auction {
             emit ClaimableRefund(beneficiary, weiAmount);
             return;
         }
-
-        uint256 demand = _getTokenAmount(weiAmount);
-        uint256 supply = tokenMaxAmount() - tokenDistributed();
-
-        if (demand > supply) {
-            uint256 supplyWeiAmount = supply.mul(price());
-            uint256 change = weiAmount.sub(supplyWeiAmount);
-
-            // Update status first before calling external functions
-            _refunds[beneficiary] += change;
-
-            _deliverTokens(beneficiary, supply);
-            emit TokensEmissioned(beneficiary, supplyWeiAmount, supply);
-            emit ClaimableRefund(beneficiary, change);
-        } else {
-            _deliverTokens(beneficiary, demand);
-            emit TokensEmissioned(beneficiary, weiAmount, demand);
-        }
+       super._processPurchase(beneficiary, weiAmount);
     }
 
     /**

@@ -401,14 +401,8 @@ contract Auction is Context, ReentrancyGuard, AccessControl {
     ) internal virtual {
         // calculate token amount to be created
         uint256 tokenAmount = _getTokenAmount(weiAmount);
-
-        //console.log("Received weiAmount", weiAmount);
-
         _deliverTokens(beneficiary, tokenAmount);
-
-        //console.log("Token delivered", tokenAmount);
-
-        emit TokensEmissioned(beneficiary, weiAmount, tokenAmount);
+       emit TokensEmissioned(beneficiary, weiAmount, tokenAmount);
     }
 
     /**

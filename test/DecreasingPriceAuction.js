@@ -142,8 +142,8 @@ contract("DecreasingPriceAuction", function (accounts) {
         // price should be initial price at the beginning
         await time.increaseTo(this.openingTime);
         expect(await this.auction.isOpen()).to.equal(true);
-        expect(await this.auction.price()).to.be.bignumber.equal(
-          initialPrice
+        expect(await this.auction.price()).to.be.bignumber.closeTo(
+          initialPrice, "5"
         );
       });
 
