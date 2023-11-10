@@ -1,0 +1,109 @@
+@startuml
+class Auction {
+    - IERC20Burnable _token
+    - address payable _owner
+    - uint256 _price
+    - mapping{address => uint256} _contributions
+    - address[] _queue
+    - uint256 _weiRaised
+    - bool _finalized
+    - bool _allowOwnerWithdrawl
+    - uint256 _tokenMaxAmount
+    - uint256 _tokenDistributed
+    + constructor(uint256, address, IERC20, uint256)
+    + token() : IERC20
+    + owner() : address
+    + price() : uint256
+    + weiRaised() : uint256
+    + finalized() : bool
+    + remainingSupply() : uint256
+    + tokenDistributed() : uint256
+    + contribution(address) : uint256
+    + placeBids()
+    + finalize()
+    + burnToken()
+    + withdrawToken()
+    + withdrawFunds()
+    # _preValidateBids(address, uint256)
+    # _postValidateBids(address, uint256)
+    # _processPurchase(address, uint256)
+    # _deliverTokens(address, uint256)
+    # _updatePurchasingState(address, uint256) : uint256
+    # _getTokenAmount(uint256) : uint256
+    # _forwardFunds()
+    # _preValidateFinalization()
+    # _finalization()
+    # _postValidateFinalization()
+}
+
+class TimedAuction {
+    - uint256 _openingTime
+    - uint256 _closingTime
+    + constructor(uint256, uint256)
+    + openingTime() : uint256
+    + closingTime() : uint256
+    + afterOpen() : bool
+    + isOpen() : bool
+    + hasClosed() : bool
+    # _preValidateBids(address, uint256)
+    # _preValidateFinalization()
+}
+
+class DecreasingPriceAuction {
+    - uint256 _initialPrice
+    - uint256 _finalPrice
+    - uint256 _discountRate
+    + constructor(uint256, uint256)
+    + initialPrice() : uint256
+    + finalPrice() : uint256
+    + price() : uint256
+    # _getTimedPrice() : uint256
+    # _getDemandPrice() : uint256
+}
+
+class RefundableAuction {
+    - mapping{address => uint256} _refunds
+    - bool _allowRefund
+    - uint256 _minimalGoal
+    + constructor(uint256)
+    + minimalGoal() : uint256
+    + minimalGoalMet() : bool
+    + allowRefund() : bool
+    + claimRefund()
+    # _processPurchase(address, uint256)
+    # _postValidateFinalization()
+
+}
+
+class AttackContract {
+    - RefundableAuctionImpl auction
+    - uint256 targetFunction
+    - address payable owner
+    - bool isTest
+    + constructor(address payable, bool, uint256)
+}
+
+class DutchAuction {
+    + constructor(uint256, uint256)
+    + getCurrentTime() : uint256
+    + price() : uint256
+    # _preValidateBids(address, uint256)
+    # _preValidateFinalization()
+    # _processPurchase(address, uint256)
+    # _postValidateFinalization()
+}
+
+class Token {
+    - uint256 initialSupply
+    + constructor(uint)
+    + mint(address, uint256)
+}
+
+Auction <|-- TimedAuction
+Auction <|-- RefundableAuction
+TimedAuction <|-- DecreasingPriceAuction
+RefundableAuction <|-- DutchAuction
+DecreasingPriceAuction <|-- DutchAuction
+Auction ..> Token : uses
+AttackContract ..> RefundableAuction : attack
+@enduml
