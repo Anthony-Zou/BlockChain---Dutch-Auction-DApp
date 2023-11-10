@@ -29,7 +29,7 @@ contract("Re-entrancy Attack Tests after Finalization", function (accounts) {
 
   async function startAttack(targetFunctionId) {
 
-    this.attackContract = await AttackContract.new(this.auction.address, true, targetFunctionId, { from: attacker });
+    this.attackContract = await AttackContract.new(this.auction.address, true, { from: attacker });
     await this.auction.placeBids({ value: ether("1"), from: investor});
     await this.auction.finalize({ from: deployer });
     expect(await this.auction.finalized()).to.equal(true);
@@ -39,20 +39,16 @@ contract("Re-entrancy Attack Tests after Finalization", function (accounts) {
         this.attackContract.attack({ from: attacker }),
         "RefundableAuction: no refunds available"
       );
+
+    console.log("  ATTACK FAILED.");
+    
   }
 
-//   it("After Finalization Attack - should not exploit re-entrancy on withdrawToken after finalization", async function () {
-//     await startAttack.call(this, 0); // Use call to set the correct context
-//     // Perform your balance checks and assertions here
-//   });
-
-//   it("After Finalization Attack - should not exploit re-entrancy on withdrawFunds after finalization", async function () {
-
-//     await startAttack.call(this, 1);
-
-//   });
-  
+  it("After Finalization Attack - should only execute re-entrancy on test mode", async function () {
+      await expectRevert(AttackContract.new(this.auction.address, false, { from: attacker }),
+      "AttackContract is for test only");
+  });
   it("After Finalization Attack - should not exploit re-entrancy on claimRefund after finalization", async function () {
-    await startAttack.call(this, 2);
+      await startAttack.call(this);
   });
 });
