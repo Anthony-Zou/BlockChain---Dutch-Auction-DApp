@@ -15,13 +15,13 @@ Right click `./frontend/index.html`, click on "Open With Live Server"
 
 Connect to any account you have added
 
-![Conect Metamask Account](.\documentaion\images\connect_to_metamask.png)
+![Conect Metamask Account](./documentaion/images/connect_to_metamask.png)
 
 Interact with the contract!
 
-![Enter with an owner](.\documentaion\images\owner_page.png)
+![Enter with an owner](./documentaion/images/owner_page.png)
 
-![Example UI](.\documentaion\images\example_ui.png)
+![Example UI](./documentaion/images/example_ui.png)
 
 # Demo
 Swith your metamask accounts to experience both owener and bidder roles. 
@@ -30,15 +30,15 @@ Please note only the account0 generated when u ran `npx hardhat node` would be t
 
 Next, wait for the auction start time then place your bid under "Your Action" Card.
 
-![Place Bid Demo](.\documentaion\images\placebid.png)
+![Place Bid Demo](./documentaion/images/placebid.png)
 
 If you find this error
 
-![Error msg](.\documentaion\images\errormsg.png)
+![Error msg](./documentaion/images/errormsg.png)
 
 Click the three vertical dots in the top-right corner, and then go to Settings > Advanced. Scroll down to the 'Clear activity and nonce data' section and click the button.
 
-![Clear activity](.\documentaion\images\clear_activity.png)
+![Clear activity](./documentaion/images/clear_activity.png)
 
 
 
