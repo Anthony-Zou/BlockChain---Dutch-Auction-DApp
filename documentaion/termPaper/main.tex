@@ -1,0 +1,146 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{{Security issues in Dutch Auction}
+\thanks{Term Paper submitted for CE/CZ4153 Blockchain Technology, NTU.}
+}
+
+\author{\IEEEauthorblockN{Chen Yiting}
+\IEEEauthorblockA{U2022489K \\
+\textit{SCSE}\\
+\textit{Nanyang Technological University}\\
+Singapore \\
+CHEN1421@e.ntu.edu.sg}
+\and
+\IEEEauthorblockN{Zhao Yu}
+\IEEEauthorblockA{Student's Matriculation Number \\
+\textit{SCSE}\\
+\textit{Nanyang Technological University}\\
+Singapore \\
+Email address of Student}
+\and
+\IEEEauthorblockN{Zou Zeren}
+\IEEEauthorblockA{U2022422H \\
+\textit{SCSE}\\
+\textit{Nanyang Technological University}\\
+Singapore \\
+ZZOU002@e.ntu.edu.sg}
+}
+
+\maketitle
+
+\begin{abstract}
+This study delves into key security issues in the solidity dutch auction system submitted for CE/CZ4153 Blockchain Technology course, with focused discussions on code quality, front-running attacks, and possible timestamp manipulation. Firstly, the paper discuss some vulnerabilities found in the code implementation by  utilizing Slither for a thorough examination of smart contracts. Secondly, the paper underscores the absence of privacy provisions in auction contracts, which may lead to the exposure of private data and bidder information. It also looks into potential weak spots with block timestamps in the auction implementation, highlighting how such manipulation could impact the fairness of auctions. The intent of this research is to improve the auction system developed by addressing these security concerns and suggesting solutions. The findings hold significance for creating more secure, efficient, and dependable dutch auction smart contracts.
+
+%This is a template for the term paper of CE/CZ4153 Blockchain Technology course offered at the School of Computer Science and Engineering, Nanyang Technological University, Singapore. The paper should follow a similar style and format to incorporate all the necessary points of introduction, motivation, literature survey, observations, analysis, and solution to the issue. The paper should be 4 to 6 pages in length, including references. In case extra material is needed for analysis or arguments, the authors may include that as appendices, after the references.
+\end{abstract}
+
+\begin{IEEEkeywords}
+blockchain, Ethereum, smart contracts, tokens, dutch auction, privacy.
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+\subsection{Blockchian Technologies}
+Blockchain technologies, essential for secure distributed computations, are gaining traction due to their wide range of applications\cite{javaidBlockchainTechnologyApplications2021}. Ethereum, a popular blockchain platform, supports not just cryptocurrency but also other applications like games and financial services through its decentralized Ethereum Virtual Machine (EVM) and smart contracts\cite{pothavarjulaInvestigationDecentralizedLedger2022}. Three fundamental concerns are critical in the field of blockchain: security, scalability, and privacy. 
+
+\begin{itemize}
+    \item \textbf{Security} properties of blockchain stems from developments in both cryptography and chain architecture. Several intrinsic security features, including consistency, resistance to tampering, resistance to Distributed Denial-of-Service (DDoS) attacks, pseudonymity, and resistance to double-spending attacks, are ensured by the design of the blockchain\cite{zhangSecurityPrivacyBlockchain2020}. However, extra high-level security features are needed with the advancement of smart contracts, such as overflow protection and code injection resistance.
+
+    \item \textbf{Privacy} concerns, particularly in applications that manage sensitive data, stem from blockchain's transparent nature. To prevent user data from being misused or exposed, it can be difficult to strike a balance between transparency and confidentiality.
+    
+    \item \textbf{Scalability} refers to the ability of a blockchain network to effectively manage high transaction volumes. With poor throughput, significant transaction delay, and massive consumption of energy, both Bitcoin and Ethereum are experiencing scalability problems\cite{zhouSolutionsScalabilityBlockchain2020}.
+    
+\end{itemize}
+
+\subsection{Dutch Auction}
+In an auction, a seller offers products or services for sale, and potential buyers submit their bids based on the price they are willing to pay. Numerous types of auctions have been developed over time. In a Dutch auction, the seller sets the starting price and gradually reduces it until a bidder agrees to the going rate\cite{bennettGoingGoingGone2020}.
+
+\subsection{Project Focus and Development}
+
+Our development project's main goal was to create an dutch auction system based on blockchain technology, taking advantage of the immutability and decentralisation of blockchain technology to guarantee an open and equitable bidding process. In order to support different kinds of auctions and preserve the integrity and dependability of the bidding process, we created a number of smart contracts.
+ 
+
+\subsection{Paper Focus and Contribution}
+
+This paper focuses on blockchain \textbf{security} in our auction system, discussing front-running attack issues in smart contracts, potential timestamp manipulation, and overall code quality and safety. Despite the importance of privacy and scalability, enhancing the security framework is essential. The study addresses these issues, provides solutions, and contributes to the stability and reliability of our dutch auction system, setting roads to improvement for future blockchain applications.
+
+%In this section, you should write a few paragraphs on blockchain (brief, can adapt from lectures, in your own words), the issues of security, privacy and scalability in blockchain (brief, can adapt from lectures, in your own words), what your development project topic was, and what you finally developed.
+
+%You should also mention exactly which issue out of the three Security, Privacy, Scalability you are going to present, and what would be the overall contribution of this paper. Argument as why this issue is the most important is not required here.
+
+\section{Motivation and Literature Survey}
+
+\subsection{Motivation}
+
+Security is the paramount concern for our blockchain-based, decentralized auction system. This emphasis is due to the financial implications of the system, the immutable nature of smart contracts, and lessons learned from compromised blockchain projects.
+
+Firstly, the system's financial transactions, managed by smart contracts, require high security standards to prevent loss or unfair advantages. Secondly, in a decentralized environment, trust lies in the code, making its security vital for user confidence and system integrity\cite{zachariadisGovernanceControlDistributed2019}. Blockchain's immutability and transparency further magnify security concerns. Any flaws become permanent vulnerabilities if not addressed beforehand, necessitating rigorous security measures during development. Lastly, past blockchain projects reveal that security is often overlooked, leading to breaches and system failures\cite{hwangGapTheoryPractice2020}.
+
+Therefore, despite the importance of privacy and scalability, security is our top priority. This aligns with the needs of our users, stakeholders, and best practices within the blockchain community.
+
+%In this subsection, you should clearly argue which one of the three issues -- Security, Privacy, Scalability -- concerns you the most in case of the Decentralized Application you developed. You may refer to the lectures, invited talks, related works, or any other instance of similar development projects to argue this.
+
+\subsection{Literature Survey}
+
+Various blockchain solutions have been proposed in recent studies to improve the effectiveness and security of e-auction systems. These studies investigate various facets of blockchain technology, ranging from enhancing the auction procedure to guaranteeing transaction security.
+
+\textbf{Blockchain Auction for Secure Communications:}
+Khan et al. \cite{khanBlockchainBasedDistributiveAuction2019} propose a blockchain-based distributive auction system designed for relay-assisted secure communications. Their system eliminates the need for a central authority by decentralising the auction process through the use of blockchain. By automating transaction rules, smart contract implementation improves the security and stability of the system. Additionally, the study discusses possible weaknesses in distributed systems and suggests defences against different kinds of malicious behaviours.
+
+\textbf{Blockchian Auction in UAE:}A blockchain-based e-auction system designed specifically for the United Arab Emirates (UAE) market is presented by Qusa et al\cite{qusaSecureEAuctionSystem2020}. Their research focuses on leveraging blockchain technology to establish an open and impenetrable bidding environment. The technology uses smart contracts to automate auction procedures, eliminating the need for middlemen. The authors talk about how this system can deal with issues that frequently arise in online auctions, like bid rigging and privacy concerns.
+
+\textbf{Enhanced Tree-Structured E-Auction:}
+An enhanced blockchain tree structure-based e-auction system is proposed by Sarfaraz et al. \cite{sarfarazTreeStructurebasedImproved2021} to make the processes of evaluating bids and choosing winners more efficient. By reducing the complexity of bid management, the tree-structured approach facilitates the safe and transparent handling of a large number of bids. The study demonstrates how blockchain technology can simplify e-auction procedures while maintaining security and fairness.
+
+\textbf{Safe Sealed-bid Bid Procedure:}
+Zhang and colleagues \cite{zhangSSBASFASecureSealedbid2022} created a blockchain-based secure sealed-bid auction system. Their method makes use of blockchain's transparency and immutability to guarantee the validity of auction bids. By enforcing stringent guidelines for bid submission and opening, the system uses smart contracts to prevent bid leakage and manipulation. The authors do point out the difficulties in ensuring that bidders correctly interact with the contract functions and the complexity of implementing smart contracts in such a system.
+
+%In this subsection, you should carefully curate similar works in the area of your interest, with proper citation (see references). This may include similar development projects or decentralized applications that have faced the same issues, lectures, articles, books or papers that talk about the issue in your case, or any other academic material related to your specific case.
+
+
+\section{Observations and Analysis}
+In this section, start by listing your main observations on the issue you chose in case of your development project. In each case, discuss the major considerations, analyze their impact (and ramifications) on your decentralized application, and compare it with similar cases in the literature, if you found any such case.
+
+\subsection{Issue X in case of Component I}
+Identify the specific issue X that will affect component Y of your decentralized application (e.g., re-entry bug in case of the auction contract). State why you think this issue may occur, what would be the impact on your application, and whether you know of any similar case in the literature where this happened.
+
+\subsection{Issue Y in case of Component I}
+There may be more than one issue per component. Think carefully to spot all such issues in your development project and write one subsection on each one of them. In case they are connected, do mention that too in this portion of your paper.
+
+\subsection{Issue Z in case of Component II}
+There may be more than one component with an issue. Think carefully to spot all such issues in your development project and write one subsection on each one of them. In case they are connected, do mention that too in this portion of your paper.
+
+\section{Proposed Solutions}
+In this section, propose potential solutions to address the issues that you found in your analysis earlier. These solutions may be inspired from the lectures, invited talks, related works, or any other instance of similar development projects. 
+
+\subsection{Solution to Issue X}
+Identify potential solutions to this issue. Clearly mention how you would apply the solution to your development project, and if you have already applied the solution. Applying the solution is of course not mandatory for the development project.
+
+\subsection{Solution to Issue Y}
+Identify potential solutions to this issue. Clearly mention how you would apply the solution to your development project, and if you have already applied the solution. Applying the solution is of course not mandatory for the development project. In case the solution to issue X already solves Y, mention that.
+
+\subsection{Solution to Issue Z}
+Identify potential solutions to this issue. Clearly mention how you would apply the solution to your development project, and if you have already applied the solution. Applying the solution is of course not mandatory for the development project. In case there exists no known solution to issue Z, propose a potential solution on your own, and argue why it may work.
+
+\section{Conclusion}
+In this section, you should mention exactly which issue out of the three -- Security, Privacy, Scalability -- you presented, and what is the overall contribution of this paper. The contribution may be in terms of your observations, analysis or proposed solutions presented for the issues and the components.
+
+You may follow the IEEE paper format for the Tables, Lists, Figures, References, etc. Keep the format uniform in the paper.
+
+
+\bibliographystyle{ieeetr} 
+\bibliography{ref}
+
+\end{document}
