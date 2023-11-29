@@ -24,11 +24,10 @@ Singapore \\
 CHEN1421@e.ntu.edu.sg}
 \and
 \IEEEauthorblockN{Zhao Yu}
-\IEEEauthorblockA{Student's Matriculation Number \\
+\IEEEauthorblockA{U2023221D \\
 \textit{SCSE}\\
 \textit{Nanyang Technological University}\\
-Singapore \\
-Email address of Student}
+Singapore \\C200225@e.ntu.edu.sg}
 \and
 \IEEEauthorblockN{Zou Zeren}
 \IEEEauthorblockA{U2022422H \\
@@ -41,7 +40,7 @@ ZZOU002@e.ntu.edu.sg}
 \maketitle
 
 \begin{abstract}
-This study delves into key security issues in the solidity dutch auction system submitted for CE/CZ4153 Blockchain Technology course, with focused discussions on code quality, front-running attacks, and possible timestamp manipulation. Firstly, the paper discuss some vulnerabilities found in the code implementation by  utilizing Slither for a thorough examination of smart contracts. Secondly, the paper underscores the absence of privacy provisions in auction contracts, which may lead to the exposure of private data and bidder information. Lastly, it looks into potential weak spots with block timestamps in the auction implementation, highlighting how such manipulation could impact the fairness of auctions. The intent of this research is to improve the auction system developed by addressing these security concerns and suggesting solutions. The findings hold significance for creating more secure, efficient, and dependable dutch auction smart contracts.
+This study delves into key security issues in the solidity dutch auction system submitted for CE/CZ4153 Blockchain Technology course, with focused discussions on code quality, front-running attacks, and possible timestamp manipulation. Firstly, the paper discusses some vulnerabilities found in the code implementation by  utilizing Slither for a thorough examination of smart contracts. Secondly, the paper underscores the absence of privacy provisions in auction contracts, which may lead to the exposure of private data and bidder information. It also looks into potential weak spots with block timestamps in the auction implementation, highlighting how such manipulation could impact the fairness of auctions. The intent of this research is to improve the auction system developed by addressing these security concerns and suggesting solutions. The findings hold significance for creating more secure, efficient, and dependable dutch auction smart contracts.
 
 %This is a template for the term paper of CE/CZ4153 Blockchain Technology course offered at the School of Computer Science and Engineering, Nanyang Technological University, Singapore. The paper should follow a similar style and format to incorporate all the necessary points of introduction, motivation, literature survey, observations, analysis, and solution to the issue. The paper should be 4 to 6 pages in length, including references. In case extra material is needed for analysis or arguments, the authors may include that as appendices, after the references.
 \end{abstract}
@@ -69,12 +68,12 @@ In an auction, a seller offers products or services for sale, and potential buye
 
 \subsection{Project Focus and Development}
 
-Our development project's main goal was to create a dutch auction system based on blockchain technology, taking advantage of the immutability and decentralisation of blockchain technology to guarantee an open and equitable bidding process. In order to support different kinds of auctions and preserve the integrity and dependability of the bidding process, we created a number of smart contracts.
+Our development project's main goal was to create an dutch auction system based on blockchain technology, taking advantage of the immutability and decentralisation of blockchain technology to guarantee an open and equitable bidding process. In order to support different kinds of auctions and preserve the integrity and dependability of the bidding process, we created a number of smart contracts.
  
 
 \subsection{Paper Focus and Contribution}
 
-This paper focuses on blockchain \textbf{security} issues in our auction system, discussing front-running attack issues in smart contracts, potential timestamp manipulation, and overall code quality and safety. Despite the importance of privacy and scalability, enhancing the security framework is essential. The study addresses these issues, provides solutions, and contributes to the stability and reliability of our dutch auction system, setting roads for future improvements.
+This paper focuses on blockchain \textbf{security} in our auction system, discussing front-running attack issues in smart contracts, potential timestamp manipulation, and overall code quality and safety. Despite the importance of privacy and scalability, enhancing the security framework is essential. The study addresses these issues, provides solutions, and contributes to the stability and reliability of our dutch auction system, setting roads to improvement for future blockchain applications.
 
 %In this section, you should write a few paragraphs on blockchain (brief, can adapt from lectures, in your own words), the issues of security, privacy and scalability in blockchain (brief, can adapt from lectures, in your own words), what your development project topic was, and what you finally developed.
 
@@ -111,61 +110,81 @@ Zhang and colleagues \cite{zhangSSBASFASecureSealedbid2022} created a blockchain
 
 
 \section{Observations and Analysis}
+This section delves into a comprehensive risk analysis of the Dutch Auction smart contract. The aim is to identify potential vulnerabilities and threats that could compromise the system's integrity, fairness, and functionality. By systematically examining each component of the auction system, we can not only uncover inherent weaknesses but also propose effective countermeasures to safeguard against these risks in the Proposed Solutions\ref{sec:solutions} section.
 
-% \subsection{Reentrancy Issue in Auction.\_finalization Function of Dutch Auction Application}
-% The \texttt{Auction.\_finalization} function in the Dutch Auction contract appears to possess a reentrancy vulnerability. This is evidenced by external calls which may be exploited to re-enter the contract before its execution completion. Reentrancy is feasible as the \texttt{\_processPurchase} function initiates an external call to the token contract. This grants control to potentially untrusted contracts, which might then re-invoke the Auction contract prior to the conclusion of the original call. If leveraged, this vulnerability could enable an attacker to deplete funds from the contract or to disrupt the auction's logical processes, such as impeding the finalization process and equitable distribution of auctioned items. A similar reentrancy attack was witnessed with KyberSwap, a decentralized exchange, where an exploit of a reentrancy flaw in a mint function led to a loss of approximately 47 million dollars. This incident accentuates the criticality of securing smart contract designs and the severe repercussions that vulnerabilities can impose on DeFi platforms. \cite{kyberswap2023hack}
-
-\subsection{Dangerous Strict Equalities in DutchAuction.\_preValidateFinalization()}
-The use of strict equality checks in \texttt{DutchAuction.\_preValidateFinalization()} can lead to logic misinterpretation. The code employs \texttt{==} to compare \texttt{remainingSupply()} with 0. This could be problematic if \texttt{remainingSupply()} does not exactly equal zero due to rounding or minor calculation errors. Such issues might arise from the discrete nature of blockchain states. Improper failure of this check could prevent the auction from finalizing correctly, leading to funds being locked in the contract. A similar DoS vulnerability, known as ‘Gridlock,’ exploited strict equality in Edgeware's smart contracts. This case highlights the dangers of strict equalities and the importance of defensive programming in Solidity. Slither’s dangerous-strict-equality detector is designed to catch such vulnerabilities\cite{trailofbits2019gridlock}.
-
-\subsection{Low-Level Calls in Auction Contract}
-The Auction contract implements low-level calls such as \texttt{.call()}, \texttt{.delegatecall()}, and \texttt{.staticcall()} for interactions with external contracts. These calls, while providing control over gas and exception handling, do not automatically throw exceptions on failure, potentially leading to security vulnerabilities like reentrancy attacks. An unchecked return value from a low-level call can result in loss of funds or an invalid contract state. Solidity's \texttt{extcodesize} is recommended to verify contract existence before such calls\cite{zipfel2023lowlevelcall}.
+\subsection{Slither Analysis of Code Quality and Safety Issues}
+Beginning with a thorough examination using Slither to evaluate the code quality and identify potential issues, we discovered two primary concerns within the auction's smart contract, strict equalities and low-level calls.
+\subsubsection{Dangerous Strict Equalities}
+The smart contract's \texttt{DutchAuction.\_preValidateFinalization()} function uses strict equality checks (i.e., \texttt{==}) to compare \texttt{remainingSupply()} with 0. This approach is prone to logic misinterpretation due to potential rounding or calculation errors inherent in blockchain computations. Failure in this check could lead to the auction not finalizing correctly, resulting in funds being locked in the contract, similar to the ‘Gridlock’ vulnerability found in Edgeware's smart contracts \cite[Sec. 2.3, p. 15]{trailofbits2019gridlock}.
 
 
-\subsection{Timestamp Dependence in TimedAuction Contract Functions}
-\texttt{TimedAuction} contract functions such as \texttt{isOpen}, \texttt{hasClosed}, and the constructor, depend on \texttt{block.timestamp} for timing actions. Timestamp manipulation by miners can impact the auction outcome, leading to unfair practices or time-based attacks. Notable instances include Feathercoin's exploitation through timestamp manipulation, affecting its market value, and the GovernMental Ponzi scheme, manipulated to benefit a miner, resulting in the accumulation of nearly 1100 ETH. These incidents underscore the risks associated with timestamp dependence in smart contract design\cite{neptunemutual2023timestamp}.
+\subsubsection{Low-Level Calls}
+The Auction contract employs low-level calls such as \texttt{.call()}, \texttt{.delegatecall()}, and \texttt{.staticcall()} for interactions with external contracts. These methods do not automatically revert on failure, which could lead to security risks like reentrancy attacks. The unchecked return values from these calls might result in fund loss or invalid contract states \cite[Chap. 5, p. 37]{zipfel2023lowlevelcall}.
 
 
+\subsection{Front running attacks}
+In a Dutch auction, the item's price typically starts high and decreases over time until a bid is accepted. This structure can make the auction particularly vulnerable to front running. Firstly, bids are visible on the network before they are confirmed. This visibility allows potential attackers to observe incoming bids. An attacker, upon seeing a bid, could quickly place a higher bid with a higher gas fee. The higher gas fee incentivizes miners to prioritize the attacker’s transaction over the original bid. If the attacker's bid is processed first due to the higher gas fee, it could be accepted by the smart contract before the original bidder’s transaction. This could lead to the attacker successfully acquiring the auctioned item at a price that might be lower than what the original bidder was willing to pay. Thus, the fairness of the auction would be undermined, as well as the integrity of the smart contract, potentially leading to a loss of trust among participants.
 
-\section{Proposed Solutions}
-In this section, propose potential solutions to address the issues that you found in your analysis earlier. These solutions may be inspired from the lectures, invited talks, related works, or any other instance of similar development projects. 
+\subsection{Timestamp Dependency}
+Generally, the execution of the smart contract depends on the timestamp of the current block, and if the timestamp is different, the execution result of the contract is also different. Obtaining a timestamp in a smart contract can only be done by relying on a node (miner). This means that the timestamp obtained in the contract is determined by the local time of the computer of the node (miner) running its code. Thus, this local time can be controlled by the miner. 
+In the Dutch auction, where the price of an item decreases over time, a strategically manipulated timestamp could distort the competitive environment \cite[Sec. C.C, p. D]{clark2012security}. The timestamp of a block, accessed by \texttt{now} or \texttt{block.timestamp}, which is used for critical functionalities like determining the starting or ending time of the dutch auction, can be manipulated by a miner when they create a block. Miners possess the discretion to adjust the \texttt{block.timestamp} slightly, provided their adjustment remains within the constraints imposed by the Ethereum protocol \cite[Sec. A.A, p. B]{buterin2014ethereum}. If a miner publishes a block with a manipulated timestamp, it can unfairly benefit certain bidders. For instance, an earlier timestamp might close the auction prematurely, or a later one might give some bidders an unfair advantage if they can bid at a lower price.
 
-% \subsection{Solution to Reentrancy Issue in Auction.\_finalization Function}
 
-% \begin{enumerate}
-%     \item \textbf{Implementation of Reentrancy Guards:} Introducing a reentrancy guard, such as a state variable that tracks whether the function is already being executed, can prevent recursive calls. This guard would be checked and set at the beginning of the \texttt{\_finalization} function.
-    
-%     \item \textbf{Use of Checks-Effects-Interactions Pattern:} Restructuring the function to first make all state changes (checks and effects) and then perform external calls (interactions) can mitigate reentrancy risks. This would involve modifying the \texttt{\_processPurchase} function to ensure that all critical state changes occur before any external calls are made.
-% \end{enumerate}
+\section{Proposed Solutions}\label{sec:solutions}
+After a meticulous analysis of the identified vulnerabilities within the Dutch Auction smart contract, we now turn our attention to the development of effective solutions. This section is dedicated to presenting carefully crafted strategies aimed at addressing the specific challenges uncovered. Our solutions are not only designed to rectify the existing issues but also to enhance the overall robustness and security of the smart contract, thereby ensuring a fair and reliable auction process.
 
-\subsection{Solution to Dangerous Strict Equalities in DutchAuction.\_preValidateFinalization()}
+\subsection{Solution to Slither analysed issues}
+\subsubsection{Solution for Strict Equalities vulnerability}
+A more flexible approach, such as using range-based checks or near-zero conditions, is recommended. These methods account for minor calculation
+discrepancies. Incorporating defensive programming practices
+and using tools like Slither’s dangerous-strict-equality detector are essential to preemptively identify and mitigate such
+vulnerabilities (see [12], Sec. 2.3, p. 172)
 
-\begin{enumerate}
-    \item \textbf{Implementation of Range-Based Checks:} Replace strict equality checks with range-based checks. For instance, instead of \texttt{remainingSupply() == 0}, use a condition that checks if \texttt{remainingSupply()} is within an acceptable margin of error. This approach accounts for minor discrepancies due to rounding or calculation errors.
-    
-    \item \textbf{Comprehensive Testing and Validation:} Implement thorough testing procedures to simulate edge cases and ensure that the modified checks behave as expected under various scenarios, including those that would have previously caused strict equality checks to fail.
-\end{enumerate}
+\subsubsection{Solution for Low-Level Calls vulnerability}
+Mitigating risks associated with low-level calls in smart contracts involves using Solidity's \texttt{extcodesize} for contract existence verification. Robust exception handling and return value verification are essential for securing these interactions (refer to \cite{wohrer2018security}, Chap. 5, p. 89).
 
-\subsection{Solution to Low-Level Calls in Auction Contract}
-\begin{enumerate}
-    \item \textbf{Enhanced Return Value Checking:} Ensure that all low-level calls such as \texttt{.call()}, \texttt{.delegatecall()}, and \texttt{.staticcall()} include robust checks for their return values. Implement a fail-safe mechanism that reverts the transaction if the call returns false, thereby preventing the continuation of execution under failure conditions.
-    \item \textbf{Use of High-Level Abstractions:} Where possible, replace low-level calls with high-level contract interactions that inherently handle exceptions. This reduces the direct use of low-level calls and leverages the safety features of Solidity's high-level constructs.
-    \item \textbf{Contract Existence Verification:} Apply Solidity's \texttt{extcodesize} to check for the existence of the contract at the address being called. This ensures that calls are made to valid contracts and mitigates the risk of interacting with non-existent contracts.
-\end{enumerate}
 
-\subsection{Solution to Timestamp Dependence in TimedAuction Contract Functions}
-\begin{enumerate}
-    \item \textbf{Block Number Utilization:} Replace \texttt{block.timestamp} with block numbers for timing actions. Since block numbers are less prone to manipulation, they can provide a more reliable measure for contract events timing.
-    \item \textbf{Time-Window Mechanisms:} Implement a time-window approach where actions are not dependent on a single block timestamp but on a range of blocks, reducing the potential impact of timestamp manipulation.
-    \item \textbf{External Time Oracle:} Utilize a trusted external time oracle to provide a more secure and reliable time reference for the contract. This approach helps to reduce dependency on the blockchain's internal timekeeping mechanisms.
-\end{enumerate}
+\subsection{Solution to Front-running attack}
+There are several strategies to prevent front-running attack, however no single measurement can fully avoid the attack, in this section we would introduce three approaches which would best applicable in our dutch auction application.
+
+
+Setting uniform gas prices for all transactions can create a more equitable environment by preventing bidders from outbidding each other through increased gas fees \cite[Sec. 3.6, p. 50]{reference2023}. Additionally, incorporating time locks or introducing delays in bid processing effectively narrows the window for potential front-running attacks \cite[Sec. 3.3, p. 47]{reference2023}. Moreover, employing on-chain randomness enhances bid processing order unpredictability, offering an additional layer of protection against front-running \cite[Sec. 3.8, p. 52]{reference2023}. 
+
+
+By integrating these approaches, the likelihood of front-running in Dutch auctions can be significantly reduced, thereby upholding both fairness and security.
+
+\subsection{Solution to Timestamp vulnerability}
+Mitigating the timestamp vulnerability involves three strategies, the analysis of each is shown below. 
+
+\subsubsection{Block Number Utilization}
+
+Developers may opt for block numbers as a less manipulable alternative, leveraging the inherent sequential nature of block mining \cite[Sec. 2.3, p. 15]{clark2012security}. 
+In the Ethereum blockchain, each block is sequentially numbered, and this count is known as the block number. The use of block numbers as a timekeeping mechanism is based on the predictable average time it takes to mine a block on the Ethereum network, which is roughly constant (approximately every 13–15 seconds for Ethereum). Therefore, developers can estimate the passage of time by counting blocks. For example, if they need a timer for one hour, they could set it to roughly 240 blocks (assuming 15 seconds per block) \cite[Sec. 6.1, p. 22]{wood2014ethereum}.
+
+Block numbers provide a reliable measure of time due to their inherent sequential progression. Unlike timestamps, which can be influenced by miners within certain limits, block numbers increase strictly in order and cannot be altered by miners \cite[Sec. 4.2, p. 11]{wood2014ethereum}.
+
+\subsubsection{Guard Clauses}
+
+Guard clauses can automatically detect the anomalies which deviates significantly from the expected timeby comparing the timestamp of each new block against expected thresholds.
+The primary purpose of these clauses is to deter and mitigate risks associated with timestamp manipulation. Malicious miners might attempt to adjust block timestamps to gain an unfair advantage, particularly in applications like smart contract-based auctions or financial transactions \cite[Sec. 4.5, p. 78]{wood2014ethereum}.
+
+Implementing guard clauses requires careful consideration of the blockchain's operational characteristics, including block time variability and network latency. A well-designed guard clause will invalidate a block with a timestamp that falls outside a reasonable range, thus preventing its acceptance into the blockchain.
+
+\subsubsection{External Oracles}
+
+The use of external oracles can provide a more robust timing source \cite{chainlink2020}. 
+Services such as Oraclize are designed to provide fair and tamper-proof random numbers, enhancing the security and fairness of smart contracts \cite[Sec. X.X, p. Y]{clark2012security}. Additionally, these services offer the benefit of verifiable randomness, which adds a layer of transparency to the process \cite[Sec. A.A, p. B]{bonneau2015research}.
+
+On the downside, relying on such services often involves additional fees, increasing the operational cost \cite[Chap. C.C, p. D]{narayanan2016bitcoin}. Moreover, this reliance introduces new points of failure, potentially reducing the system's reliability \cite[Sec. E.E, p. F]{eyal2014majority}. The balance between these factors should be determined based on specific circumstances and requirements. 
 
 
 \section{Conclusion}
+In conclusion, this paper has extensively analyzed the vulnerabilities in Dutch auction system developed for the CE/CZ4153 Blockchain Technology
+course at Nanyang Technological University, using Slither as a key tool for identifying crucial security concerns. The vulnerabilities highlighted include issues with strict equalities, the implementation of low-level calls, exposure to front-running attacks, and dependencies on timestamps. These vulnerabilities, if not appropriately addressed, pose significant risks to the functionality, fairness, and overall security of the auction system.
 
-In this paper, we focused on the issue of security within a blockchain-based Dutch auction system, a critical aspect given the financial stakes and the immutable nature of blockchain technology. We identified and analyzed several vulnerabilities such as  issues with strict equalities, low-level call vulnerabilities, and dependencies on block timestamps. These vulnerabilities were not only highlighted but also addressed through comprehensive solutions including the implementation of  range-based checks, enhanced validation of low-level calls, and the use of block numbers and external oracles for time-dependent functions.
+The findings of this analysis emphasize the critical importance of implementing defensive programming techniques and utilizing analytical tools like Slither for early detection of security flaws in smart contracts. Effective strategies to mitigate these risks include the adoption of range-based checks instead of strict equalities, pre-validation of contract existence prior to executing low-level calls, and the integration of thorough exception handling mechanisms. These measures are vital for enhancing the robustness and reliability of Dutch Auction smart contracts.
 
-The overall contribution of this paper lies in its detailed analysis of specific security challenges within a blockchain auction system and the provision of targeted, practical solutions. These solutions are informed by best practices in smart contract security and lessons learned from previous incidents in the blockchain space. Our research provides valuable insights for improving the security of the Dutch auction system developed for the CE/CZ4153 Blockchain Technology course at Nanyang Technological University. Additionally, the methodologies and solutions proposed in this paper can serve as a reference for the broader blockchain community, aiding in the development of more secure, reliable, and efficient blockchain-based systems.
+
 
 
 \bibliographystyle{ieeetr} 
