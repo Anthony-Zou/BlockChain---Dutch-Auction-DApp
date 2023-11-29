@@ -112,8 +112,8 @@ Zhang and colleagues \cite{zhangSSBASFASecureSealedbid2022} created a blockchain
 
 \section{Observations and Analysis}
 
-\subsection{Reentrancy Issue in Auction.\_finalization Function of Dutch Auction Application}
-The \texttt{Auction.\_finalization} function in the Dutch Auction contract appears to possess a reentrancy vulnerability. This is evidenced by external calls which may be exploited to re-enter the contract before its execution completion. Reentrancy is feasible as the \texttt{\_processPurchase} function initiates an external call to the token contract. This grants control to potentially untrusted contracts, which might then re-invoke the Auction contract prior to the conclusion of the original call. If leveraged, this vulnerability could enable an attacker to deplete funds from the contract or to disrupt the auction's logical processes, such as impeding the finalization process and equitable distribution of auctioned items. A similar reentrancy attack was witnessed with KyberSwap, a decentralized exchange, where an exploit of a reentrancy flaw in a mint function led to a loss of approximately 47 million dollars. This incident accentuates the criticality of securing smart contract designs and the severe repercussions that vulnerabilities can impose on DeFi platforms. \cite{kyberswap2023hack}
+% \subsection{Reentrancy Issue in Auction.\_finalization Function of Dutch Auction Application}
+% The \texttt{Auction.\_finalization} function in the Dutch Auction contract appears to possess a reentrancy vulnerability. This is evidenced by external calls which may be exploited to re-enter the contract before its execution completion. Reentrancy is feasible as the \texttt{\_processPurchase} function initiates an external call to the token contract. This grants control to potentially untrusted contracts, which might then re-invoke the Auction contract prior to the conclusion of the original call. If leveraged, this vulnerability could enable an attacker to deplete funds from the contract or to disrupt the auction's logical processes, such as impeding the finalization process and equitable distribution of auctioned items. A similar reentrancy attack was witnessed with KyberSwap, a decentralized exchange, where an exploit of a reentrancy flaw in a mint function led to a loss of approximately 47 million dollars. This incident accentuates the criticality of securing smart contract designs and the severe repercussions that vulnerabilities can impose on DeFi platforms. \cite{kyberswap2023hack}
 
 \subsection{Dangerous Strict Equalities in DutchAuction.\_preValidateFinalization()}
 The use of strict equality checks in \texttt{DutchAuction.\_preValidateFinalization()} can lead to logic misinterpretation. The code employs \texttt{==} to compare \texttt{remainingSupply()} with 0. This could be problematic if \texttt{remainingSupply()} does not exactly equal zero due to rounding or minor calculation errors. Such issues might arise from the discrete nature of blockchain states. Improper failure of this check could prevent the auction from finalizing correctly, leading to funds being locked in the contract. A similar DoS vulnerability, known as ‘Gridlock,’ exploited strict equality in Edgeware's smart contracts. This case highlights the dangers of strict equalities and the importance of defensive programming in Solidity. Slither’s dangerous-strict-equality detector is designed to catch such vulnerabilities\cite{trailofbits2019gridlock}.
@@ -130,13 +130,13 @@ The Auction contract implements low-level calls such as \texttt{.call()}, \textt
 \section{Proposed Solutions}
 In this section, propose potential solutions to address the issues that you found in your analysis earlier. These solutions may be inspired from the lectures, invited talks, related works, or any other instance of similar development projects. 
 
-\subsection{Solution to Reentrancy Issue in Auction.\_finalization Function}
+% \subsection{Solution to Reentrancy Issue in Auction.\_finalization Function}
 
-\begin{enumerate}
-    \item \textbf{Implementation of Reentrancy Guards:} Introducing a reentrancy guard, such as a state variable that tracks whether the function is already being executed, can prevent recursive calls. This guard would be checked and set at the beginning of the \texttt{\_finalization} function.
+% \begin{enumerate}
+%     \item \textbf{Implementation of Reentrancy Guards:} Introducing a reentrancy guard, such as a state variable that tracks whether the function is already being executed, can prevent recursive calls. This guard would be checked and set at the beginning of the \texttt{\_finalization} function.
     
-    \item \textbf{Use of Checks-Effects-Interactions Pattern:} Restructuring the function to first make all state changes (checks and effects) and then perform external calls (interactions) can mitigate reentrancy risks. This would involve modifying the \texttt{\_processPurchase} function to ensure that all critical state changes occur before any external calls are made.
-\end{enumerate}
+%     \item \textbf{Use of Checks-Effects-Interactions Pattern:} Restructuring the function to first make all state changes (checks and effects) and then perform external calls (interactions) can mitigate reentrancy risks. This would involve modifying the \texttt{\_processPurchase} function to ensure that all critical state changes occur before any external calls are made.
+% \end{enumerate}
 
 \subsection{Solution to Dangerous Strict Equalities in DutchAuction.\_preValidateFinalization()}
 
@@ -163,7 +163,7 @@ In this section, propose potential solutions to address the issues that you foun
 
 \section{Conclusion}
 
-In this paper, we focused on the issue of security within a blockchain-based Dutch auction system, a critical aspect given the financial stakes and the immutable nature of blockchain technology. We identified and analyzed several vulnerabilities such as reentrancy risks, issues with strict equalities, low-level call vulnerabilities, and dependencies on block timestamps. These vulnerabilities were not only highlighted but also addressed through comprehensive solutions including the implementation of reentrancy guards, range-based checks, enhanced validation of low-level calls, and the use of block numbers and external oracles for time-dependent functions.
+In this paper, we focused on the issue of security within a blockchain-based Dutch auction system, a critical aspect given the financial stakes and the immutable nature of blockchain technology. We identified and analyzed several vulnerabilities such as  issues with strict equalities, low-level call vulnerabilities, and dependencies on block timestamps. These vulnerabilities were not only highlighted but also addressed through comprehensive solutions including the implementation of  range-based checks, enhanced validation of low-level calls, and the use of block numbers and external oracles for time-dependent functions.
 
 The overall contribution of this paper lies in its detailed analysis of specific security challenges within a blockchain auction system and the provision of targeted, practical solutions. These solutions are informed by best practices in smart contract security and lessons learned from previous incidents in the blockchain space. Our research provides valuable insights for improving the security of the Dutch auction system developed for the CE/CZ4153 Blockchain Technology course at Nanyang Technological University. Additionally, the methodologies and solutions proposed in this paper can serve as a reference for the broader blockchain community, aiding in the development of more secure, reliable, and efficient blockchain-based systems.
 
