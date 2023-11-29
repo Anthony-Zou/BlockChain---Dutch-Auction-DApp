@@ -12,3 +12,12 @@ artifacts
 package-lock.json
 da.json
 token.json
+documentaion/termPaper/main.log
+documentaion/termPaper/main.fls
+documentaion/termPaper/main.fdb_latexmk
+documentaion/termPaper/main.blg
+documentaion/termPaper/main.bbl
+documentaion/termPaper/main.aux
+documentaion/termPaper/main 3.aux
+documentaion/termPaper/main 2.aux
+documentaion/termPaper/main.synctex.gz

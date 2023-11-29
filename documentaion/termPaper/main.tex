@@ -111,33 +111,61 @@ Zhang and colleagues \cite{zhangSSBASFASecureSealedbid2022} created a blockchain
 
 
 \section{Observations and Analysis}
-In this section, start by listing your main observations on the issue you chose in case of your development project. In each case, discuss the major considerations, analyze their impact (and ramifications) on your decentralized application, and compare it with similar cases in the literature, if you found any such case.
 
-\subsection{Issue X in case of Component I}
-Identify the specific issue X that will affect component Y of your decentralized application (e.g., re-entry bug in case of the auction contract). State why you think this issue may occur, what would be the impact on your application, and whether you know of any similar case in the literature where this happened.
+\subsection{Reentrancy Issue in Auction.\_finalization Function of Dutch Auction Application}
+The \texttt{Auction.\_finalization} function in the Dutch Auction contract appears to possess a reentrancy vulnerability. This is evidenced by external calls which may be exploited to re-enter the contract before its execution completion. Reentrancy is feasible as the \texttt{\_processPurchase} function initiates an external call to the token contract. This grants control to potentially untrusted contracts, which might then re-invoke the Auction contract prior to the conclusion of the original call. If leveraged, this vulnerability could enable an attacker to deplete funds from the contract or to disrupt the auction's logical processes, such as impeding the finalization process and equitable distribution of auctioned items. A similar reentrancy attack was witnessed with KyberSwap, a decentralized exchange, where an exploit of a reentrancy flaw in a mint function led to a loss of approximately 47 million dollars. This incident accentuates the criticality of securing smart contract designs and the severe repercussions that vulnerabilities can impose on DeFi platforms. \cite{kyberswap2023hack}
 
-\subsection{Issue Y in case of Component I}
-There may be more than one issue per component. Think carefully to spot all such issues in your development project and write one subsection on each one of them. In case they are connected, do mention that too in this portion of your paper.
+\subsection{Dangerous Strict Equalities in DutchAuction.\_preValidateFinalization()}
+The use of strict equality checks in \texttt{DutchAuction.\_preValidateFinalization()} can lead to logic misinterpretation. The code employs \texttt{==} to compare \texttt{remainingSupply()} with 0. This could be problematic if \texttt{remainingSupply()} does not exactly equal zero due to rounding or minor calculation errors. Such issues might arise from the discrete nature of blockchain states. Improper failure of this check could prevent the auction from finalizing correctly, leading to funds being locked in the contract. A similar DoS vulnerability, known as ‘Gridlock,’ exploited strict equality in Edgeware's smart contracts. This case highlights the dangers of strict equalities and the importance of defensive programming in Solidity. Slither’s dangerous-strict-equality detector is designed to catch such vulnerabilities\cite{trailofbits2019gridlock}.
 
-\subsection{Issue Z in case of Component II}
-There may be more than one component with an issue. Think carefully to spot all such issues in your development project and write one subsection on each one of them. In case they are connected, do mention that too in this portion of your paper.
+\subsection{Low-Level Calls in Auction Contract}
+The Auction contract implements low-level calls such as \texttt{.call()}, \texttt{.delegatecall()}, and \texttt{.staticcall()} for interactions with external contracts. These calls, while providing control over gas and exception handling, do not automatically throw exceptions on failure, potentially leading to security vulnerabilities like reentrancy attacks. An unchecked return value from a low-level call can result in loss of funds or an invalid contract state. Solidity's \texttt{extcodesize} is recommended to verify contract existence before such calls\cite{zipfel2023lowlevelcall}.
+
+
+\subsection{Timestamp Dependence in TimedAuction Contract Functions}
+\texttt{TimedAuction} contract functions such as \texttt{isOpen}, \texttt{hasClosed}, and the constructor, depend on \texttt{block.timestamp} for timing actions. Timestamp manipulation by miners can impact the auction outcome, leading to unfair practices or time-based attacks. Notable instances include Feathercoin's exploitation through timestamp manipulation, affecting its market value, and the GovernMental Ponzi scheme, manipulated to benefit a miner, resulting in the accumulation of nearly 1100 ETH. These incidents underscore the risks associated with timestamp dependence in smart contract design\cite{neptunemutual2023timestamp}.
+
+
 
 \section{Proposed Solutions}
 In this section, propose potential solutions to address the issues that you found in your analysis earlier. These solutions may be inspired from the lectures, invited talks, related works, or any other instance of similar development projects. 
 
-\subsection{Solution to Issue X}
-Identify potential solutions to this issue. Clearly mention how you would apply the solution to your development project, and if you have already applied the solution. Applying the solution is of course not mandatory for the development project.
+\subsection{Solution to Reentrancy Issue in Auction.\_finalization Function}
 
-\subsection{Solution to Issue Y}
-Identify potential solutions to this issue. Clearly mention how you would apply the solution to your development project, and if you have already applied the solution. Applying the solution is of course not mandatory for the development project. In case the solution to issue X already solves Y, mention that.
+\begin{enumerate}
+    \item \textbf{Implementation of Reentrancy Guards:} Introducing a reentrancy guard, such as a state variable that tracks whether the function is already being executed, can prevent recursive calls. This guard would be checked and set at the beginning of the \texttt{\_finalization} function.
+    
+    \item \textbf{Use of Checks-Effects-Interactions Pattern:} Restructuring the function to first make all state changes (checks and effects) and then perform external calls (interactions) can mitigate reentrancy risks. This would involve modifying the \texttt{\_processPurchase} function to ensure that all critical state changes occur before any external calls are made.
+\end{enumerate}
 
-\subsection{Solution to Issue Z}
-Identify potential solutions to this issue. Clearly mention how you would apply the solution to your development project, and if you have already applied the solution. Applying the solution is of course not mandatory for the development project. In case there exists no known solution to issue Z, propose a potential solution on your own, and argue why it may work.
+\subsection{Solution to Dangerous Strict Equalities in DutchAuction.\_preValidateFinalization()}
+
+\begin{enumerate}
+    \item \textbf{Implementation of Range-Based Checks:} Replace strict equality checks with range-based checks. For instance, instead of \texttt{remainingSupply() == 0}, use a condition that checks if \texttt{remainingSupply()} is within an acceptable margin of error. This approach accounts for minor discrepancies due to rounding or calculation errors.
+    
+    \item \textbf{Comprehensive Testing and Validation:} Implement thorough testing procedures to simulate edge cases and ensure that the modified checks behave as expected under various scenarios, including those that would have previously caused strict equality checks to fail.
+\end{enumerate}
+
+\subsection{Solution to Low-Level Calls in Auction Contract}
+\begin{enumerate}
+    \item \textbf{Enhanced Return Value Checking:} Ensure that all low-level calls such as \texttt{.call()}, \texttt{.delegatecall()}, and \texttt{.staticcall()} include robust checks for their return values. Implement a fail-safe mechanism that reverts the transaction if the call returns false, thereby preventing the continuation of execution under failure conditions.
+    \item \textbf{Use of High-Level Abstractions:} Where possible, replace low-level calls with high-level contract interactions that inherently handle exceptions. This reduces the direct use of low-level calls and leverages the safety features of Solidity's high-level constructs.
+    \item \textbf{Contract Existence Verification:} Apply Solidity's \texttt{extcodesize} to check for the existence of the contract at the address being called. This ensures that calls are made to valid contracts and mitigates the risk of interacting with non-existent contracts.
+\end{enumerate}
+
+\subsection{Solution to Timestamp Dependence in TimedAuction Contract Functions}
+\begin{enumerate}
+    \item \textbf{Block Number Utilization:} Replace \texttt{block.timestamp} with block numbers for timing actions. Since block numbers are less prone to manipulation, they can provide a more reliable measure for contract events timing.
+    \item \textbf{Time-Window Mechanisms:} Implement a time-window approach where actions are not dependent on a single block timestamp but on a range of blocks, reducing the potential impact of timestamp manipulation.
+    \item \textbf{External Time Oracle:} Utilize a trusted external time oracle to provide a more secure and reliable time reference for the contract. This approach helps to reduce dependency on the blockchain's internal timekeeping mechanisms.
+\end{enumerate}
+
 
 \section{Conclusion}
-In this section, you should mention exactly which issue out of the three -- Security, Privacy, Scalability -- you presented, and what is the overall contribution of this paper. The contribution may be in terms of your observations, analysis or proposed solutions presented for the issues and the components.
 
-You may follow the IEEE paper format for the Tables, Lists, Figures, References, etc. Keep the format uniform in the paper.
+In this paper, we focused on the issue of security within a blockchain-based Dutch auction system, a critical aspect given the financial stakes and the immutable nature of blockchain technology. We identified and analyzed several vulnerabilities such as reentrancy risks, issues with strict equalities, low-level call vulnerabilities, and dependencies on block timestamps. These vulnerabilities were not only highlighted but also addressed through comprehensive solutions including the implementation of reentrancy guards, range-based checks, enhanced validation of low-level calls, and the use of block numbers and external oracles for time-dependent functions.
+
+The overall contribution of this paper lies in its detailed analysis of specific security challenges within a blockchain auction system and the provision of targeted, practical solutions. These solutions are informed by best practices in smart contract security and lessons learned from previous incidents in the blockchain space. Our research provides valuable insights for improving the security of the Dutch auction system developed for the CE/CZ4153 Blockchain Technology course at Nanyang Technological University. Additionally, the methodologies and solutions proposed in this paper can serve as a reference for the broader blockchain community, aiding in the development of more secure, reliable, and efficient blockchain-based systems.
 
 
 \bibliographystyle{ieeetr} 
